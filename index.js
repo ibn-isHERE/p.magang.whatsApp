@@ -35,6 +35,11 @@ if (!fs.existsSync(mediaDir)) {
     fs.mkdirSync(mediaDir, { recursive: true });
 }
 app.use('/media', express.static(mediaDir));
+const chatMediaDir = path.join(__dirname, 'uploads', 'chat_media');
+if (!fs.existsSync(chatMediaDir)) {
+    fs.mkdirSync(chatMediaDir, { recursive: true });
+}
+app.use('/uploads/chat_media', express.static(chatMediaDir));
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
