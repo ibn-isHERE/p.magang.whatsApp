@@ -9,79 +9,80 @@ let socket;
 let currentChatNumber = null;
 let chatConversations = [];
 let unreadCount = 0;
-let activeChatTab = 'active';
+let activeChatTab = "active";
 
 // --- Bagian 1: Fungsi untuk Mengelola Tab ---
 function showForm(formId) {
-    // Sembunyikan semua container konten form dengan menghapus kelas 'active'
-    document.querySelectorAll(".form-content").forEach((form) => {
-        form.classList.remove("active");
-    });
+  // Sembunyikan semua container konten form dengan menghapus kelas 'active'
+  document.querySelectorAll(".form-content").forEach((form) => {
+    form.classList.remove("active");
+  });
 
-    // Hapus kelas 'active' dari semua tombol tab utama
-    document.querySelectorAll(".tab-button").forEach((button) => {
-        button.classList.remove("active");
-    });
+  // Hapus kelas 'active' dari semua tombol tab utama
+  document.querySelectorAll(".tab-button").forEach((button) => {
+    button.classList.remove("active");
+  });
 
-    // Ambil elemen-elemen utama yang akan diatur tampilannya
-    const scheduleContainer = document.getElementById("scheduleContainer");
-    const chatMainContainer = document.getElementById("chatMainContainer");
+  // Ambil elemen-elemen utama yang akan diatur tampilannya
+  const scheduleContainer = document.getElementById("scheduleContainer");
+  const chatMainContainer = document.getElementById("chatMainContainer");
 
-    if (formId === 'chat') {
-        // Tampilkan sidebar chat dengan menambahkan kelas 'active'
-        const chatSidebarContainer = document.getElementById("chatSidebarContainer");
-        if (chatSidebarContainer) {
-            chatSidebarContainer.classList.add("active");
-        }
-
-        // Sembunyikan container jadwal reguler
-        if (scheduleContainer) {
-            scheduleContainer.style.display = "none";
-        }
-
-        // Tampilkan container utama untuk area chat
-        if (chatMainContainer) {
-            chatMainContainer.style.display = "flex";
-        }
-
-        // Muat data percakapan berdasarkan tab yang aktif (Daftar/History)
-        loadChatConversations(activeChatTab);
-        updateUnreadCount();
-        
-    } else {
-        // Untuk tab lainnya (bukan chat), tampilkan form yang sesuai
-        const selectedForm = document.getElementById(formId + "FormContainer");
-        if (selectedForm) {
-            selectedForm.classList.add("active");
-        }
-
-        // Tampilkan kembali container jadwal reguler
-        if (scheduleContainer) {
-            scheduleContainer.style.display = "block";
-        }
-
-        // Sembunyikan container utama area chat
-        if (chatMainContainer) {
-            chatMainContainer.style.display = "none";
-        }
-    }
-
-    // Beri tanda 'active' pada tombol tab utama yang diklik
-    const selectedTab = document.querySelector(
-        `.tab-button[onclick="showForm('${formId}')"]`
+  if (formId === "chat") {
+    // Tampilkan sidebar chat dengan menambahkan kelas 'active'
+    const chatSidebarContainer = document.getElementById(
+      "chatSidebarContainer"
     );
-    if (selectedTab) {
-        selectedTab.classList.add("active");
+    if (chatSidebarContainer) {
+      chatSidebarContainer.classList.add("active");
     }
 
-    // Muat data spesifik jika diperlukan (misalnya, saat membuka tab Kontak)
-    if (formId === "contacts") {
-        fetchAndRenderContacts();
+    // Sembunyikan container jadwal reguler
+    if (scheduleContainer) {
+      scheduleContainer.style.display = "none";
     }
 
-    if (formId === "meeting") {
-        renderMeetingContactList();
+    // Tampilkan container utama untuk area chat
+    if (chatMainContainer) {
+      chatMainContainer.style.display = "flex";
     }
+
+    // Muat data percakapan berdasarkan tab yang aktif (Daftar/History)
+    loadChatConversations(activeChatTab);
+    updateUnreadCount();
+  } else {
+    // Untuk tab lainnya (bukan chat), tampilkan form yang sesuai
+    const selectedForm = document.getElementById(formId + "FormContainer");
+    if (selectedForm) {
+      selectedForm.classList.add("active");
+    }
+
+    // Tampilkan kembali container jadwal reguler
+    if (scheduleContainer) {
+      scheduleContainer.style.display = "block";
+    }
+
+    // Sembunyikan container utama area chat
+    if (chatMainContainer) {
+      chatMainContainer.style.display = "none";
+    }
+  }
+
+  // Beri tanda 'active' pada tombol tab utama yang diklik
+  const selectedTab = document.querySelector(
+    `.tab-button[onclick="showForm('${formId}')"]`
+  );
+  if (selectedTab) {
+    selectedTab.classList.add("active");
+  }
+
+  // Muat data spesifik jika diperlukan (misalnya, saat membuka tab Kontak)
+  if (formId === "contacts") {
+    fetchAndRenderContacts();
+  }
+
+  if (formId === "meeting") {
+    renderMeetingContactList();
+  }
 }
 
 async function fetchAndRenderContacts() {
@@ -1899,503 +1900,560 @@ async function loadMeetings() {
     console.error("Error loading meetings:", error);
   }
 }
-console.log('🔍 Checking Socket.IO availability:', typeof io);
+console.log("🔍 Checking Socket.IO availability:", typeof io);
 function initSocketConnection() {
-    console.log('🚀 Initializing Socket connection...');
-    
-    if (typeof io === 'undefined') {
-        console.error('❌ Socket.IO not loaded!');
-        return;
-    }
-    
-    socket = io();
-    
-    socket.on('connect', () => {
-        console.log('✅ Socket connected successfully! ID:', socket.id);
-        socket.emit('test', { message: 'Frontend connected' });
-    });
-    
-    socket.on('disconnect', () => {
-        console.log('❌ Socket disconnected');
-    });
-    
-    socket.on('connect_error', (error) => {
-        console.error('❌ Socket connection error:', error);
-    });
-    
-    // ===== INI YANG PENTING: Event listeners untuk chat =====
-    socket.on('newIncomingMessage', (data) => {
-        console.log('🔔 RECEIVED newIncomingMessage:', data);
-        
-        // Langsung update UI
-        handleNewIncomingMessage(data);
-    });
-    
-    socket.on('updateUnreadCount', () => {
-        console.log('🔄 Received updateUnreadCount signal');
-        updateUnreadCount();
-        loadChatConversations();
-    });
-    
-    socket.on('testResponse', (data) => {
-        console.log('🧪 Test response received:', data);
-    });
-    
-    // Debug: Listen semua events
-    socket.onAny((eventName, ...args) => {
-        console.log('📡 Socket event received:', eventName, args);
-    });
+  console.log("🚀 Initializing Socket connection...");
+
+  if (typeof io === "undefined") {
+    console.error("❌ Socket.IO not loaded!");
+    return;
+  }
+
+  socket = io();
+
+  socket.on("connect", () => {
+    console.log("✅ Socket connected successfully! ID:", socket.id);
+    socket.emit("test", { message: "Frontend connected" });
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ Socket disconnected");
+  });
+
+  socket.on("connect_error", (error) => {
+    console.error("❌ Socket connection error:", error);
+  });
+
+  // ===== INI YANG PENTING: Event listeners untuk chat =====
+  socket.on("newIncomingMessage", (data) => {
+    console.log("🔔 RECEIVED newIncomingMessage:", data);
+
+    // Langsung update UI
+    handleNewIncomingMessage(data);
+  });
+
+  socket.on("updateUnreadCount", () => {
+    console.log("🔄 Received updateUnreadCount signal");
+    updateUnreadCount();
+    loadChatConversations();
+  });
+
+  socket.on("testResponse", (data) => {
+    console.log("🧪 Test response received:", data);
+  });
+
+  // Debug: Listen semua events
+  socket.onAny((eventName, ...args) => {
+    console.log("📡 Socket event received:", eventName, args);
+  });
 }
 function handleNewIncomingMessage(messageData) {
-    console.log('🔔 Handling new incoming message:', messageData);
-    
-    // 1. Update unread count
-    updateUnreadCount();
-    
-    // 2. Play notification sound
-    playNotificationSound();
-    
-    // 3. Show browser notification
-    showBrowserNotification(messageData);
-    
-    // 4. Reload conversations list untuk tab yang sedang aktif
-    loadChatConversations(activeChatTab);
-    
-    // 5. Jika sedang melihat chat ini, reload messages di area utama
-    if (currentChatNumber === messageData.fromNumber) {
-        console.log('📱 Reloading active chat:', messageData.fromNumber);
-        loadChatHistory(messageData.fromNumber);
-    } else {
-        console.log('📱 Message from different chat:', messageData.fromNumber, 'current:', currentChatNumber);
-    }
-    
-    console.log('✅ New message handled successfully');
+  console.log("🔔 Handling new incoming message:", messageData);
+
+  // 1. Update unread count
+  updateUnreadCount();
+
+  // 2. Play notification sound
+  playNotificationSound();
+
+  // 3. Show browser notification
+  showBrowserNotification(messageData);
+
+  // 4. Reload conversations list untuk tab yang sedang aktif
+  loadChatConversations(activeChatTab);
+
+  // 5. Jika sedang melihat chat ini, reload messages di area utama
+  if (currentChatNumber === messageData.fromNumber) {
+    console.log("📱 Reloading active chat:", messageData.fromNumber);
+    loadChatHistory(messageData.fromNumber);
+  } else {
+    console.log(
+      "📱 Message from different chat:",
+      messageData.fromNumber,
+      "current:",
+      currentChatNumber
+    );
+  }
+
+  console.log("✅ New message handled successfully");
 }
 
 // TAMBAHAN: Fungsi untuk menambah pesan langsung ke chat aktif
 function addMessageToActiveChat(messageData) {
-    // Hanya tambahkan jika sedang melihat chat dari nomor yang sama
-    if (currentChatNumber !== messageData.fromNumber) return;
-    
-    const chatMessages = document.getElementById('chatMessages');
-    if (!chatMessages) return;
-    
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message incoming';
-    
-    const messageTime = new Date(messageData.timestamp).toLocaleString('id-ID', {
-        hour: '2-digit',
-        minute: '2-digit',
-        day: '2-digit',
-        month: '2-digit'
-    });
-    
-    messageDiv.innerHTML = `
+  // Hanya tambahkan jika sedang melihat chat dari nomor yang sama
+  if (currentChatNumber !== messageData.fromNumber) return;
+
+  const chatMessages = document.getElementById("chatMessages");
+  if (!chatMessages) return;
+
+  const messageDiv = document.createElement("div");
+  messageDiv.className = "message incoming";
+
+  const messageTime = new Date(messageData.timestamp).toLocaleString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+  });
+
+  messageDiv.innerHTML = `
         <div class="message-bubble">
             ${messageData.message}
             <div class="message-time">${messageTime}</div>
         </div>
     `;
-    
-    chatMessages.appendChild(messageDiv);
-    
-    // Scroll to bottom
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-    
-    // Mark as read jika chat sedang aktif
-    markMessagesAsRead(messageData.fromNumber);
+
+  chatMessages.appendChild(messageDiv);
+
+  // Scroll to bottom
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  // Mark as read jika chat sedang aktif
+  markMessagesAsRead(messageData.fromNumber);
 }
 
 // PERBAIKAN: Fungsi untuk mark as read
 async function markMessagesAsRead(fromNumber) {
-    try {
-        await fetch(`/api/chats/mark-read`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ fromNumber: fromNumber })
-        });
-    } catch (error) {
-        console.error('Error marking messages as read:', error);
-    }
+  try {
+    await fetch(`/api/chats/mark-read`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ fromNumber: fromNumber }),
+    });
+  } catch (error) {
+    console.error("Error marking messages as read:", error);
+  }
 }
 
 // PERBAIKAN: Load chat conversations dengan error handling
-async function loadChatConversations(status = 'active') {
-    console.log(`📋 Memuat percakapan dengan status: ${status}...`);
-    try {
-        const response = await fetch(`/api/chats/conversations?status=${status}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
-        if (result.success && Array.isArray(result.data)) {
-            // Langsung gunakan data dari backend tanpa perlu mapping lagi
-            chatConversations = result.data.map(conv => ({
-                phoneNumber: conv.fromNumber,
-                contactName: conv.contactName,
-                lastMessage: conv.lastMessage,
-                lastMessageTime: conv.lastTimestamp,
-                direction: conv.direction,
-                unreadCount: conv.unreadCount || 0
-            }));
-            
-            renderChatConversations();
-
-        } else {
-            console.error('❌ Format data dari server tidak valid:', result.message || result);
-            chatConversations = []; // Kosongkan data jika error
-            renderChatConversations(); // Tampilkan pesan "tidak ada percakapan"
-        }
-        
-    } catch (error) {
-        console.error('❌ Error di dalam fungsi loadChatConversations:', error);
-        chatConversations = []; // Kosongkan data jika error
-        renderChatConversations(); // Tampilkan pesan "tidak ada percakapan"
+async function loadChatConversations(status = "active") {
+  console.log(`📋 Memuat percakapan dengan status: ${status}...`);
+  try {
+    const response = await fetch(`/api/chats/conversations?status=${status}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-}
 
+    const result = await response.json();
+
+    if (result.success && Array.isArray(result.data)) {
+      // Langsung gunakan data dari backend tanpa perlu mapping lagi
+      chatConversations = result.data.map((conv) => ({
+        phoneNumber: conv.fromNumber,
+        contactName: conv.contactName,
+        lastMessage: conv.lastMessage,
+        lastMessageTime: conv.lastTimestamp,
+        direction: conv.direction,
+        unreadCount: conv.unreadCount || 0,
+      }));
+
+      renderChatConversations();
+    } else {
+      console.error(
+        "❌ Format data dari server tidak valid:",
+        result.message || result
+      );
+      chatConversations = []; // Kosongkan data jika error
+      renderChatConversations(); // Tampilkan pesan "tidak ada percakapan"
+    }
+  } catch (error) {
+    console.error("❌ Error di dalam fungsi loadChatConversations:", error);
+    chatConversations = []; // Kosongkan data jika error
+    renderChatConversations(); // Tampilkan pesan "tidak ada percakapan"
+  }
+}
 
 // PERBAIKAN: Update unread count
 async function updateUnreadCount() {
-    try {
-        const response = await fetch('/api/chats/unread-count');
-        const result = await response.json();
-        
-        if (result.totalUnread !== undefined) {
-            unreadCount = result.totalUnread;
-            
-            const chatBadge = document.getElementById('chatBadge');
-            if (chatBadge) {
-                if (unreadCount > 0) {
-                    chatBadge.textContent = unreadCount;
-                    chatBadge.style.display = 'inline-flex';
-                } else {
-                    chatBadge.style.display = 'none';
-                }
-            }
-            
-            console.log(`📊 Unread count updated: ${unreadCount}`);
+  try {
+    const response = await fetch("/api/chats/unread-count");
+    const result = await response.json();
+
+    if (result.totalUnread !== undefined) {
+      unreadCount = result.totalUnread;
+
+      const chatBadge = document.getElementById("chatBadge");
+      if (chatBadge) {
+        if (unreadCount > 0) {
+          chatBadge.textContent = unreadCount;
+          chatBadge.style.display = "inline-flex";
+        } else {
+          chatBadge.style.display = "none";
         }
-    } catch (error) {
-        console.error('Error updating unread count:', error);
+      }
+
+      console.log(`📊 Unread count updated: ${unreadCount}`);
     }
+  } catch (error) {
+    console.error("Error updating unread count:", error);
+  }
 }
 
 // ===== CHAT SYSTEM INITIALIZATION =====
 function initChatSystem() {
-    console.log('💬 Chat system initialization started...');
-    
-    // 1. Inisialisasi Socket
-    initSocketConnection();
-    
-    // 2. Inisialisasi Event Listeners
-    initChatEventListeners();
-    
-    // 3. Load data awal setelah delay singkat
-    setTimeout(() => {
-        console.log('📋 Loading initial chat data...');
-        loadChatConversations();
-        updateUnreadCount();
-    }, 1000);
-    
-    console.log('✅ Chat system initialization complete');
+  console.log("💬 Chat system initialization started...");
+
+  // 1. Inisialisasi Socket
+  initSocketConnection();
+
+  // 2. Inisialisasi Event Listeners
+  initChatEventListeners();
+
+  // 3. Load data awal setelah delay singkat
+  setTimeout(() => {
+    console.log("📋 Loading initial chat data...");
+    loadChatConversations();
+    updateUnreadCount();
+  }, 1000);
+
+  console.log("✅ Chat system initialization complete");
 }
 
 // ===== CHAT EVENT LISTENERS =====
 function initChatEventListeners() {
-    // Search chat functionality
-    const chatSearch = document.getElementById('chatSearch');
-    if (chatSearch) {
-        chatSearch.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            filterChatConversations(searchTerm);
-        });
-    }
-    
-    // Send reply button
-    const sendReplyBtn = document.getElementById('sendReplyBtn');
-    if (sendReplyBtn) {
-        sendReplyBtn.addEventListener('click', sendReply);
-    }
-    
-    // Enter key to send reply
-    const replyInput = document.getElementById('replyInput');
-    if (replyInput) {
-        replyInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendReply();
-            }
-        });
-    }
-    
-    // Refresh chat button
-    const refreshChatBtn = document.getElementById('refreshChatBtn');
-    if (refreshChatBtn) {
-        refreshChatBtn.addEventListener('click', function() {
-            if (currentChatNumber) {
-                loadChatHistory(currentChatNumber);
-            }
-            loadChatConversations(activeChatTab);
-        });
-    }
-
-    // End chat button
-    const endChatBtn = document.getElementById('endChatBtn');
-    if(endChatBtn){
-        endChatBtn.addEventListener('click', endChat);
-    }
-
-    // Event listener untuk tombol tab chat (Daftar Percakapan & History Chat)
-    document.querySelectorAll('.chat-tab-button').forEach(button => {
-        button.addEventListener('click', () => {
-            document.querySelectorAll('.chat-tab-button').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            activeChatTab = button.dataset.status;
-            loadChatConversations(activeChatTab);
-        });
+  // Search chat functionality
+  const chatSearch = document.getElementById("chatSearch");
+  if (chatSearch) {
+    chatSearch.addEventListener("input", function () {
+      const searchTerm = this.value.toLowerCase();
+      filterChatConversations(searchTerm);
     });
+  }
+
+  // Send reply button
+  const sendReplyBtn = document.getElementById("sendReplyBtn");
+  if (sendReplyBtn) {
+    sendReplyBtn.addEventListener("click", sendReply);
+  }
+
+  // Enter key to send reply
+  const replyInput = document.getElementById("replyInput");
+  if (replyInput) {
+    replyInput.addEventListener("keypress", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendReply();
+      }
+    });
+  }
+
+  // Refresh chat button
+  const refreshChatBtn = document.getElementById("refreshChatBtn");
+  if (refreshChatBtn) {
+    refreshChatBtn.addEventListener("click", function () {
+      if (currentChatNumber) {
+        loadChatHistory(currentChatNumber);
+      }
+      loadChatConversations(activeChatTab);
+    });
+  }
+
+  // End chat button
+  const endChatBtn = document.getElementById("endChatBtn");
+  if (endChatBtn) {
+    endChatBtn.addEventListener("click", endChat);
+  }
+
+  // Event listener untuk tombol tab chat (Daftar Percakapan & History Chat)
+  document.querySelectorAll(".chat-tab-button").forEach((button) => {
+    button.addEventListener("click", () => {
+      document
+        .querySelectorAll(".chat-tab-button")
+        .forEach((btn) => btn.classList.remove("active"));
+      button.classList.add("active");
+      activeChatTab = button.dataset.status;
+      loadChatConversations(activeChatTab);
+    });
+  });
 }
 
 // ===== LOAD CHAT CONVERSATIONS =====
-async function loadChatConversations(status = 'active') {
-    console.log(`📋 Loading chat conversations with status: ${status}...`);
-    try {
-        const response = await fetch(`/api/chats/conversations?status=${status}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
-        if (result.success && Array.isArray(result.data)) {
-            // Ini adalah langkah kunci: mengubah 'fromNumber' menjadi 'phoneNumber'
-            chatConversations = result.data.map(conv => {
-                console.log('[DEBUG] Raw data from server:', conv); // Untuk debugging
-                return {
-                    phoneNumber: conv.fromNumber, // Membuat properti yang benar
-                    contactName: conv.contactName || conv.fromNumber,
-                    lastMessage: conv.lastMessage,
-                    lastMessageTime: conv.lastTimestamp,
-                    direction: conv.direction,
-                    unreadCount: conv.unreadCount || 0
-                };
-            });
-            renderChatConversations();
-        } else {
-            console.error('❌ Invalid data format from server:', result.message || result);
-        }
-    } catch (error) {
-        console.error('❌ Error in loadChatConversations:', error);
+async function loadChatConversations(status = "active") {
+  console.log(`📋 Loading chat conversations with status: ${status}...`);
+  try {
+    const response = await fetch(`/api/chats/conversations?status=${status}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+    const result = await response.json();
+
+    if (result.success && Array.isArray(result.data)) {
+      // Ini adalah langkah kunci: mengubah 'fromNumber' menjadi 'phoneNumber'
+      chatConversations = result.data.map((conv) => {
+        console.log("[DEBUG] Raw data from server:", conv); // Untuk debugging
+        return {
+          phoneNumber: conv.fromNumber, // Membuat properti yang benar
+          contactName: conv.contactName || conv.fromNumber,
+          lastMessage: conv.lastMessage,
+          lastMessageTime: conv.lastTimestamp,
+          direction: conv.direction,
+          unreadCount: conv.unreadCount || 0,
+        };
+      });
+      renderChatConversations();
+    } else {
+      console.error(
+        "❌ Invalid data format from server:",
+        result.message || result
+      );
+    }
+  } catch (error) {
+    console.error("❌ Error in loadChatConversations:", error);
+  }
 }
 
 // ===== RENDER CHAT CONVERSATIONS =====
 function renderChatConversations() {
-    const chatList = document.getElementById('chatList');
-    if (!chatList) return;
+  const chatList = document.getElementById("chatList");
+  if (!chatList) return;
 
-    chatList.innerHTML = '';
-    
-    if (chatConversations.length === 0) {
-        chatList.innerHTML = '<div class="no-conversations">Tidak ada percakapan.</div>';
-        return;
+  chatList.innerHTML = "";
+
+  if (chatConversations.length === 0) {
+    chatList.innerHTML =
+      '<div class="no-conversations">Tidak ada percakapan.</div>';
+    return;
+  }
+
+  chatConversations.forEach((conversation) => {
+    const chatItem = document.createElement("div");
+    chatItem.className = "chat-item";
+    if (conversation.unreadCount > 0) {
+      chatItem.classList.add("unread");
     }
-    
-    chatConversations.forEach((conversation) => {
-        const chatItem = document.createElement('div');
-        chatItem.className = 'chat-item';
-        if (conversation.unreadCount > 0) {
-            chatItem.classList.add('unread');
-        }
-        
-        chatItem.setAttribute('data-phone-number', conversation.phoneNumber);
-        
-        const lastMessageTime = new Date(conversation.lastMessageTime).toLocaleString('id-ID', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            day: '2-digit',
-            month: '2-digit'
-        });
-        
-        chatItem.innerHTML = `
+
+    chatItem.setAttribute("data-phone-number", conversation.phoneNumber);
+
+    const lastMessageTime = new Date(
+      conversation.lastMessageTime
+    ).toLocaleString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
+    });
+
+    chatItem.innerHTML = `
             <div class="chat-item-header">
                 <div class="chat-contact-name">${conversation.contactName}</div>
                 <div class="chat-time">${lastMessageTime}</div>
             </div>
             <div class="chat-preview">
                 ${conversation.lastMessage}
-                ${conversation.unreadCount > 0 ? `<span class="unread-count">${conversation.unreadCount}</span>` : ''}
+                ${
+                  conversation.unreadCount > 0
+                    ? `<span class="unread-count">${conversation.unreadCount}</span>`
+                    : ""
+                }
             </div>
         `;
-        
-        chatItem.addEventListener('click', () => {
-            selectConversation(conversation.phoneNumber, conversation.contactName);
-        });
-        
-        chatList.appendChild(chatItem);
-    });
-}
 
+    chatItem.addEventListener("click", () => {
+      selectConversation(conversation.phoneNumber, conversation.contactName);
+    });
+
+    chatList.appendChild(chatItem);
+  });
+}
 
 // ===== FILTER CHAT CONVERSATIONS =====
 function filterChatConversations(searchTerm) {
-    const chatItems = document.querySelectorAll('.chat-item');
-    
-    chatItems.forEach(item => {
-        const contactName = item.querySelector('.chat-contact-name').textContent.toLowerCase();
-        const chatPreview = item.querySelector('.chat-preview').textContent.toLowerCase();
-        
-        if (contactName.includes(searchTerm) || chatPreview.includes(searchTerm)) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
-        }
-    });
+  const chatItems = document.querySelectorAll(".chat-item");
+
+  chatItems.forEach((item) => {
+    const contactName = item
+      .querySelector(".chat-contact-name")
+      .textContent.toLowerCase();
+    const chatPreview = item
+      .querySelector(".chat-preview")
+      .textContent.toLowerCase();
+
+    if (contactName.includes(searchTerm) || chatPreview.includes(searchTerm)) {
+      item.style.display = "block";
+    } else {
+      item.style.display = "none";
+    }
+  });
 }
 
 // ===== SELECT CONVERSATION =====
 async function selectConversation(phoneNumber, contactName) {
-    currentChatNumber = phoneNumber;
-    
-    // Update UI header chat
-    document.getElementById('activeContactName').textContent = contactName;
-    document.getElementById('activeContactNumber').textContent = phoneNumber;
-    
-    // Tampilkan area input chat
-    const chatInputArea = document.getElementById('chatInputArea');
-    if (chatInputArea) {
-        chatInputArea.style.display = 'block';
+  currentChatNumber = phoneNumber;
+
+  // Update UI header chat
+  document.getElementById("activeContactName").textContent = contactName;
+  document.getElementById("activeContactNumber").textContent = phoneNumber;
+
+  // Tampilkan area input chat
+  const chatInputArea = document.getElementById("chatInputArea");
+  if (chatInputArea) {
+    chatInputArea.style.display = "block";
+  }
+
+  // Update active state di sidebar
+  document.querySelectorAll(".chat-item").forEach((item) => {
+    item.classList.remove("active");
+  });
+
+  // Cari dan aktifkan item yang dipilih
+  const chatItems = document.querySelectorAll(".chat-item");
+  chatItems.forEach((item) => {
+    const contactNameEl = item.querySelector(".chat-contact-name");
+    if (contactNameEl && contactNameEl.textContent === contactName) {
+      item.classList.add("active");
+      item.classList.remove("unread");
     }
-    
-    // Update active state di sidebar
-    document.querySelectorAll('.chat-item').forEach(item => {
-        item.classList.remove('active');
+  });
+
+  // Mark messages as read
+  try {
+    await fetch(`/api/chats/mark-read/${phoneNumber}`, {
+      method: "PUT",
     });
-    
-    // Cari dan aktifkan item yang dipilih
-    const chatItems = document.querySelectorAll('.chat-item');
-    chatItems.forEach(item => {
-        const contactNameEl = item.querySelector('.chat-contact-name');
-        if (contactNameEl && contactNameEl.textContent === contactName) {
-            item.classList.add('active');
-            item.classList.remove('unread');
-        }
-    });
-    
-    // Mark messages as read
-    try {
-        await fetch(`/api/chats/mark-read/${phoneNumber}`, {
-            method: 'PUT'
-        });
-    } catch (error) {
-        console.error('Error marking messages as read:', error);
-    }
-    
-    // Load chat history
-    loadChatHistory(phoneNumber);
-    
-    // Update unread count
-    updateUnreadCount();
+  } catch (error) {
+    console.error("Error marking messages as read:", error);
+  }
+
+  // Load chat history
+  loadChatHistory(phoneNumber);
+
+  // Update unread count
+  updateUnreadCount();
 }
 
 // ===== LOAD CHAT HISTORY =====
 async function loadChatHistory(phoneNumber) {
-    try {
-        const response = await fetch(`/api/chats/conversation/${phoneNumber}`);
-        const result = await response.json();
-        
-        if (result.success) {
-            renderChatMessages(result.data.messages);
-        } else {
-            console.error('Failed to load chat history:', result.message);
-        }
-    } catch (error) {
-        console.error('Error loading chat history:', error);
+  try {
+    const response = await fetch(`/api/chats/conversation/${phoneNumber}`);
+    const result = await response.json();
+
+    if (result.success) {
+      renderChatMessages(result.data.messages);
+    } else {
+      console.error("Failed to load chat history:", result.message);
     }
+  } catch (error) {
+    console.error("Error loading chat history:", error);
+  }
 }
 
 // ===== RENDER CHAT MESSAGES =====
 // Di dalam file script.js
 
 function renderChatMessages(messages) {
-    const chatMessages = document.getElementById('chatMessages');
-    if (!chatMessages) return;
+  const chatMessages = document.getElementById("chatMessages");
+  if (!chatMessages) return;
 
-    chatMessages.innerHTML = '';
-    
-    if (!messages || messages.length === 0) {
-        chatMessages.innerHTML = '<div class="no-messages">Belum ada pesan dalam percakapan ini</div>';
-        return;
+  chatMessages.innerHTML = "";
+
+  if (!messages || messages.length === 0) {
+    chatMessages.innerHTML =
+      '<div class="no-messages">Belum ada pesan dalam percakapan ini</div>';
+    return;
+  }
+
+  messages.forEach((raw) => {
+    const message = Object.assign({}, raw); // salinan
+    // Normalize message.message (parse JSON bila perlu)
+    let payload = message.message;
+    if (typeof payload === "string") {
+      try {
+        payload = JSON.parse(payload);
+      } catch (e) {
+        /* tetap string */
+      }
     }
-    
-    messages.forEach(message => {
-        let messageDiv;
 
-        if (message.messageType === 'system') {
-            messageDiv = document.createElement('div');
-            messageDiv.className = 'session-separator';
-            messageDiv.textContent = message.message;
-        } else {
-            messageDiv = document.createElement('div');
-            messageDiv.className = `message ${message.direction === 'in' ? 'incoming' : 'outgoing'}`;
-            
-            const messageTime = new Date(message.timestamp).toLocaleString('id-ID', {
-                hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit'
-            });
+    // If payload is object and has url, use it
+    const mediaUrl =
+      payload && typeof payload === "object" && (payload.url || payload.path)
+        ? payload.url || payload.path
+        : message.mediaUrl || null;
 
-            let messageBubbleContent = '';
+    // ensure messageType
+    let mtype =
+      message.messageType ||
+      (payload && payload.mimetype
+        ? payload.mimetype.startsWith("image/")
+          ? "image"
+          : payload.mimetype.startsWith("video/")
+          ? "video"
+          : "document"
+        : "chat");
 
-            switch (message.messageType) {
-                case 'image':
-                    messageBubbleContent = `
-                        <div class="message-media-container" onclick="showMediaModal('${message.mediaUrl}', 'image')">
-                            <img src="${message.mediaUrl}" class="chat-image" alt="Gambar Terkirim">
-                        </div>
-                        ${message.message ? `<div class="message-caption">${message.message}</div>` : ''}
-                        <div class="message-time">${messageTime}</div>
-                    `;
-                    break;
-                case 'video':
-                     messageBubbleContent = `
-                        <div class="chat-file-link video-thumbnail" onclick="showMediaModal('${message.mediaUrl}', 'video')">
-                            <div class="file-icon"><i class="fa-solid fa-play"></i></div>
-                            <div class="file-info">
-                                <span class="chat-file-name">${message.message || 'Lihat Video'}</span>
-                            </div>
-                        </div>
-                        <div class="message-time">${messageTime}</div>
-                    `;
-                    break;
-                case 'document':
-                    messageBubbleContent = `
-                        <a href="${message.mediaUrl}" target="_blank" download class="chat-file-link">
-                            <div class="file-icon"><i class="fa-solid fa-file-arrow-down"></i></div>
-                            <div class="file-info">
-                                <span class="chat-file-name">${message.message || 'Unduh Dokumen'}</span>
-                            </div>
-                        </a>
-                        <div class="message-time">${messageTime}</div>
-                    `;
-                    break;
-                default:
-                    messageBubbleContent = `
-                        ${message.message}
-                        <div class="message-time">${messageTime}</div>
-                    `;
-                    break;
-            }
-            messageDiv.innerHTML = `<div class="message-bubble">${messageBubbleContent}</div>`;
-        }
-        
-        chatMessages.appendChild(messageDiv);
+    const messageDiv = document.createElement("div");
+    messageDiv.className = `message ${
+      message.direction === "in" ? "incoming" : "outgoing"
+    }`;
+
+    const messageTime = new Date(message.timestamp).toLocaleString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "2-digit",
     });
-    
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    let messageBubbleContent = "";
+
+    if (mtype === "image" && mediaUrl) {
+      messageBubbleContent = `
+        <div class="message-media-container" onclick="showMediaModal('${mediaUrl}', 'image')">
+          <img src="${mediaUrl}" class="chat-image" alt="${
+        payload && payload.originalname ? payload.originalname : "Gambar"
+      }">
+        </div>
+        ${
+          payload && payload.caption
+            ? `<div class="message-caption">${payload.caption}</div>`
+            : ""
+        }
+        <div class="message-time">${messageTime}</div>
+      `;
+    } else if (mtype === "video" && mediaUrl) {
+      messageBubbleContent = `
+        <div class="message-media-container" onclick="showMediaModal('${mediaUrl}', 'video')">
+          <video src="${mediaUrl}" class="chat-video-preview" controls preload="metadata"></video>
+        </div>
+        ${
+          payload && payload.caption
+            ? `<div class="message-caption">${payload.caption}</div>`
+            : ""
+        }
+        <div class="message-time">${messageTime}</div>
+      `;
+    } else if ((mtype === "document" || mtype === "file") && mediaUrl) {
+      const fileName =
+        (payload && payload.originalname) ||
+        (typeof payload === "string" ? payload : "Unduh File");
+      messageBubbleContent = `
+        <a href="${mediaUrl}" target="_blank" download class="chat-file-link">
+          <div class="file-icon"><i class="fa-solid fa-file-arrow-down"></i></div>
+          <div class="file-info">
+            <span class="chat-file-name">${fileName}</span>
+          </div>
+        </a>
+        <div class="message-time">${messageTime}</div>
+      `;
+    } else {
+      // teks / fallback
+      const text =
+        typeof payload === "object"
+          ? payload.caption || payload.originalname || JSON.stringify(payload)
+          : payload || "";
+      messageBubbleContent = `
+        <div class="text-content">${text}</div>
+        <div class="message-time">${messageTime}</div>
+      `;
+    }
+
+    messageDiv.innerHTML = `<div class="message-bubble">${messageBubbleContent}</div>`;
+    chatMessages.appendChild(messageDiv);
+  });
+
+  chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 // ==========================================================
@@ -2408,381 +2466,395 @@ function renderChatMessages(messages) {
  * @param {string} type - Tipe media ('image' atau 'video').
  */
 function showMediaModal(url, type) {
-    const modal = document.getElementById('mediaModal');
-    const modalContent = document.getElementById('modalContent');
-    const downloadLink = document.getElementById('downloadLink');
+  const modal = document.getElementById("mediaModal");
+  const modalContent = document.getElementById("modalContent");
+  const downloadLink = document.getElementById("downloadLink");
 
-    // Kosongkan konten sebelumnya
-    modalContent.innerHTML = '';
+  // Kosongkan konten sebelumnya
+  modalContent.innerHTML = "";
 
-    if (type === 'image') {
-        const img = document.createElement('img');
-        img.src = url;
-        modalContent.appendChild(img);
-    } else if (type === 'video') {
-        const video = document.createElement('video');
-        video.src = url;
-        video.controls = true;
-        video.autoplay = true;
-        video.playsInline = true;
-        modalContent.appendChild(video);
-    }
+  if (type === "image") {
+    const img = document.createElement("img");
+    img.src = url;
+    modalContent.appendChild(img);
+  } else if (type === "video") {
+    const video = document.createElement("video");
+    video.src = url;
+    video.controls = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    modalContent.appendChild(video);
+  }
 
-    // Atur link unduhan
-    downloadLink.href = url;
-    
-    // Tampilkan modal
-    modal.style.display = 'flex';
+  // Atur link unduhan
+  downloadLink.href = url;
+
+  // Tampilkan modal
+  modal.style.display = "flex";
 }
 
 /**
  * Menutup modal media.
  */
 function closeMediaModal() {
-    const modal = document.getElementById('mediaModal');
-    const modalContent = document.getElementById('modalContent');
-    
-    // Hentikan video jika ada
-    const video = modalContent.querySelector('video');
-    if (video) {
-        video.pause();
-    }
+  const modal = document.getElementById("mediaModal");
+  const modalContent = document.getElementById("modalContent");
 
-    modal.style.display = 'none';
-    modalContent.innerHTML = ''; // Kosongkan konten untuk menghemat memori
+  // Hentikan video jika ada
+  const video = modalContent.querySelector("video");
+  if (video) {
+    video.pause();
+  }
+
+  modal.style.display = "none";
+  modalContent.innerHTML = ""; // Kosongkan konten untuk menghemat memori
 }
 
 // ===== SEND REPLY =====
 async function sendReply() {
-    const replyInput = document.getElementById('replyInput');
-    const chatFileInput = document.getElementById('chatFileInput');
-    const sendBtn = document.getElementById('sendReplyBtn');
+  const replyInput = document.getElementById("replyInput");
+  const chatFileInput = document.getElementById("chatFileInput");
+  const sendBtn = document.getElementById("sendReplyBtn");
 
-    if (!currentChatNumber) {
-        Swal.fire('Error', 'Pilih percakapan terlebih dahulu.', 'error');
-        return;
+  if (!currentChatNumber) {
+    Swal.fire("Error", "Pilih percakapan terlebih dahulu.", "error");
+    return;
+  }
+
+  const caption = replyInput.value.trim();
+  const file = chatFileInput.files[0];
+  const hasFile = !!file;
+
+  if (!caption && !hasFile) {
+    Swal.fire(
+      "Peringatan",
+      "Ketik pesan atau pilih file terlebih dahulu.",
+      "warning"
+    );
+    return;
+  }
+
+  // Disable UI
+  replyInput.disabled = true;
+  chatFileInput.disabled = true;
+  sendBtn.disabled = true;
+
+  try {
+    let response;
+    if (hasFile) {
+      // Logika untuk mengirim media
+      const formData = new FormData();
+      formData.append("to", currentChatNumber);
+      formData.append("caption", caption);
+      formData.append("media", file); // Nama field harus 'media'
+
+      response = await fetch("/api/chats/send-media", {
+        method: "POST",
+        body: formData,
+      });
+    } else {
+      // Logika untuk mengirim teks biasa
+      response = await fetch("/api/chats/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: currentChatNumber, message: caption }),
+      });
     }
 
-    const caption = replyInput.value.trim();
-    const file = chatFileInput.files[0];
-    const hasFile = !!file;
-
-    if (!caption && !hasFile) {
-        Swal.fire('Peringatan', 'Ketik pesan atau pilih file terlebih dahulu.', 'warning');
-        return;
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || "Gagal mengirim pesan.");
     }
 
-    // Disable UI
-    replyInput.disabled = true;
-    chatFileInput.disabled = true;
-    sendBtn.disabled = true;
+    // Reset UI setelah berhasil
+    replyInput.value = "";
+    chatFileInput.value = "";
+    const selectedFilePreviewEl = document.querySelector(".chat-selected-file");
+    if (selectedFilePreviewEl) selectedFilePreviewEl.remove();
 
-    try {
-        let response;
-        if (hasFile) {
-            // Logika untuk mengirim media
-            const formData = new FormData();
-            formData.append('to', currentChatNumber);
-            formData.append('caption', caption);
-            formData.append('media', file); // Nama field harus 'media'
-
-            response = await fetch('/api/chats/send-media', {
-                method: 'POST',
-                body: formData
-            });
-
-        } else {
-            // Logika untuk mengirim teks biasa
-            response = await fetch('/api/chats/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ to: currentChatNumber, message: caption })
-            });
-        }
-
-        const result = await response.json();
-        if (!response.ok || !result.success) {
-            throw new Error(result.message || 'Gagal mengirim pesan.');
-        }
-        
-        // Reset UI setelah berhasil
-        replyInput.value = '';
-        chatFileInput.value = '';
-        const selectedFilePreviewEl = document.querySelector('.chat-selected-file');
-        if (selectedFilePreviewEl) selectedFilePreviewEl.remove();
-
-        // Muat ulang history untuk menampilkan pesan/gambar yang baru dikirim
-        loadChatHistory(currentChatNumber);
-        // Muat ulang daftar percakapan untuk memperbarui pesan terakhir
-        loadChatConversations(activeChatTab);
-
-    } catch (e) {
-        console.error(e);
-        Swal.fire('Error', e.message, 'error');
-    } finally {
-        // Re-enable UI
-        replyInput.disabled = false;
-        chatFileInput.disabled = false;
-        sendBtn.disabled = false;
-        replyInput.focus();
-    }
+    // Muat ulang history untuk menampilkan pesan/gambar yang baru dikirim
+    loadChatHistory(currentChatNumber);
+    // Muat ulang daftar percakapan untuk memperbarui pesan terakhir
+    loadChatConversations(activeChatTab);
+  } catch (e) {
+    console.error(e);
+    Swal.fire("Error", e.message, "error");
+  } finally {
+    // Re-enable UI
+    replyInput.disabled = false;
+    chatFileInput.disabled = false;
+    sendBtn.disabled = false;
+    replyInput.focus();
+  }
 }
 
-
 async function endChat() {
-    if (!currentChatNumber) {
-        Swal.fire('Peringatan', 'Pilih percakapan terlebih dahulu.', 'warning');
-        return;
+  if (!currentChatNumber) {
+    Swal.fire("Peringatan", "Pilih percakapan terlebih dahulu.", "warning");
+    return;
+  }
+
+  const result = await Swal.fire({
+    title: "Akhiri Sesi Chat?",
+    text: "Percakapan ini akan dipindahkan ke History Chat.",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Ya, Akhiri",
+    cancelButtonText: "Batal",
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const response = await fetch(`/api/chats/end-chat/${currentChatNumber}`, {
+        method: "PUT",
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        Swal.fire("Berhasil", "Sesi chat telah diakhiri.", "success");
+        currentChatNumber = null;
+        document.getElementById("activeContactName").textContent =
+          "Pilih percakapan";
+        document.getElementById("activeContactNumber").textContent = "";
+        document.getElementById("chatMessages").innerHTML =
+          '<div class="no-chat-selected"><i class="fa-solid fa-comments"></i><p>Pilih percakapan untuk mulai chat</p></div>';
+        document.getElementById("chatInputArea").style.display = "none";
+        loadChatConversations(activeChatTab);
+      } else {
+        Swal.fire("Gagal", data.message, "error");
+      }
+    } catch (error) {
+      Swal.fire("Error", "Terjadi kesalahan saat menghubungi server.", "error");
     }
-
-    const result = await Swal.fire({
-        title: 'Akhiri Sesi Chat?',
-        text: 'Percakapan ini akan dipindahkan ke History Chat.',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Ya, Akhiri',
-        cancelButtonText: 'Batal'
-    });
-
-    if (result.isConfirmed) {
-        try {
-            const response = await fetch(`/api/chats/end-chat/${currentChatNumber}`, {
-                method: 'PUT'
-            });
-            const data = await response.json();
-
-            if (data.success) {
-                Swal.fire('Berhasil', 'Sesi chat telah diakhiri.', 'success');
-                currentChatNumber = null;
-                document.getElementById('activeContactName').textContent = 'Pilih percakapan';
-                document.getElementById('activeContactNumber').textContent = '';
-                document.getElementById('chatMessages').innerHTML = '<div class="no-chat-selected"><i class="fa-solid fa-comments"></i><p>Pilih percakapan untuk mulai chat</p></div>';
-                document.getElementById('chatInputArea').style.display = 'none';
-                loadChatConversations(activeChatTab);
-            } else {
-                Swal.fire('Gagal', data.message, 'error');
-            }
-        } catch (error) {
-            Swal.fire('Error', 'Terjadi kesalahan saat menghubungi server.', 'error');
-        }
-    }
+  }
 }
 
 // ===== UPDATE UNREAD COUNT =====
 async function updateUnreadCount() {
-    try {
-        const response = await fetch('/api/chats/unread-count');
-        const result = await response.json();
-        
-        if (result.success) {
-            unreadCount = result.data.count;
-            
-            const chatBadge = document.getElementById('chatBadge');
-            if (chatBadge) {
-                if (unreadCount > 0) {
-                    chatBadge.textContent = unreadCount;
-                    chatBadge.style.display = 'inline-flex';
-                } else {
-                    chatBadge.style.display = 'none';
-                }
-            }
+  try {
+    const response = await fetch("/api/chats/unread-count");
+    const result = await response.json();
+
+    if (result.success) {
+      unreadCount = result.data.count;
+
+      const chatBadge = document.getElementById("chatBadge");
+      if (chatBadge) {
+        if (unreadCount > 0) {
+          chatBadge.textContent = unreadCount;
+          chatBadge.style.display = "inline-flex";
+        } else {
+          chatBadge.style.display = "none";
         }
-    } catch (error) {
-        console.error('Error updating unread count:', error);
+      }
     }
+  } catch (error) {
+    console.error("Error updating unread count:", error);
+  }
 }
 
 // ===== NOTIFICATION FUNCTIONS =====
 function playNotificationSound() {
-    console.log('🔊 Playing notification sound...');
-    
-    // Buat audio element jika belum ada
-    let audio = document.getElementById('notificationSound');
-    if (!audio) {
-        audio = document.createElement('audio');
-        audio.id = 'notificationSound';
-        audio.preload = 'auto';
-        
-        // Gunakan default notification sound atau data URL
-        audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBj+a2/LDciUFL';
-        
-        document.body.appendChild(audio);
-    }
-    
-    // Play dengan error handling
-    audio.play().catch(e => {
-        console.log('🔇 Could not play notification sound:', e.message);
-    });
+  console.log("🔊 Playing notification sound...");
+
+  // Buat audio element jika belum ada
+  let audio = document.getElementById("notificationSound");
+  if (!audio) {
+    audio = document.createElement("audio");
+    audio.id = "notificationSound";
+    audio.preload = "auto";
+
+    // Gunakan default notification sound atau data URL
+    audio.src =
+      "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBj+a2/LDciUFL";
+
+    document.body.appendChild(audio);
+  }
+
+  // Play dengan error handling
+  audio.play().catch((e) => {
+    console.log("🔇 Could not play notification sound:", e.message);
+  });
 }
 
-
 function showBrowserNotification(messageData) {
-    console.log('🔔 Showing browser notification for:', messageData);
-    
-    // Request permission jika belum ada
-    if ('Notification' in window) {
-        if (Notification.permission === 'default') {
-            Notification.requestPermission().then(permission => {
-                if (permission === 'granted') {
-                    showNotification(messageData);
-                }
-            });
-        } else if (Notification.permission === 'granted') {
-            showNotification(messageData);
+  console.log("🔔 Showing browser notification for:", messageData);
+
+  // Request permission jika belum ada
+  if ("Notification" in window) {
+    if (Notification.permission === "default") {
+      Notification.requestPermission().then((permission) => {
+        if (permission === "granted") {
+          showNotification(messageData);
         }
+      });
+    } else if (Notification.permission === "granted") {
+      showNotification(messageData);
     }
+  }
 }
 
 function showNotification(messageData) {
-    const notification = new Notification('Pesan WhatsApp Baru', {
-        body: `${messageData.contactName || messageData.fromNumber}: ${messageData.message}`,
-        icon: '/favicon.ico', // Sesuaikan dengan path icon Anda
-        tag: 'whatsapp-message',
-        requireInteraction: false
-    });
-    
-    notification.onclick = function() {
-        window.focus();
-        // Buka tab chat jika diperlukan
-        showForm('chat'); 
-        notification.close();
-    };
-    
-    // Auto close after 5 seconds
-    setTimeout(() => notification.close(), 5000);
+  const notification = new Notification("Pesan WhatsApp Baru", {
+    body: `${messageData.contactName || messageData.fromNumber}: ${
+      messageData.message
+    }`,
+    icon: "/favicon.ico", // Sesuaikan dengan path icon Anda
+    tag: "whatsapp-message",
+    requireInteraction: false,
+  });
+
+  notification.onclick = function () {
+    window.focus();
+    // Buka tab chat jika diperlukan
+    showForm("chat");
+    notification.close();
+  };
+
+  // Auto close after 5 seconds
+  setTimeout(() => notification.close(), 5000);
 }
 
 // Initial calls
 function initApp() {
-    console.log('🚀 Initializing app...');
-    
-    // Inisialisasi fungsi-fungsi utama
-    initContactListeners();
-    initFileUploadListener();
-    initFilterButtons();
-    initReminderForm();
-    initMeetingForm();
-    initMeetingContactListeners();
-    initMeetingFileUploadListener();
+  console.log("🚀 Initializing app...");
 
-    // Event listener untuk modal media
-    const mediaModal = document.getElementById('mediaModal');
-    if (mediaModal) {
-        mediaModal.addEventListener('click', function(event) {
-            if (event.target === mediaModal) {
-                closeMediaModal();
-            }
-        });
-    }
+  // Inisialisasi fungsi-fungsi utama
+  initContactListeners();
+  initFileUploadListener();
+  initFilterButtons();
+  initReminderForm();
+  initMeetingForm();
+  initMeetingContactListeners();
+  initMeetingFileUploadListener();
 
-    // Form CRUD kontak
-    const contactForm = document.getElementById("contact-crud-form");
-    if (contactForm) {
-        contactForm.addEventListener("submit", handleContactFormSubmit);
-    }
-    
-    const contactCancelBtn = document.getElementById("contact-crud-cancel");
-    if (contactCancelBtn) {
-        contactCancelBtn.addEventListener("click", resetContactCrudForm);
-    }
+  // Event listener untuk modal media
+  const mediaModal = document.getElementById("mediaModal");
+  if (mediaModal) {
+    mediaModal.addEventListener("click", function (event) {
+      if (event.target === mediaModal) {
+        closeMediaModal();
+      }
+    });
+  }
 
-    // Load data awal
-    loadContacts();
-    loadMeetingRooms();
-    updateFilterButtonActiveState(currentFilter);
-    renderScheduleTable();
+  // Form CRUD kontak
+  const contactForm = document.getElementById("contact-crud-form");
+  if (contactForm) {
+    contactForm.addEventListener("submit", handleContactFormSubmit);
+  }
 
-    // Inisialisasi chat system
-    console.log('💬 Initializing chat system...');
-    initChatSystem();
+  const contactCancelBtn = document.getElementById("contact-crud-cancel");
+  if (contactCancelBtn) {
+    contactCancelBtn.addEventListener("click", resetContactCrudForm);
+  }
 
-    // Timer untuk update berkala
-    setInterval(updateCountdownTimers, 1000);
-    setInterval(renderScheduleTable, 5000);
-    
-    console.log('✅ App initialization complete');
+  // Load data awal
+  loadContacts();
+  loadMeetingRooms();
+  updateFilterButtonActiveState(currentFilter);
+  renderScheduleTable();
+
+  // Inisialisasi chat system
+  console.log("💬 Initializing chat system...");
+  initChatSystem();
+
+  // Timer untuk update berkala
+  setInterval(updateCountdownTimers, 1000);
+  setInterval(renderScheduleTable, 5000);
+
+  console.log("✅ App initialization complete");
 }
 
 function handleNewIncomingMessage(messageData) {
-    console.log('🔔 Handling new incoming message:', messageData);
-    
-    // 1. Update unread count
-    updateUnreadCount();
-    
-    // 2. Play notification sound
-    playNotificationSound();
-    
-    // 3. Show browser notification
-    showBrowserNotification(messageData);
-    
-    // 4. Reload conversations list (ini akan memperbarui sidebar)
-    loadChatConversations();
-    
-    // 5. Jika sedang melihat chat ini, reload messages di area utama
-    if (currentChatNumber === messageData.fromNumber) {
-        console.log('📱 Reloading active chat:', messageData.fromNumber);
-        loadChatHistory(messageData.fromNumber);
-    } else {
-        console.log('📱 Message from different chat:', messageData.fromNumber, 'current:', currentChatNumber);
-    }
-    
-    console.log('✅ New message handled successfully');
+  console.log("🔔 Handling new incoming message:", messageData);
+
+  // 1. Update unread count
+  updateUnreadCount();
+
+  // 2. Play notification sound
+  playNotificationSound();
+
+  // 3. Show browser notification
+  showBrowserNotification(messageData);
+
+  // 4. Reload conversations list (ini akan memperbarui sidebar)
+  loadChatConversations();
+
+  // 5. Jika sedang melihat chat ini, reload messages di area utama
+  if (currentChatNumber === messageData.fromNumber) {
+    console.log("📱 Reloading active chat:", messageData.fromNumber);
+    loadChatHistory(messageData.fromNumber);
+  } else {
+    console.log(
+      "📱 Message from different chat:",
+      messageData.fromNumber,
+      "current:",
+      currentChatNumber
+    );
+  }
+
+  console.log("✅ New message handled successfully");
 }
 
 // Update fungsi loadChatConversations untuk bekerja dengan sidebar
-async function loadChatConversations(status = 'active') {
-    console.log(`[Frontend] Meminta percakapan dengan status: ${status}...`);
-    try {
-        const response = await fetch(`/api/chats/conversations?status=${status}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
-        if (result.success && Array.isArray(result.data)) {
-            console.log("[Frontend] Data diterima dari backend:", result.data);
-            
-            // Perbaikan: Mapping data dari backend ke format yang dibutuhkan frontend
-            chatConversations = result.data.map(conv => ({
-                phoneNumber: conv.fromNumber,
-                contactName: conv.contactName || conv.fromNumber, // Fallback jika nama kontak tidak ada
-                lastMessage: conv.lastMessage || '', // Fallback untuk pesan kosong
-                lastMessageTime: conv.lastTimestamp,
-                direction: conv.direction,
-                unreadCount: conv.unreadCount || 0
-            }));
-            
-            renderChatConversations();
-
-        } else {
-            console.error('[Frontend] Format data dari server tidak valid:', result.message || result);
-            chatConversations = [];
-            renderChatConversations();
-        }
-        
-    } catch (error) {
-        console.error('[Frontend] Error di dalam fungsi loadChatConversations:', error);
-        chatConversations = [];
-        renderChatConversations();
+async function loadChatConversations(status = "active") {
+  console.log(`[Frontend] Meminta percakapan dengan status: ${status}...`);
+  try {
+    const response = await fetch(`/api/chats/conversations?status=${status}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+    const result = await response.json();
+
+    if (result.success && Array.isArray(result.data)) {
+      console.log("[Frontend] Data diterima dari backend:", result.data);
+
+      // Perbaikan: Mapping data dari backend ke format yang dibutuhkan frontend
+      chatConversations = result.data.map((conv) => ({
+        phoneNumber: conv.fromNumber,
+        contactName: conv.contactName || conv.fromNumber, // Fallback jika nama kontak tidak ada
+        lastMessage: conv.lastMessage || "", // Fallback untuk pesan kosong
+        lastMessageTime: conv.lastTimestamp,
+        direction: conv.direction,
+        unreadCount: conv.unreadCount || 0,
+      }));
+
+      renderChatConversations();
+    } else {
+      console.error(
+        "[Frontend] Format data dari server tidak valid:",
+        result.message || result
+      );
+      chatConversations = [];
+      renderChatConversations();
+    }
+  } catch (error) {
+    console.error(
+      "[Frontend] Error di dalam fungsi loadChatConversations:",
+      error
+    );
+    chatConversations = [];
+    renderChatConversations();
+  }
 }
 
 // di script.js
-const attachBtn = document.getElementById('attachFileBtn');
-const chatFileInput = document.getElementById('chatFileInput');
+const attachBtn = document.getElementById("attachFileBtn");
+const chatFileInput = document.getElementById("chatFileInput");
 
-attachBtn.addEventListener('click', (e) => {
+attachBtn.addEventListener("click", (e) => {
   e.preventDefault();
   chatFileInput.click();
 });
 
-const chatInputContainer = document.querySelector('.chat-input-container');
-const replyInput = document.getElementById('replyInput');
+const chatInputContainer = document.querySelector(".chat-input-container");
+const replyInput = document.getElementById("replyInput");
 
 let selectedFilePreviewEl = null;
 
-chatFileInput.addEventListener('change', () => {
+chatFileInput.addEventListener("change", () => {
   // bersihkan preview lama
   if (selectedFilePreviewEl) selectedFilePreviewEl.remove();
 
@@ -2790,28 +2862,32 @@ chatFileInput.addEventListener('change', () => {
   const f = chatFileInput.files[0];
 
   // buat chip preview
-  const wrap = document.createElement('div');
-  wrap.className = 'chat-selected-file';
+  const wrap = document.createElement("div");
+  wrap.className = "chat-selected-file";
 
-  const name = document.createElement('span');
-  name.className = 'file-name';
-  name.textContent = f.name + ` (${Math.round(f.size/1024)} KB)`;
+  const name = document.createElement("span");
+  name.className = "file-name";
+  name.textContent = f.name + ` (${Math.round(f.size / 1024)} KB)`;
   wrap.appendChild(name);
 
   // thumbnail opsional
-  if (f.type.startsWith('image/')) {
-    const img = document.createElement('img');
-    img.className = 'thumb';
+  if (f.type.startsWith("image/")) {
+    const img = document.createElement("img");
+    img.className = "thumb";
     img.src = URL.createObjectURL(f);
     img.onload = () => URL.revokeObjectURL(img.src);
     wrap.prepend(img);
   }
 
-  const removeBtn = document.createElement('button');
-  removeBtn.type = 'button';
-  removeBtn.className = 'remove';
-  removeBtn.innerHTML = '&times;';
-  removeBtn.onclick = () => { chatFileInput.value = ''; wrap.remove(); selectedFilePreviewEl = null; };
+  const removeBtn = document.createElement("button");
+  removeBtn.type = "button";
+  removeBtn.className = "remove";
+  removeBtn.innerHTML = "&times;";
+  removeBtn.onclick = () => {
+    chatFileInput.value = "";
+    wrap.remove();
+    selectedFilePreviewEl = null;
+  };
   wrap.appendChild(removeBtn);
 
   // sisipkan sebelum input teks
@@ -2819,51 +2895,11 @@ chatFileInput.addEventListener('change', () => {
   selectedFilePreviewEl = wrap;
 });
 
-const sendReplyBtn = document.getElementById('sendReplyBtn');
-
 // simpan nomor aktif saat user memilih percakapan
 // pastikan kamu set ini di handler ketika user klik sebuah chat
 window.activeChatNumber = window.activeChatNumber || null;
 
-sendReplyBtn.addEventListener('click', async () => {
-  const to = window.activeChatNumber || document.getElementById('activeContactNumber').dataset.number || document.getElementById('activeContactNumber').textContent.trim();
-  const caption = replyInput.value.trim();
-  const hasFile = chatFileInput.files.length > 0;
 
-  if (!to) { alert('Pilih percakapan dulu.'); return; }
-
-  try {
-    if (hasFile) {
-      const fd = new FormData();
-      fd.append('to', to);
-      fd.append('caption', caption);
-      fd.append('media', chatFileInput.files[0]); // <— harus 'media'
-
-      const res = await fetch('/api/chats/send-media', { method: 'POST', body: fd });
-      const out = await res.json();
-      if (!out.success) throw new Error(out.message || 'Gagal mengirim media');
-
-      // reset UI
-      chatFileInput.value = '';
-      if (selectedFilePreviewEl) { selectedFilePreviewEl.remove(); selectedFilePreviewEl = null; }
-      replyInput.value = '';
-    } else if (caption) {
-      const res = await fetch('/api/chats/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to, message: caption })
-      });
-      const out = await res.json();
-      if (!out.success) throw new Error(out.message || 'Gagal mengirim pesan');
-      replyInput.value = '';
-    } else {
-      alert('Ketik pesan atau pilih file terlebih dahulu.');
-    }
-  } catch (e) {
-    console.error(e);
-    alert(e.message);
-  }
-});
 
 // Jalankan aplikasi ketika DOM siap
 document.addEventListener("DOMContentLoaded", initApp);
