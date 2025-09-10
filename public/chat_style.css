@@ -394,6 +394,12 @@
     cursor: pointer;
 }
 
+.chat-video-preview {
+    max-width: 100%;
+    border-radius: 5.6px; /* 8 *0.7 */
+    cursor: pointer;
+}
+
 .message-media-container {
     cursor: pointer;
 }
