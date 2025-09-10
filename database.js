@@ -50,7 +50,8 @@ db.serialize(() => {
             filesData TEXT,
             start_epoch INTEGER,
             end_epoch INTEGER,
-            createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+            createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+            updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
         )`,
         (err) => {
             if (err) {
