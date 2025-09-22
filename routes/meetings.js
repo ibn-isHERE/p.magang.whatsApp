@@ -556,6 +556,46 @@ function validateMeetingInput(meetingTitle, numbers, meetingRoom, startTime, end
     return null; // Valid
 }
 
+/**
+ * Kirim notifikasi PEMBATALAN via WhatsApp
+ */
+async function sendCancellationNotification(meeting) {
+    if (!client) {
+        console.error("Client WA belum siap, skip pengiriman notifikasi pembatalan.");
+        return;
+    }
+
+    const message =
+        `🚫 *PEMBERITAHUAN PEMBATALAN RAPAT*\n\n` +
+        `Rapat dengan detail berikut telah dibatalkan:\n` +
+        `🗓️ *Judul:* ${meeting.meetingTitle}\n` +
+        `📍 *Ruangan:* ${meeting.meetingRoom}\n` +
+        `⏰ *Waktu Semula:* ${meeting.date} pukul ${meeting.startTime}\n\n` +
+        `Mohon maaf atas ketidaknyamanannya.`;
+
+    let numbersArray = [];
+    try {
+        numbersArray = JSON.parse(meeting.numbers);
+    } catch (e) {
+        console.error("Gagal parsing JSON numbers di sendCancellationNotification:", e);
+        return;
+    }
+
+    if (!Array.isArray(numbersArray) || numbersArray.length === 0) return;
+
+    for (const num of numbersArray) {
+        try {
+            const formattedNum = formatNumber(num);
+            if (formattedNum) {
+                await client.sendMessage(formattedNum, message);
+                console.log(`Notifikasi pembatalan rapat terkirim ke: ${num}`);
+            }
+        } catch (err) {
+            console.error(`Gagal kirim notifikasi pembatalan ke ${num}:`, err.message);
+        }
+    }
+}
+
 // Auto update expired meetings setiap 5 menit
 setInterval(() => {
     updateExpiredMeetings();
@@ -998,9 +1038,9 @@ router.put('/cancel-meeting/:id', async (req, res) => {
     }
 
     try {
-        // LANGKAH 1 (BARU): Ambil data file SEBELUM mengubah status
+        // LANGKAH 1 (BARU): Ambil data meeting SEBELUM mengubah status
         const meeting = await new Promise((resolve, reject) => {
-            db.get("SELECT filesData FROM meetings WHERE id = ?", [id], (err, row) => {
+            db.get("SELECT * FROM meetings WHERE id = ?", [id], (err, row) => {
                 if (err) return reject(new Error("Gagal mengakses database."));
                 resolve(row);
             });
@@ -1009,6 +1049,12 @@ router.put('/cancel-meeting/:id', async (req, res) => {
         if (!meeting) {
             return res.status(404).json({ success: false, message: "Meeting tidak ditemukan" });
         }
+        
+        // --- PENAMBAHAN FITUR: Kirim notifikasi pembatalan ---
+        if (meeting.status === 'terjadwal' || meeting.status === 'terkirim') {
+            await sendCancellationNotification(meeting);
+        }
+        // --- AKHIR PENAMBAHAN FITUR ---
 
         // LANGKAH 2: Update status menjadi 'dibatalkan'
         await new Promise((resolve, reject) => {
@@ -1041,7 +1087,7 @@ router.put('/cancel-meeting/:id', async (req, res) => {
 
         res.json({
             success: true,
-            message: "Meeting berhasil dibatalkan dan file terkait telah dihapus"
+            message: "Meeting berhasil dibatalkan dan notifikasi telah dikirim."
         });
 
     } catch (error) {
