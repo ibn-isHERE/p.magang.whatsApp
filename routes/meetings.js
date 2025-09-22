@@ -596,6 +596,7 @@ async function sendCancellationNotification(meeting) {
     }
 }
 
+
 // Auto update expired meetings setiap 5 menit
 setInterval(() => {
     updateExpiredMeetings();
@@ -1050,9 +1051,11 @@ router.put('/cancel-meeting/:id', async (req, res) => {
             return res.status(404).json({ success: false, message: "Meeting tidak ditemukan" });
         }
         
-        // --- PENAMBAHAN FITUR: Kirim notifikasi pembatalan ---
-        if (meeting.status === 'terjadwal' || meeting.status === 'terkirim') {
+        let notificationSent = false;
+        // --- PENAMBAHAN FITUR: Kirim notifikasi pembatalan HANYA JIKA status 'terkirim' ---
+        if (meeting.status === 'terkirim') {
             await sendCancellationNotification(meeting);
+            notificationSent = true;
         }
         // --- AKHIR PENAMBAHAN FITUR ---
 
@@ -1085,9 +1088,13 @@ router.put('/cancel-meeting/:id', async (req, res) => {
             console.log(`Reminder untuk meeting ${id} dibatalkan`);
         }
 
+        const message = notificationSent 
+            ? "Meeting berhasil dibatalkan dan pesan pembatalan telah terkirim."
+            : "Meeting berhasil dibatalkan.";
+
         res.json({
             success: true,
-            message: "Meeting berhasil dibatalkan dan notifikasi telah dikirim."
+            message: message
         });
 
     } catch (error) {
