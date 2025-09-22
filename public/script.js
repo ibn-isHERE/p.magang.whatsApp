@@ -13,76 +13,75 @@ let activeChatTab = "active";
 
 // --- Bagian 1: Fungsi untuk Mengelola Tab ---
 function showForm(formId) {
-  // Sembunyikan semua container konten form dengan menghapus kelas 'active'
+  // Sembunyikan semua form
   document.querySelectorAll(".form-content").forEach((form) => {
-    form.classList.remove("active");
+    form.style.display = "none";
   });
 
-  // Hapus kelas 'active' dari semua tombol tab utama
+  // Hapus active dari tab buttons
   document.querySelectorAll(".tab-button").forEach((button) => {
     button.classList.remove("active");
   });
 
-  // Ambil elemen-elemen utama yang akan diatur tampilannya
   const scheduleContainer = document.getElementById("scheduleContainer");
   const chatMainContainer = document.getElementById("chatMainContainer");
 
   if (formId === "chat") {
-    // Tampilkan sidebar chat dengan menambahkan kelas 'active'
-    const chatSidebarContainer = document.getElementById(
-      "chatSidebarContainer"
-    );
+    const chatSidebarContainer = document.getElementById("chatSidebarContainer");
     if (chatSidebarContainer) {
-      chatSidebarContainer.classList.add("active");
+      chatSidebarContainer.style.display = "block";
     }
-
-    // Sembunyikan container jadwal reguler
     if (scheduleContainer) {
       scheduleContainer.style.display = "none";
     }
-
-    // Tampilkan container utama untuk area chat
     if (chatMainContainer) {
       chatMainContainer.style.display = "flex";
     }
-
-    // Muat data percakapan berdasarkan tab yang aktif (Daftar/History)
     loadChatConversations(activeChatTab);
     updateUnreadCount();
   } else {
-    // Untuk tab lainnya (bukan chat), tampilkan form yang sesuai
+    // Tampilkan form yang dipilih
     const selectedForm = document.getElementById(formId + "FormContainer");
     if (selectedForm) {
-      selectedForm.classList.add("active");
+      selectedForm.style.display = "block";
     }
-
-    // Tampilkan kembali container jadwal reguler
     if (scheduleContainer) {
       scheduleContainer.style.display = "block";
     }
-
-    // Sembunyikan container utama area chat
     if (chatMainContainer) {
       chatMainContainer.style.display = "none";
     }
   }
 
-  // Beri tanda 'active' pada tombol tab utama yang diklik
-  const selectedTab = document.querySelector(
-    `.tab-button[onclick="showForm('${formId}')"]`
-  );
+  // Set active tab
+  const selectedTab = document.querySelector(`[onclick="showForm('${formId}')"]`);
   if (selectedTab) {
     selectedTab.classList.add("active");
   }
 
-  // Muat data spesifik jika diperlukan (misalnya, saat membuka tab Kontak)
   if (formId === "contacts") {
     fetchAndRenderContacts();
   }
-
   if (formId === "meeting") {
     renderMeetingContactList();
   }
+}
+function closeEditModal() {
+    const modal = document.getElementById('editModal');
+    modal.style.display = 'none';
+    
+    // Reset form content
+    document.getElementById('editModalBody').innerHTML = '';
+    
+    // Clear selected numbers
+    selectedNumbers.clear();
+    selectedMeetingNumbers.clear();
+}
+
+function showEditModal(title) {
+    const modal = document.getElementById('editModal');
+    document.getElementById('editModalTitle').textContent = title;
+    modal.style.display = 'block';
 }
 
 async function fetchAndRenderContacts() {
@@ -993,211 +992,49 @@ async function renderScheduleTable() {
 
 // Add these event listeners to the attachScheduleActionListeners function in script.js
 
-function attachScheduleActionListeners() {
-  // FIXED: Edit button listener yang diperbaiki
+async function attachScheduleActionListeners() {
   document.querySelectorAll(".edit-btn").forEach((button) => {
-    button.onclick = function () {
-      const id = this.dataset.id;
-      const type = this.dataset.type;
+    button.onclick = async function () {
+        const id = this.dataset.id;
+        const type = this.dataset.type;
+        const isMeeting = type === "meeting";
 
-      // Tentukan apakah ini rapat atau pesan biasa
-      const isMeeting = type === "meeting";
-
-      // Pindah ke tab yang benar
-      showForm(isMeeting ? "meeting" : "message");
-
-      const scheduleToEdit = schedules.find((s) => s.id == id);
-      if (!scheduleToEdit) {
-        Swal.fire("Error", "Data jadwal tidak ditemukan", "error");
-        return;
-      }
-
-      if (isMeeting) {
-        // Handle meeting edit
-        document.getElementById("meetingTitle").value =
-          scheduleToEdit.meetingTitle || scheduleToEdit.message || "";
-        document.getElementById("meetingRoom").value =
-          scheduleToEdit.meetingRoom || "";
-
-        // Handle timezone untuk input datetime-local (waktu mulai)
-        const scheduledTime = new Date(scheduleToEdit.scheduledTime);
-        const localDateTime = new Date(
-          scheduledTime.getTime() - scheduledTime.getTimezoneOffset() * 60000
-        )
-          .toISOString()
-          .slice(0, 16);
-
-        document.getElementById("meetingStartTime").value = localDateTime;
-
-        // Handle waktu selesai jika ada
-        if (scheduleToEdit.meetingEndTime) {
-          const endTime = new Date(scheduleToEdit.meetingEndTime);
-          const localEndDateTime = new Date(
-            endTime.getTime() - endTime.getTimezoneOffset() * 60000
-          )
-            .toISOString()
-            .slice(0, 16);
-          document.getElementById("meetingEndTime").value = localEndDateTime;
-        } else if (scheduleToEdit.endTime) {
-          // Handle format endTime yang hanya waktu
-          const startDate = new Date(scheduleToEdit.scheduledTime);
-          const [hours, minutes] = scheduleToEdit.endTime.split(":");
-          const endDateTime = new Date(startDate);
-          endDateTime.setHours(parseInt(hours), parseInt(minutes));
-          const localEndDateTime = new Date(
-            endDateTime.getTime() - endDateTime.getTimezoneOffset() * 60000
-          )
-            .toISOString()
-            .slice(0, 16);
-          document.getElementById("meetingEndTime").value = localEndDateTime;
+        const scheduleToEdit = schedules.find((s) => s.id == id);
+        if (!scheduleToEdit) {
+            Swal.fire("Error", "Data jadwal tidak ditemukan", "error");
+            return;
         }
 
-        // FIXED: Handle numbers dengan benar
-        let numbers = [];
-        if (scheduleToEdit.originalNumbers) {
-          numbers = Array.isArray(scheduleToEdit.originalNumbers)
-            ? scheduleToEdit.originalNumbers
-            : JSON.parse(scheduleToEdit.originalNumbers || "[]");
-        } else if (scheduleToEdit.numbers) {
-          numbers = Array.isArray(scheduleToEdit.numbers)
-            ? scheduleToEdit.numbers
-            : JSON.parse(scheduleToEdit.numbers || "[]");
-        }
+        // Tampilkan modal edit
+        const modalBody = document.getElementById('editModalBody');
+        
+        if (isMeeting) {
+    showEditModal('Edit Jadwal Rapat');
+    modalBody.innerHTML = createMeetingEditFormHtml(scheduleToEdit);
+    
+    try {
+        await populateMeetingEditForm(scheduleToEdit);
+    } catch (error) {
+        console.error("Error saat mengisi form meeting:", error);
+        Swal.fire("Error", "Gagal memuat data ruangan rapat", "error");
+    }
+    
+    document.getElementById('editMeetingForm').addEventListener('submit', handleMeetingFormSubmit);
+    document.getElementById('cancel-edit-meeting-btn').addEventListener('click', closeEditModal);
+    initEditMeetingContactListeners();
 
-        // Konversi format @c.us kembali ke format biasa untuk tampilan
-        const plainNumbers = numbers.map((num) => {
-          let plainNum = String(num).replace("@c.us", "");
-          if (plainNum.startsWith("62")) {
-            plainNum = "0" + plainNum.slice(2);
-          }
-          return plainNum;
-        });
-
-        // Tampilkan di input manual
-        document.getElementById("meetingNumbers").value =
-          plainNumbers.join(", ");
-
-        // Set selected numbers untuk checkbox
-        selectedMeetingNumbers.clear();
-        plainNumbers.forEach((num) => selectedMeetingNumbers.add(num));
-
-        // Render ulang daftar kontak dengan checkbox terpilih
-        renderMeetingContactList();
-
-        // Handle files untuk meeting
-        const fileNamesDisplay = document.getElementById("meetingFileNames");
-        const keepFileDiv = document.getElementById(
-          "meetingKeepFileCheckboxDiv"
-        );
-        if (scheduleToEdit.filesData && scheduleToEdit.filesData.length > 0) {
-          const fileNames = scheduleToEdit.filesData.map((file) => file.name);
-          if (fileNamesDisplay) {
-            fileNamesDisplay.innerHTML = `<strong>File saat ini:</strong><br>${fileNames.join(
-              "<br>"
-            )}`;
-          }
-          if (keepFileDiv) {
-            keepFileDiv.style.display = "block";
-            document.getElementById("meetingKeepOriginalFile").checked = true;
-          }
         } else {
-          if (fileNamesDisplay) {
-            fileNamesDisplay.textContent = "Belum ada file terpilih";
-          }
-
-          if (keepFileDiv) {
-            keepFileDiv.style.display = "none";
-          }
-        }
-
-        const meetingSubmitButton = document.querySelector(
-          '#addMeetingForm button[type="submit"]'
-        );
-        if (meetingSubmitButton) {
-          meetingSubmitButton.textContent = "Update Jadwal Rapat";
-          meetingSubmitButton.dataset.editId = id;
-        }
-      } else {
-        // Handle message edit - existing logic
-        document.getElementById("message").value = scheduleToEdit.message || "";
-
-        // Handle timezone untuk datetime-local input
-        const scheduledTime = new Date(scheduleToEdit.scheduledTime);
-        const localDateTime = new Date(
-          scheduledTime.getTime() - scheduledTime.getTimezoneOffset() * 60000
-        )
-          .toISOString()
-          .slice(0, 16);
-        document.getElementById("datetime").value = localDateTime;
-
-        // Handle numbers
-        let numbers = [];
-        if (scheduleToEdit.originalNumbers) {
-          numbers = Array.isArray(scheduleToEdit.originalNumbers)
-            ? scheduleToEdit.originalNumbers
-            : JSON.parse(scheduleToEdit.originalNumbers || "[]");
-        } else if (scheduleToEdit.numbers) {
-          numbers = Array.isArray(scheduleToEdit.numbers)
-            ? scheduleToEdit.numbers
-            : JSON.parse(scheduleToEdit.numbers || "[]");
-        }
-
-        const plainNumbers = numbers.map((num) => {
-          let plainNum = String(num).replace("@c.us", "");
-          if (plainNum.startsWith("62")) {
-            plainNum = "0" + plainNum.slice(2);
-          }
-          return plainNum;
-        });
-
-        selectedNumbers.clear();
-        plainNumbers.forEach((num) => selectedNumbers.add(num));
-        renderContactList();
-
-        // Handle files
-        const fileNamesDisplay = document.getElementById("fileNames");
-        const keepFileCheckboxDiv = document.getElementById(
-          "keepFileCheckboxDiv"
-        );
-        const keepOriginalFile = document.getElementById("keepOriginalFile");
-
-        if (scheduleToEdit.filesData && scheduleToEdit.filesData.length > 0) {
-          const fileNames = scheduleToEdit.filesData.map((file) => file.name);
-          if (fileNamesDisplay) {
-            fileNamesDisplay.innerHTML = `**File saat ini:**<br>${fileNames.join(
-              "<br>"
-            )}`;
-          }
-          if (keepFileCheckboxDiv) {
-            keepFileCheckboxDiv.style.display = "block";
-          }
-          if (keepOriginalFile) {
-            keepOriginalFile.checked = true;
-          }
-        } else {
-          if (fileNamesDisplay) {
-            fileNamesDisplay.textContent = "Belum ada file terpilih";
-          }
-          if (keepFileCheckboxDiv) {
-            keepFileCheckboxDiv.style.display = "none";
-          }
-          if (keepOriginalFile) {
-            keepOriginalFile.checked = false;
-          }
-        }
-
-        const messageSubmitButton = document.querySelector(
-          '#reminderForm button[type="submit"]'
-        );
-        if (messageSubmitButton) {
-          messageSubmitButton.textContent = "Update Pesan";
-          messageSubmitButton.dataset.editId = id;
-        }
-      }
-
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    showEditModal('Edit Jadwal Pesan');
+    modalBody.innerHTML = createMessageEditFormHtml(scheduleToEdit);
+    populateMessageEditForm(scheduleToEdit);
+    
+    document.getElementById('editReminderForm').addEventListener('submit', handleReminderFormSubmit);
+    document.getElementById('cancel-edit-message-btn').addEventListener('click', closeEditModal);
+}
+        
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
-  });
+});
 
   // Cancel meeting button listener
   document.querySelectorAll(".cancel-meeting-btn").forEach((button) => {
@@ -1405,6 +1242,350 @@ function attachScheduleActionListeners() {
     };
   });
 }
+
+function initEditMeetingContactListeners() {
+    const searchInput = document.getElementById("edit-meetingContactSearch");
+    if (searchInput) {
+        searchInput.addEventListener("input", renderMeetingContactListForEdit);
+    }
+}
+
+function createMessageEditFormHtml(schedule) {
+    return `
+        <h2>Edit Jadwal Pesan</h2>
+        <form id="editReminderForm" enctype="multipart/form-data">
+            <input type="hidden" id="edit-id" name="id" value="${schedule.id}">
+            <label for="edit-contactSearch">Pilih Kontak:</label>
+            <input type="text" id="edit-contactSearch" placeholder="Cari kontak...">
+            <div id="edit-contactList" class="contact-checklist-box"></div>
+            <label for="edit-manualNumbers">Nomor Manual (pisahkan koma):</label>
+            <input type="text" id="edit-manualNumbers" name="manualNumbers" placeholder="0812...">
+            <div class="file-upload-section">
+                <label>File:</label>
+                <div id="edit-fileNames" class="file-name"></div>
+                <div class="file-upload-container" onclick="document.getElementById('edit-fileUpload').click()">
+                    <input type="file" id="edit-fileUpload" name="files" multiple>
+                    <span class="file-upload-label">Klik untuk ganti/tambah file</span>
+                </div>
+            </div>
+            <div id="edit-keepFileCheckboxDiv" style="display: none; align-items: center; gap: 7px; margin-top: 14px;">
+                <input type="checkbox" id="edit-keepOriginalFile" name="keepOriginalFile" value="true">
+                <label for="edit-keepOriginalFile" style="margin: 0;">Pertahankan file lama</label>
+            </div>
+            <label for="edit-message">Pesan:</label>
+            <textarea id="edit-message" name="message" rows="4"></textarea>
+            <label for="edit-datetime">Waktu Kirim:</label>
+            <input type="datetime-local" id="edit-datetime" name="datetime" required>
+            <button type="submit">Update Pesan</button>
+            <button type="button" id="cancel-edit-message-btn" style="background-color: #6c757d; margin-top: 10px;">Batal</button>
+        </form>
+    `;
+}
+
+function populateMessageEditForm(schedule) {
+    document.getElementById('edit-message').value = schedule.message || '';
+    const scheduledTime = new Date(schedule.scheduledTime);
+    const localDateTime = new Date(scheduledTime.getTime() - scheduledTime.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    document.getElementById('edit-datetime').value = localDateTime;
+
+    let numbers = schedule.originalNumbers || schedule.numbers || [];
+    const plainNumbers = numbers.map(num => String(num).replace("@c.us", "").replace(/^62/, "0"));
+    
+    document.getElementById('edit-manualNumbers').value = plainNumbers.join(', ');
+    selectedNumbers.clear();
+    plainNumbers.forEach(num => selectedNumbers.add(num));
+    
+    renderContactListForEdit();
+
+    const fileNamesDisplay = document.getElementById("edit-fileNames");
+    const keepFileCheckboxDiv = document.getElementById("edit-keepFileCheckboxDiv");
+    const fileUpload = document.getElementById("edit-fileUpload");
+    
+    if (schedule.filesData && schedule.filesData.length > 0) {
+        const fileNames = schedule.filesData.map(file => {
+            return file.name || file.filename || "File";
+        }).join("<br>");
+        fileNamesDisplay.innerHTML = `<strong>File saat ini:</strong><br>${fileNames}`;
+        keepFileCheckboxDiv.style.display = 'flex';
+        document.getElementById("edit-keepOriginalFile").checked = true;
+    } else if (schedule.file) {
+        // Fallback untuk format lama
+        const fileName = schedule.file.replace(/^\d+-/, "");
+        fileNamesDisplay.innerHTML = `<strong>File saat ini:</strong><br>${fileName}`;
+        keepFileCheckboxDiv.style.display = 'flex';
+        document.getElementById("edit-keepOriginalFile").checked = true;
+    } else {
+        fileNamesDisplay.innerHTML = "Tidak ada file yang dilampirkan.";
+        keepFileCheckboxDiv.style.display = 'none';
+    }
+    
+    // Tambahkan event listener untuk file upload (SAMA SEPERTI DI MEETING)
+    if (fileUpload) {
+        fileUpload.addEventListener("change", function () {
+            if (this.files.length > 0) {
+                let fileNames = Array.from(this.files).map(f => f.name).join("<br>");
+                fileNamesDisplay.innerHTML = `<strong>File terpilih:</strong><br>${fileNames}`;
+                keepFileCheckboxDiv.style.display = 'none';
+                document.getElementById("edit-keepOriginalFile").checked = false;
+            } else {
+                // Jika tidak ada file yang dipilih, kembali tampilkan file lama
+                if (schedule.filesData && schedule.filesData.length > 0) {
+                    const fileNames = schedule.filesData.map(file => {
+                        return file.name || file.filename || "File";
+                    }).join("<br>");
+                    fileNamesDisplay.innerHTML = `<strong>File saat ini:</strong><br>${fileNames}`;
+                    keepFileCheckboxDiv.style.display = 'flex';
+                } else {
+                    fileNamesDisplay.innerHTML = "Tidak ada file yang dilampirkan.";
+                    keepFileCheckboxDiv.style.display = 'none';
+                }
+            }
+        });
+    }
+}
+
+// FUNGSI BARU (Tambahkan ini di bawah populateMessageEditForm)
+function renderContactListForEdit() {
+    const list = document.getElementById("edit-contactList");
+    if (!list) return;
+    list.innerHTML = "";
+    contacts.forEach(contact => {
+        const label = document.createElement("label");
+        const isChecked = selectedNumbers.has(contact.number) ? "checked" : "";
+        label.innerHTML = `<input type="checkbox" class="contact-checkbox-edit" value="${contact.number}" ${isChecked}> <strong>${contact.name}</strong> — ${contact.number}`;
+        list.appendChild(label);
+    });
+    document.querySelectorAll('.contact-checkbox-edit').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) selectedNumbers.add(this.value);
+            else selectedNumbers.delete(this.value);
+            document.getElementById('edit-manualNumbers').value = Array.from(selectedNumbers).join(', ');
+        });
+    });
+}
+
+
+// GANTI FUNGSI LAMA ANDA DENGAN VERSI BARU INI
+async function populateMeetingEditForm(schedule) {
+    document.getElementById('edit-meetingTitle').value = schedule.meetingTitle || schedule.message || '';
+    
+    // PERBAIKAN KUNCI: Panggil loadMeetingRooms dengan await dan pastikan element sudah ada
+    const roomSelect = document.getElementById('edit-meetingRoom');
+    if (roomSelect) {
+        await loadMeetingRooms(roomSelect, schedule.meetingRoom); // 'await' menunggu ruangan selesai dimuat
+    } else {
+        console.error('Element edit-meetingRoom tidak ditemukan!');
+    }
+
+    // Mengisi waktu mulai
+    const startTime = new Date(schedule.scheduledTime);
+    const startTimeInput = document.getElementById('edit-meetingStartTime');
+    if (startTimeInput) {
+        startTimeInput.value = new Date(startTime.getTime() - startTime.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    }
+    
+    // Mengisi waktu selesai jika ada
+    if (schedule.meetingEndTime) {
+        const endTime = new Date(schedule.meetingEndTime);
+        const endTimeInput = document.getElementById('edit-meetingEndTime');
+        if (endTimeInput) {
+            endTimeInput.value = new Date(endTime.getTime() - endTime.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        }
+    }
+    
+    // Mengisi nomor kontak
+    let numbers = schedule.originalNumbers || schedule.numbers || [];
+    const plainNumbers = numbers.map(num => String(num).replace("@c.us", "").replace(/^62/, "0"));
+
+    const numbersInput = document.getElementById('edit-meetingNumbers');
+    if (numbersInput) {
+        numbersInput.value = plainNumbers.join(', ');
+    }
+    
+    // Reset dan isi ulang selected meeting numbers
+    selectedMeetingNumbers.clear();
+    plainNumbers.forEach(num => selectedMeetingNumbers.add(num));
+    
+    // Render daftar kontak untuk edit
+    renderMeetingContactListForEdit();
+
+     const fileNamesDisplay = document.getElementById("edit-meetingFileNames");
+    const keepFileCheckboxDiv = document.getElementById("edit-meetingKeepFileCheckboxDiv");
+    
+    if (schedule.filesData && schedule.filesData.length > 0) {
+    const fileNames = schedule.filesData.map(file => {
+        // Ambil nama file yang benar (hilangkan prefix timestamp jika ada)
+        return file.name || file.filename || "File";
+    }).join("<br>");
+    fileNamesDisplay.innerHTML = `<strong>File saat ini:</strong><br>${fileNames}`;
+    keepFileCheckboxDiv.style.display = 'flex';
+    document.getElementById("edit-meetingKeepOriginalFile").checked = true;
+} else if (schedule.file) {
+    // Fallback untuk format lama
+    const fileName = schedule.file.replace(/^\d+-/, "");
+    fileNamesDisplay.innerHTML = `<strong>File saat ini:</strong><br>${fileName}`;
+    keepFileCheckboxDiv.style.display = 'flex';
+    document.getElementById("edit-meetingKeepOriginalFile").checked = true;
+} else if (schedule.meetingFile) {
+    // Fallback untuk format meeting lama
+    const fileName = schedule.meetingFile.replace(/^\d+-/, "");
+    fileNamesDisplay.innerHTML = `<strong>File saat ini:</strong><br>${fileName}`;
+    keepFileCheckboxDiv.style.display = 'flex';
+    document.getElementById("edit-meetingKeepOriginalFile").checked = true;
+} else {
+    fileNamesDisplay.innerHTML = "Tidak ada file yang dilampirkan.";
+    keepFileCheckboxDiv.style.display = 'none';
+}
+    
+    // Event listener untuk file upload
+    const fileUpload = document.getElementById("edit-meetingFileUpload");
+    if (fileUpload) {
+        fileUpload.addEventListener("change", function () {
+            if (this.files.length > 0) {
+                let fileNames = Array.from(this.files).map(f => f.name).join("<br>");
+                fileNamesDisplay.innerHTML = `<strong>File terpilih:</strong><br>${fileNames}`;
+                keepFileCheckboxDiv.style.display = 'none';
+                document.getElementById("edit-meetingKeepOriginalFile").checked = false;
+            }
+        });
+    }
+}
+
+
+// FUNGSI BARU (Tambahkan ini di bawah populateMeetingEditForm)
+function renderMeetingContactListForEdit() {
+    const list = document.getElementById("edit-meetingContactList");
+    if (!list) return;
+    
+    list.innerHTML = "";
+    
+    const searchInput = document.getElementById("edit-meetingContactSearch");
+    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    
+    // Filter kontak berdasarkan pencarian
+    const filteredContacts = contacts.filter(contact => 
+        contact.name.toLowerCase().includes(searchTerm) || 
+        contact.number.includes(searchTerm)
+    );
+    
+    if (filteredContacts.length === 0) {
+        list.innerHTML = "<p>Tidak ada kontak ditemukan.</p>";
+        return;
+    }
+    
+    filteredContacts.forEach(contact => {
+        const label = document.createElement("label");
+        const isChecked = selectedMeetingNumbers.has(contact.number) ? "checked" : "";
+        label.innerHTML = `
+            <input type="checkbox" class="meeting-contact-checkbox-edit" value="${contact.number}" ${isChecked}> 
+            <strong>${contact.name}</strong> — ${contact.number}
+        `;
+        list.appendChild(label);
+    });
+    
+    // Add event listeners untuk checkbox yang baru dibuat
+    document.querySelectorAll('.meeting-contact-checkbox-edit').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                selectedMeetingNumbers.add(this.value);
+            } else {
+                selectedMeetingNumbers.delete(this.value);
+            }
+            // Update manual numbers input
+            const numbersInput = document.getElementById('edit-meetingNumbers');
+            if (numbersInput) {
+                numbersInput.value = Array.from(selectedMeetingNumbers).join(', ');
+            }
+        });
+    });
+}
+
+
+// MODIFIKASI KECIL pada fungsi loadMeetingRooms
+async function loadMeetingRooms(selectElement = null, selectedValue = null) {
+    try {
+        const res = await fetch("/meeting-rooms");
+        if (!res.ok) throw new Error("Gagal mengambil daftar ruangan.");
+        
+        const rooms = await res.json();
+        
+        // Tentukan element yang akan digunakan
+        const roomSelect = selectElement || document.getElementById("meetingRoom");
+        
+        if (roomSelect) {
+            roomSelect.innerHTML = '<option value="">Pilih Ruangan</option>';
+            
+            rooms.forEach(room => {
+                const option = document.createElement("option");
+                option.value = room;
+                option.textContent = room;
+                
+                // Set sebagai selected jika cocok dengan selectedValue
+                if (room === selectedValue) {
+                    option.selected = true;
+                }
+                
+                roomSelect.appendChild(option);
+            });
+            
+            console.log(`Berhasil memuat ${rooms.length} ruangan rapat`);
+        } else {
+            console.error("Element select untuk meeting room tidak ditemukan!");
+        }
+    } catch (error) {
+        console.error("Error loading meeting rooms:", error);
+        Swal.fire("Error", "Gagal memuat daftar ruangan rapat", "error");
+    }
+}
+
+function createMeetingEditFormHtml(schedule) {
+    return `
+        <h2>Edit Jadwal Rapat</h2>
+        <form id="editMeetingForm" enctype="multipart/form-data">
+            <input type="hidden" name="id" value="${schedule.id}">
+            
+            <label for="edit-meetingTitle">Judul Rapat:</label>
+            <input type="text" id="edit-meetingTitle" name="meetingTitle" required>
+            
+            <label for="edit-meetingContactSearch">Pilih Kontak:</label>
+            <input type="text" id="edit-meetingContactSearch" placeholder="Cari kontak...">
+            <div id="edit-meetingContactList" class="contact-checklist-box"></div>
+            
+            <label for="edit-meetingNumbers">Nomor Manual (pisahkan koma):</label>
+            <input type="text" id="edit-meetingNumbers" name="manualNumbers" placeholder="0812...">
+            
+            <!-- TAMBAHAN FILE UPLOAD -->
+            <div class="file-upload-section">
+                <label>File untuk Rapat:</label>
+                <div id="edit-meetingFileNames" class="file-name"></div>
+                <div class="file-upload-container" onclick="document.getElementById('edit-meetingFileUpload').click()">
+                    <input type="file" id="edit-meetingFileUpload" name="files" multiple accept="image/*,video/*,application/pdf">
+                    <span class="file-upload-label">Klik untuk ganti/tambah file</span>
+                </div>
+            </div>
+            <div id="edit-meetingKeepFileCheckboxDiv" style="display: none; align-items: center; gap: 7px; margin-top: 14px;">
+                <input type="checkbox" id="edit-meetingKeepOriginalFile" name="keepOriginalFile" value="true">
+                <label for="edit-meetingKeepOriginalFile" style="margin: 0;">Pertahankan file lama</label>
+            </div>
+            <!-- END TAMBAHAN -->
+            
+            <label for="edit-meetingRoom">Ruangan:</label>
+            <select id="edit-meetingRoom" name="meetingRoom" required>
+                <option value="">Loading...</option>
+            </select>
+            
+            <label for="edit-meetingStartTime">Waktu Mulai:</label>
+            <input type="datetime-local" id="edit-meetingStartTime" name="startTime" required>
+            
+            <label for="edit-meetingEndTime">Waktu Selesai:</label>
+            <input type="datetime-local" id="edit-meetingEndTime" name="endTime" required>
+            
+            <button type="submit">Update Rapat</button>
+            <button type="button" id="cancel-edit-meeting-btn" style="background-color: #6c757d; margin-top: 10px;">Batal</button>
+        </form>
+    `;
+}
+
 
 // Event listeners for filter buttons
 function initFilterButtons() {
@@ -1863,28 +2044,6 @@ function initMeetingForm() {
       // -----------------------------------
     }
   });
-}
-
-// Fungsi untuk memuat daftar ruangan rapat
-async function loadMeetingRooms() {
-  try {
-    const res = await fetch("/meeting-rooms");
-    if (!res.ok) throw new Error("Gagal mengambil daftar ruangan.");
-    const rooms = await res.json();
-
-    const roomSelect = document.getElementById("meetingRoom");
-    if (roomSelect) {
-      roomSelect.innerHTML = '<option value="">Pilih Ruangan</option>';
-      rooms.forEach((room) => {
-        const option = document.createElement("option");
-        option.value = room;
-        option.textContent = room;
-        roomSelect.appendChild(option);
-      });
-    }
-  } catch (error) {
-    console.error("Error loading meeting rooms:", error);
-  }
 }
 
 // Fungsi untuk memuat data meetings dari server
@@ -2714,6 +2873,77 @@ function showNotification(messageData) {
   // Auto close after 5 seconds
   setTimeout(() => notification.close(), 5000);
 }
+
+async function handleReminderFormSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const editId = form.querySelector('input[name="id"]')?.value;
+    const isEditing = !!editId;
+
+    const formData = new FormData(form);
+    
+    const manualNumbers = formData.get('manualNumbers').split(',').map(n => n.trim()).filter(Boolean);
+    const finalNumbers = JSON.stringify(Array.from(new Set([...selectedNumbers, ...manualNumbers])));
+    formData.set('numbers', finalNumbers);
+
+    let url = isEditing ? `/edit-schedule/${editId}` : "/add-reminder";
+    let method = isEditing ? "PUT" : "POST";
+
+    try {
+        Swal.fire({ title: "Memproses...", text: "Mohon tunggu", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const res = await fetch(url, { method: method, body: formData });
+        const text = await res.text();
+        Swal.close();
+
+        if (res.ok) {
+            Swal.fire(isEditing ? "Jadwal Diupdate!" : "Pesan Terjadwal!", text, "success");
+            renderScheduleTable();
+            closeEditModal();
+        } else {
+            Swal.fire("Gagal", text, "error");
+        }
+    } catch (err) {
+        Swal.close();
+        Swal.fire("Gagal koneksi ke server", err.message, "error");
+    }
+}
+
+
+async function handleMeetingFormSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const editId = form.querySelector('input[name="id"]')?.value;
+    const isEditing = !!editId;
+
+    const formData = new FormData(form);
+    const manualNumbers = formData.get('manualNumbers').split(',').map(n => n.trim()).filter(Boolean);
+    const finalNumbers = JSON.stringify(Array.from(new Set([...selectedMeetingNumbers, ...manualNumbers])));
+    formData.set('numbers', finalNumbers);
+    
+    formData.delete('manualNumbers');
+
+    let url = isEditing ? `/edit-meeting/${editId}` : "/add-meeting";
+    let method = isEditing ? "PUT" : "POST";
+
+    try {
+        Swal.fire({ title: "Memproses...", text: "Mohon tunggu", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const res = await fetch(url, { method: method, body: formData });
+        const result = await res.json();
+        Swal.close();
+
+        if (res.ok && result.success) {
+            Swal.fire(isEditing ? "Rapat Diupdate!" : "Rapat Terjadwal!", result.message, "success");
+            renderScheduleTable();
+            closeEditModal();
+        } else {
+            Swal.fire("Gagal", result.message || "Terjadi kesalahan", "error");
+        }
+    } catch (err) {
+        Swal.close();
+        Swal.fire("Gagal koneksi ke server", err.message, "error");
+    }
+}
+
 
 // Initial calls
 function initApp() {
