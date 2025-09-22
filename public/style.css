@@ -110,9 +110,15 @@ main {
 /* Tambahan CSS untuk tab button di form container */
 .tabs {
     display: flex;
-    justify-content: center;
-    margin-bottom: 17.5px; /* 25 * 0.7 */
-    border-bottom: 2px solid #e9ecef; /* Garis abu-abu tipis di bawah semua tab */
+    justify-content: center; /* Menggantikan flex-start agar lebih rapi saat hanya satu tab */
+    margin-bottom: 17.5px;
+    border-bottom: 2px solid #e9ecef;
+    min-height: 42px; /* Menetapkan tinggi minimum agar tidak collaps */
+    box-sizing: border-box;
+}
+
+#main-tabs {
+    display: flex; /* Pastikan ini flex untuk menampilkan isinya */
 }
 
 
@@ -560,6 +566,60 @@ form button:hover {
     transform: translateY(-0.7px); /* -1px *0.7 */
     box-shadow: 0 2.8px 5.6px rgba(0, 123, 255, 0.3);
 }
+
+.edit-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(3px);
+}
+
+.edit-modal-content {
+    background-color: #fff;
+    margin: 2% auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.edit-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.edit-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-modal-close:hover {
+    background-color: #f0f0f0;
+    color: #333;
+} 
 
 .cancel-btn,
 .delete-history-btn {
