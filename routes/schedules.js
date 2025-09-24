@@ -817,8 +817,17 @@ router.put("/edit-schedule/:id", (req, res) => {
             return res.status(400).send(`Tipe file tidak didukung: ${err.message}`);
         }
 
-        let { numbers, message, datetime, keepOriginalFile } = req.body;
-        const shouldKeepOriginalFile = keepOriginalFile === "true";
+        let { numbers, message, datetime, deletedFiles } = req.body;
+
+        // parse deletedFiles if provided (client may send JSON string)
+        let deletedNames = [];
+        if (deletedFiles) {
+            try {
+                deletedNames = Array.isArray(deletedFiles) ? deletedFiles : JSON.parse(deletedFiles);
+            } catch (e) {
+                deletedNames = [];
+            }
+        }
 
         // Validasi nomor
         let parsedNumbers;
@@ -864,12 +873,17 @@ router.put("/edit-schedule/:id", (req, res) => {
                     ? JSON.parse(oldSchedule.filesData)
                     : [];
 
-                // Validasi data lengkap
+                // determine how many existing files will remain after deletedFiles
+                const remainingAfterDeletion = oldFilesDataParsed.filter(f => {
+                    const name = f.name || f.filename || f;
+                    return !deletedNames.includes(name);
+                });
+
+                // Validasi data lengkap: if no message and no new files and no remaining existing files -> error
                 if (
                     !message &&
                     (!newFiles || newFiles.length === 0) &&
-                    !shouldKeepOriginalFile &&
-                    oldFilesDataParsed.length === 0
+                    remainingAfterDeletion.length === 0
                 ) {
                     if (newFiles && Array.isArray(newFiles)) {
                         newFiles.forEach((file) => deleteFileIfExists(file.path));
@@ -881,31 +895,6 @@ router.put("/edit-schedule/:id", (req, res) => {
                         );
                 }
 
-                // Validasi format nomor
-                const invalidNumbers = validateNumbers(parsedNumbers);
-                if (invalidNumbers.length > 0) {
-                    if (newFiles && Array.isArray(newFiles)) {
-                        newFiles.forEach((file) => deleteFileIfExists(file.path));
-                    }
-                    return res
-                        .status(400)
-                        .send(
-                            `Nomor tidak valid: ${invalidNumbers.join(
-                                ", "
-                            )}. Pastikan format 08xxxxxxxxxx atau 628xxxxxxxxxx.`
-                        );
-                }
-
-                // Validasi waktu jadwal
-                const timeValidation = validateScheduleTime(datetime);
-                if (!timeValidation.isValid) {
-                    if (newFiles && Array.isArray(newFiles)) {
-                        newFiles.forEach((file) => deleteFileIfExists(file.path));
-                    }
-                    return res.status(400).send(timeValidation.error);
-                }
-                datetime = timeValidation.adjustedTime;
-
                 // Tentukan file data final
                 let finalFilesData = null;
 
@@ -913,12 +902,16 @@ router.put("/edit-schedule/:id", (req, res) => {
                     // Gunakan file baru, hapus file lama
                     finalFilesData = newFilesDataTemp;
                     oldFilesDataParsed.forEach((file) => deleteFileIfExists(file.path));
-                } else if (shouldKeepOriginalFile && oldFilesDataParsed.length > 0) {
-                    // Pertahankan file lama
-                    finalFilesData = JSON.stringify(oldFilesDataParsed);
+                } else if (deletedNames.length > 0) {
+                    // Hapus hanya file yang diminta di deletedFiles, simpan sisanya
+                    const toDelete = oldFilesDataParsed.filter(f => deletedNames.includes(f.name || f.filename || f));
+                    toDelete.forEach((file) => deleteFileIfExists(file.path));
+
+                    const remaining = oldFilesDataParsed.filter(f => !deletedNames.includes(f.name || f.filename || f));
+                    finalFilesData = remaining.length > 0 ? JSON.stringify(remaining) : null;
                 } else {
-                    // Hapus semua file lama
-                    oldFilesDataParsed.forEach((file) => deleteFileIfExists(file.path));
+                    // Tidak ada perubahan file -> pertahankan file lama
+                    finalFilesData = oldFilesDataParsed.length > 0 ? JSON.stringify(oldFilesDataParsed) : null;
                 }
 
                 // Batalkan job lama
