@@ -946,37 +946,47 @@ router.put("/edit-meeting/:id", upload.array('files', 5), async (req, res) => {
         }
 
         // 3. Logika Penanganan File
-        let finalFilesData = currentMeeting.filesData;
+        let finalFilesData = currentMeeting.filesData || null;
         const hasNewFiles = newFiles && newFiles.length > 0;
-        const keepOriginalFile = req.body.meetingKeepOriginalFile;
+
+        // parse deletedFiles if provided
+        const deletedFilesRaw = req.body.deletedFiles;
+        let deletedNames = [];
+        if (deletedFilesRaw) {
+            try {
+                deletedNames = Array.isArray(deletedFilesRaw) ? deletedFilesRaw : JSON.parse(deletedFilesRaw);
+            } catch (e) {
+                deletedNames = [];
+            }
+        }
+
+        const oldFiles = currentMeeting.filesData ? JSON.parse(currentMeeting.filesData) : [];
 
         if (hasNewFiles) {
             // Jika ada file baru, hapus file lama dan gunakan yang baru
-            const oldFiles = JSON.parse(currentMeeting.filesData || '[]');
-            if (Array.isArray(oldFiles)) {
-                oldFiles.forEach(file => deleteFileIfExists(file.path));
-            }
+            oldFiles.forEach(file => deleteFileIfExists(file.path));
             finalFilesData = JSON.stringify(newFiles.map(f => ({
                 path: f.path, 
                 name: f.originalname, 
                 mimetype: f.mimetype
             })));
-        } else if (!keepOriginalFile && currentMeeting.filesData) {
-            // Jika tidak ada file baru dan checkbox tidak dicentang, hapus file lama
-            const oldFiles = JSON.parse(currentMeeting.filesData || '[]');
-            if (Array.isArray(oldFiles)) {
-                oldFiles.forEach(file => deleteFileIfExists(file.path));
-            }
-            finalFilesData = null; // Kosongkan data file di DB
+        } else if (deletedNames.length > 0) {
+            // Remove only the specified existing files
+            const toDelete = oldFiles.filter(f => deletedNames.includes(f.name || f.filename || f));
+            toDelete.forEach(file => deleteFileIfExists(file.path));
+            const remaining = oldFiles.filter(f => !deletedNames.includes(f.name || f.filename || f));
+            finalFilesData = remaining.length > 0 ? JSON.stringify(remaining) : null;
+        } else {
+            // keep existing files as-is
+            finalFilesData = oldFiles.length > 0 ? JSON.stringify(oldFiles) : null;
         }
-        // Jika tidak ada file baru dan checkbox dicentang, `finalFilesData` tetap berisi data lama (tidak ada perubahan).
 
-        // 4. Update database dengan data baru
+        // 4. Update database with new data (rest unchanged)
         const startParsed = parseDateTime(startTime);
         const endParsed = parseDateTime(endTime);
         const formattedNumbers = JSON.parse(numbers).map(num => formatNumber(num)).filter(Boolean);
         
-        // KUNCI PERBAIKAN: Reset status ke 'terjadwal' agar bisa dijadwalkan ulang
+        // Reset status to 'terjadwal'
         const query = `
             UPDATE meetings SET 
                 meetingTitle = ?, numbers = ?, meetingRoom = ?, date = ?, startTime = ?, endTime = ?, 
@@ -998,7 +1008,7 @@ router.put("/edit-meeting/:id", upload.array('files', 5), async (req, res) => {
 
         console.log(`Meeting ID ${id} berhasil diupdate di database.`);
 
-        // 5. KUNCI PERBAIKAN: Jadwalkan ulang pengingat dengan data yang sudah diupdate
+        // Reschedule reminder
         const updatedMeetingData = {
             id: id,
             meetingTitle: meetingTitle,
@@ -1009,23 +1019,20 @@ router.put("/edit-meeting/:id", upload.array('files', 5), async (req, res) => {
             endTime: endParsed.time,
             start_epoch: startParsed.epoch,
             end_epoch: endParsed.epoch,
-            status: "terjadwal", // Pastikan statusnya benar untuk penjadwalan
+            status: "terjadwal",
             filesData: finalFilesData
         };
         
-        // Panggil fungsi `scheduleMeetingReminder` yang akan otomatis membatalkan job lama dan membuat yang baru
         scheduleMeetingReminder(updatedMeetingData);
         
         res.json({ success: true, message: "Jadwal rapat berhasil diupdate dan dijadwalkan ulang!" });
 
     } catch (error) {
-        // Jika terjadi error, hapus file baru yang mungkin sudah terupload
         if (newFiles) newFiles.forEach(f => deleteFileIfExists(f.path));
         console.error("Error fatal pada rute /edit-meeting:", error.message);
         res.status(500).json({ success: false, message: error.message || "Terjadi kesalahan server." });
     }
 });
-
 
 /**
  * PUT cancel meeting
