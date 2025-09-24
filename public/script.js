@@ -27,7 +27,9 @@ function showForm(formId) {
   const chatMainContainer = document.getElementById("chatMainContainer");
 
   if (formId === "chat") {
-    const chatSidebarContainer = document.getElementById("chatSidebarContainer");
+    const chatSidebarContainer = document.getElementById(
+      "chatSidebarContainer"
+    );
     if (chatSidebarContainer) {
       chatSidebarContainer.style.display = "block";
     }
@@ -54,7 +56,9 @@ function showForm(formId) {
   }
 
   // Set active tab
-  const selectedTab = document.querySelector(`[onclick="showForm('${formId}')"]`);
+  const selectedTab = document.querySelector(
+    `[onclick="showForm('${formId}')"]`
+  );
   if (selectedTab) {
     selectedTab.classList.add("active");
   }
@@ -67,21 +71,21 @@ function showForm(formId) {
   }
 }
 function closeEditModal() {
-    const modal = document.getElementById('editModal');
-    modal.style.display = 'none';
-    
-    // Reset form content
-    document.getElementById('editModalBody').innerHTML = '';
-    
-    // Clear selected numbers
-    selectedNumbers.clear();
-    selectedMeetingNumbers.clear();
+  const modal = document.getElementById("editModal");
+  modal.style.display = "none";
+
+  // Reset form content
+  document.getElementById("editModalBody").innerHTML = "";
+
+  // Clear selected numbers
+  selectedNumbers.clear();
+  selectedMeetingNumbers.clear();
 }
 
 function showEditModal(title) {
-    const modal = document.getElementById('editModal');
-    document.getElementById('editModalTitle').textContent = title;
-    modal.style.display = 'block';
+  const modal = document.getElementById("editModal");
+  document.getElementById("editModalTitle").textContent = title;
+  modal.style.display = "block";
 }
 
 async function fetchAndRenderContacts() {
@@ -225,18 +229,12 @@ function initMeetingContactListeners() {
  */
 function initMeetingFileUploadListener() {
   const fileUpload = document.getElementById("meetingFileUpload");
-  if (fileUpload) {
-    fileUpload.addEventListener("change", function () {
-      const fileNamesDisplay = document.getElementById("meetingFileNames");
-      if (this.files.length > 0) {
-        let fileNames = Array.from(this.files)
-          .map((f) => f.name)
-          .join("<br>");
-        fileNamesDisplay.innerHTML = `<strong>File terpilih:</strong><br>${fileNames}`;
-      } else {
-        fileNamesDisplay.textContent = "Belum ada file terpilih";
-      }
-    });
+  const fileNamesDisplay = document.getElementById("meetingFileNames");
+  if (fileNamesDisplay) {
+    fileNamesDisplay.textContent =
+      fileNamesDisplay.textContent || "Belum ada file terpilih";
+  } else {
+    fileNamesDisplay.textContent = "Belum ada file terpilih";
   }
 }
 // FUNGSI BARU: Menghapus kontak berdasarkan ID
@@ -392,44 +390,8 @@ function initFileUploadListener() {
         fileNamesDisplay.innerHTML = `**File terpilih:**<br>${fileNames.join(
           "<br>"
         )}`;
-        const keepFileCheckboxDiv = document.getElementById(
-          "keepFileCheckboxDiv"
-        );
-        if (keepFileCheckboxDiv) {
-          keepFileCheckboxDiv.style.display = "none";
-        }
-        const keepOriginalFile = document.getElementById("keepOriginalFile");
-        if (keepOriginalFile) {
-          keepOriginalFile.checked = false;
-        }
       } else {
         fileNamesDisplay.textContent = "Belum ada file terpilih";
-        const submitButton = document.querySelector(
-          '#reminderForm button[type="submit"]'
-        );
-        if (submitButton) {
-          const editId = submitButton.dataset.editId;
-          if (editId) {
-            const currentSchedule = schedules.find((s) => s.id == editId);
-            if (
-              currentSchedule &&
-              currentSchedule.filesData &&
-              currentSchedule.filesData.length > 0
-            ) {
-              const keepFileCheckboxDiv = document.getElementById(
-                "keepFileCheckboxDiv"
-              );
-              if (keepFileCheckboxDiv) {
-                keepFileCheckboxDiv.style.display = "block";
-              }
-              const keepOriginalFile =
-                document.getElementById("keepOriginalFile");
-              if (keepOriginalFile) {
-                keepOriginalFile.checked = true;
-              }
-            }
-          }
-        }
       }
     });
   }
@@ -995,46 +957,54 @@ async function renderScheduleTable() {
 async function attachScheduleActionListeners() {
   document.querySelectorAll(".edit-btn").forEach((button) => {
     button.onclick = async function () {
-        const id = this.dataset.id;
-        const type = this.dataset.type;
-        const isMeeting = type === "meeting";
+      const id = this.dataset.id;
+      const type = this.dataset.type;
+      const isMeeting = type === "meeting";
 
-        const scheduleToEdit = schedules.find((s) => s.id == id);
-        if (!scheduleToEdit) {
-            Swal.fire("Error", "Data jadwal tidak ditemukan", "error");
-            return;
+      const scheduleToEdit = schedules.find((s) => s.id == id);
+      if (!scheduleToEdit) {
+        Swal.fire("Error", "Data jadwal tidak ditemukan", "error");
+        return;
+      }
+
+      // Tampilkan modal edit
+      const modalBody = document.getElementById("editModalBody");
+
+      if (isMeeting) {
+        showEditModal("Edit Jadwal Rapat");
+        modalBody.innerHTML = createMeetingEditFormHtml(scheduleToEdit);
+        afterEditMeetingModalOpen();
+
+        try {
+          await populateMeetingEditForm(scheduleToEdit);
+        } catch (error) {
+          console.error("Error saat mengisi form meeting:", error);
+          Swal.fire("Error", "Gagal memuat data ruangan rapat", "error");
         }
 
-        // Tampilkan modal edit
-        const modalBody = document.getElementById('editModalBody');
-        
-        if (isMeeting) {
-    showEditModal('Edit Jadwal Rapat');
-    modalBody.innerHTML = createMeetingEditFormHtml(scheduleToEdit);
-    
-    try {
-        await populateMeetingEditForm(scheduleToEdit);
-    } catch (error) {
-        console.error("Error saat mengisi form meeting:", error);
-        Swal.fire("Error", "Gagal memuat data ruangan rapat", "error");
-    }
-    
-    document.getElementById('editMeetingForm').addEventListener('submit', handleMeetingFormSubmit);
-    document.getElementById('cancel-edit-meeting-btn').addEventListener('click', closeEditModal);
-    initEditMeetingContactListeners();
+        document
+          .getElementById("editMeetingForm")
+          .addEventListener("submit", handleMeetingFormSubmit);
+        document
+          .getElementById("cancel-edit-meeting-btn")
+          .addEventListener("click", closeEditModal);
+        initEditMeetingContactListeners();
+      } else {
+        showEditModal("Edit Jadwal Pesan");
+        modalBody.innerHTML = createMessageEditFormHtml(scheduleToEdit);
+        populateMessageEditForm(scheduleToEdit);
 
-        } else {
-    showEditModal('Edit Jadwal Pesan');
-    modalBody.innerHTML = createMessageEditFormHtml(scheduleToEdit);
-    populateMessageEditForm(scheduleToEdit);
-    
-    document.getElementById('editReminderForm').addEventListener('submit', handleReminderFormSubmit);
-    document.getElementById('cancel-edit-message-btn').addEventListener('click', closeEditModal);
-}
-        
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        document
+          .getElementById("editReminderForm")
+          .addEventListener("submit", handleReminderFormSubmit);
+        document
+          .getElementById("cancel-edit-message-btn")
+          .addEventListener("click", closeEditModal);
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
     };
-});
+  });
 
   // Cancel meeting button listener
   document.querySelectorAll(".cancel-meeting-btn").forEach((button) => {
@@ -1244,14 +1214,14 @@ async function attachScheduleActionListeners() {
 }
 
 function initEditMeetingContactListeners() {
-    const searchInput = document.getElementById("edit-meetingContactSearch");
-    if (searchInput) {
-        searchInput.addEventListener("input", renderMeetingContactListForEdit);
-    }
+  const searchInput = document.getElementById("edit-meetingContactSearch");
+  if (searchInput) {
+    searchInput.addEventListener("input", renderMeetingContactListForEdit);
+  }
 }
 
 function createMessageEditFormHtml(schedule) {
-    return `
+  return `
         <h2>Edit Jadwal Pesan</h2>
         <form id="editReminderForm" enctype="multipart/form-data">
             <input type="hidden" id="edit-id" name="id" value="${schedule.id}">
@@ -1262,16 +1232,14 @@ function createMessageEditFormHtml(schedule) {
             <input type="text" id="edit-manualNumbers" name="manualNumbers" placeholder="0812...">
             <div class="file-upload-section">
                 <label>File:</label>
-                <div id="edit-fileNames" class="file-name"></div>
-                <div class="file-upload-container" onclick="document.getElementById('edit-fileUpload').click()">
-                    <input type="file" id="edit-fileUpload" name="files" multiple>
-                    <span class="file-upload-label">Klik untuk ganti/tambah file</span>
+                <div class="file-upload-container">
+                    <input type="file" id="edit-fileUpload" name="files" multiple accept="image/*,video/*,application/pdf">
+                    <span class="file-upload-label" data-input="edit-fileUpload">Klik untuk ganti/tambah file</span>
+                    <div id="edit-fileNames" class="customFilePreview">Tidak ada file terpilih</div>
                 </div>
+                <button type="button" id="clearAllEditFilesBtn" style="display: none; background-color: #dc3545; margin-top: 6px;">Hapus Seluruh File</button>
             </div>
-            <div id="edit-keepFileCheckboxDiv" style="display: none; align-items: center; gap: 7px; margin-top: 14px;">
-                <input type="checkbox" id="edit-keepOriginalFile" name="keepOriginalFile" value="true">
-                <label for="edit-keepOriginalFile" style="margin: 0;">Pertahankan file lama</label>
-            </div>
+
             <label for="edit-message">Pesan:</label>
             <textarea id="edit-message" name="message" rows="4"></textarea>
             <label for="edit-datetime">Waktu Kirim:</label>
@@ -1282,310 +1250,384 @@ function createMessageEditFormHtml(schedule) {
     `;
 }
 
+let selectedEditFiles = [];
+let existingEditFiles = [];          // objects from schedule.filesData for edit-message
+let removedExistingEditFiles = [];   // names/ids marked for deletion
+
+let existingEditMeetingFiles = [];          // objects from schedule.filesData for edit-meeting
+let removedExistingEditMeetingFiles = [];   // names/ids marked for deletion
+
+// Render preview for edit-message modal (edit-fileNames) — show existing then newly added
+function renderEditFilePreview() {
+  const editPreview = document.getElementById("edit-fileNames");
+  const clearBtn = document.getElementById("clearAllEditFilesBtn");
+  if (!editPreview) return;
+  editPreview.innerHTML = "";
+
+  const total = (existingEditFiles ? existingEditFiles.length : 0) + (selectedEditFiles ? selectedEditFiles.length : 0);
+  if (total === 0) {
+    editPreview.innerHTML = "<span>Tidak ada file terpilih</span>";
+    if (clearBtn) clearBtn.style.display = "none";
+    return;
+  }
+
+  // render existing files first (mark data-existing="true")
+  existingEditFiles.forEach((ef, idx) => {
+    const div = document.createElement("div");
+    div.className = "file-chip existing";
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "file-name-text";
+    nameSpan.textContent = ef.name || ef.filename || ef;
+    const sizeSpan = document.createElement("span");
+    sizeSpan.className = "file-size-text";
+    sizeSpan.textContent = ef.size ? ` (${Math.round(ef.size / 1024)} KB)` : "";
+    div.appendChild(nameSpan);
+    div.appendChild(sizeSpan);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "remove-file-btn";
+    btn.dataset.idx = idx;
+    btn.dataset.existing = "true";
+    btn.textContent = "×";
+    div.appendChild(btn);
+
+    editPreview.appendChild(div);
+  });
+
+  // then render newly selected files
+  selectedEditFiles.forEach((file, idx) => {
+    const div = document.createElement("div");
+    div.className = "file-chip";
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "file-name-text";
+    nameSpan.textContent = file.name;
+    const sizeSpan = document.createElement("span");
+    sizeSpan.className = "file-size-text";
+    sizeSpan.textContent = ` (${Math.round(file.size / 1024)} KB)`;
+    div.appendChild(nameSpan);
+    div.appendChild(sizeSpan);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "remove-file-btn";
+    btn.dataset.idx = idx;
+    btn.dataset.existing = "false";
+    btn.textContent = "×";
+    div.appendChild(btn);
+
+    editPreview.appendChild(div);
+  });
+
+  if (clearBtn) clearBtn.style.display = "inline-block";
+}
+
+
 function populateMessageEditForm(schedule) {
-    document.getElementById('edit-message').value = schedule.message || '';
-    const scheduledTime = new Date(schedule.scheduledTime);
-    const localDateTime = new Date(scheduledTime.getTime() - scheduledTime.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-    document.getElementById('edit-datetime').value = localDateTime;
+  document.getElementById("edit-message").value = schedule.message || "";
+  const scheduledTime = new Date(schedule.scheduledTime);
+  const localDateTime = new Date(
+    scheduledTime.getTime() - scheduledTime.getTimezoneOffset() * 60000
+  )
+    .toISOString()
+    .slice(0, 16);
+  document.getElementById("edit-datetime").value = localDateTime;
 
-    let numbers = schedule.originalNumbers || schedule.numbers || [];
-    const plainNumbers = numbers.map(num => String(num).replace("@c.us", "").replace(/^62/, "0"));
-    
-    document.getElementById('edit-manualNumbers').value = plainNumbers.join(', ');
-    selectedNumbers.clear();
-    plainNumbers.forEach(num => selectedNumbers.add(num));
-    
-    renderContactListForEdit();
+  let numbers = schedule.originalNumbers || schedule.numbers || [];
+  const plainNumbers = numbers.map((num) =>
+    String(num).replace("@c.us", "").replace(/^62/, "0")
+  );
 
-    const fileNamesDisplay = document.getElementById("edit-fileNames");
-    const keepFileCheckboxDiv = document.getElementById("edit-keepFileCheckboxDiv");
-    const fileUpload = document.getElementById("edit-fileUpload");
-    
-    if (schedule.filesData && schedule.filesData.length > 0) {
-        const fileNames = schedule.filesData.map(file => {
-            return file.name || file.filename || "File";
-        }).join("<br>");
-        fileNamesDisplay.innerHTML = `<strong>File saat ini:</strong><br>${fileNames}`;
-        keepFileCheckboxDiv.style.display = 'flex';
-        document.getElementById("edit-keepOriginalFile").checked = true;
-    } else if (schedule.file) {
-        // Fallback untuk format lama
-        const fileName = schedule.file.replace(/^\d+-/, "");
-        fileNamesDisplay.innerHTML = `<strong>File saat ini:</strong><br>${fileName}`;
-        keepFileCheckboxDiv.style.display = 'flex';
-        document.getElementById("edit-keepOriginalFile").checked = true;
-    } else {
-        fileNamesDisplay.innerHTML = "Tidak ada file yang dilampirkan.";
-        keepFileCheckboxDiv.style.display = 'none';
-    }
-    
-    // Tambahkan event listener untuk file upload (SAMA SEPERTI DI MEETING)
-    if (fileUpload) {
-        fileUpload.addEventListener("change", function () {
-            if (this.files.length > 0) {
-                let fileNames = Array.from(this.files).map(f => f.name).join("<br>");
-                fileNamesDisplay.innerHTML = `<strong>File terpilih:</strong><br>${fileNames}`;
-                keepFileCheckboxDiv.style.display = 'none';
-                document.getElementById("edit-keepOriginalFile").checked = false;
-            } else {
-                // Jika tidak ada file yang dipilih, kembali tampilkan file lama
-                if (schedule.filesData && schedule.filesData.length > 0) {
-                    const fileNames = schedule.filesData.map(file => {
-                        return file.name || file.filename || "File";
-                    }).join("<br>");
-                    fileNamesDisplay.innerHTML = `<strong>File saat ini:</strong><br>${fileNames}`;
-                    keepFileCheckboxDiv.style.display = 'flex';
-                } else {
-                    fileNamesDisplay.innerHTML = "Tidak ada file yang dilampirkan.";
-                    keepFileCheckboxDiv.style.display = 'none';
-                }
-            }
-        });
-    }
+  document.getElementById("edit-manualNumbers").value = plainNumbers.join(", ");
+  selectedNumbers.clear();
+  plainNumbers.forEach((num) => selectedNumbers.add(num));
+
+  renderContactListForEdit();
+
+  const fileUpload = document.getElementById("edit-fileUpload");
+  const fileNamesDisplay = document.getElementById("edit-fileNames");
+
+  // Prepare existing files (for display) and reset edit buffers
+  existingEditFiles = [];
+  removedExistingEditFiles = [];
+  selectedEditFiles = [];
+
+  if (schedule.filesData && schedule.filesData.length > 0) {
+    existingEditFiles = schedule.filesData.map((f) => ({ name: f.name || f.filename || f, size: f.size || 0, meta: f }));
+    fileNamesDisplay.innerHTML = ""; // will be rendered by renderEditFilePreview
+  } else if (schedule.file) {
+    existingEditFiles = [{ name: schedule.file.replace(/^\d+-/, ""), size: 0 }];
+    fileNamesDisplay.innerHTML = "";
+  } else {
+    existingEditFiles = [];
+    fileNamesDisplay.innerHTML = "Tidak ada file yang dilampirkan.";
+  }
+
+  if (fileUpload) {
+    fileUpload.addEventListener("change", function () {
+      if (this.files && this.files.length > 0) {
+        for (const f of this.files) {
+          if (!selectedEditFiles.some((sf) => sf.name === f.name && sf.size === f.size)) {
+            selectedEditFiles.push(f);
+          }
+        }
+        this.value = "";
+        renderEditFilePreview();
+      }
+    });
+  }
+
+  const clearAllEditBtn = document.getElementById("clearAllEditFilesBtn");
+  if (clearAllEditBtn) {
+    clearAllEditBtn.onclick = function () {
+      // mark existing as removed and clear new selections
+      removedExistingEditFiles = existingEditFiles.map((e) => e.name || e.filename || e);
+      existingEditFiles = [];
+      selectedEditFiles = [];
+      renderEditFilePreview();
+    };
+  }
+
+  renderEditFilePreview();
 }
 
 // FUNGSI BARU (Tambahkan ini di bawah populateMessageEditForm)
 function renderContactListForEdit() {
-    const list = document.getElementById("edit-contactList");
-    if (!list) return;
-    list.innerHTML = "";
-    contacts.forEach(contact => {
-        const label = document.createElement("label");
-        const isChecked = selectedNumbers.has(contact.number) ? "checked" : "";
-        label.innerHTML = `<input type="checkbox" class="contact-checkbox-edit" value="${contact.number}" ${isChecked}> <strong>${contact.name}</strong> — ${contact.number}`;
-        list.appendChild(label);
+  const list = document.getElementById("edit-contactList");
+  if (!list) return;
+  list.innerHTML = "";
+  contacts.forEach((contact) => {
+    const label = document.createElement("label");
+    const isChecked = selectedNumbers.has(contact.number) ? "checked" : "";
+    label.innerHTML = `<input type="checkbox" class="contact-checkbox-edit" value="${contact.number}" ${isChecked}> <strong>${contact.name}</strong> — ${contact.number}`;
+    list.appendChild(label);
+  });
+  document.querySelectorAll(".contact-checkbox-edit").forEach((checkbox) => {
+    checkbox.addEventListener("change", function () {
+      if (this.checked) selectedNumbers.add(this.value);
+      else selectedNumbers.delete(this.value);
+      document.getElementById("edit-manualNumbers").value =
+        Array.from(selectedNumbers).join(", ");
     });
-    document.querySelectorAll('.contact-checkbox-edit').forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            if (this.checked) selectedNumbers.add(this.value);
-            else selectedNumbers.delete(this.value);
-            document.getElementById('edit-manualNumbers').value = Array.from(selectedNumbers).join(', ');
-        });
-    });
+  });
 }
-
 
 // GANTI FUNGSI LAMA ANDA DENGAN VERSI BARU INI
 async function populateMeetingEditForm(schedule) {
-    document.getElementById('edit-meetingTitle').value = schedule.meetingTitle || schedule.message || '';
-    
-    // PERBAIKAN KUNCI: Panggil loadMeetingRooms dengan await dan pastikan element sudah ada
-    const roomSelect = document.getElementById('edit-meetingRoom');
-    if (roomSelect) {
-        await loadMeetingRooms(roomSelect, schedule.meetingRoom); // 'await' menunggu ruangan selesai dimuat
-    } else {
-        console.error('Element edit-meetingRoom tidak ditemukan!');
-    }
+  document.getElementById("edit-meetingTitle").value =
+    schedule.meetingTitle || schedule.message || "";
 
-    // Mengisi waktu mulai
-    const startTime = new Date(schedule.scheduledTime);
-    const startTimeInput = document.getElementById('edit-meetingStartTime');
-    if (startTimeInput) {
-        startTimeInput.value = new Date(startTime.getTime() - startTime.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-    }
-    
-    // Mengisi waktu selesai jika ada
-    if (schedule.meetingEndTime) {
-        const endTime = new Date(schedule.meetingEndTime);
-        const endTimeInput = document.getElementById('edit-meetingEndTime');
-        if (endTimeInput) {
-            endTimeInput.value = new Date(endTime.getTime() - endTime.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-        }
-    }
-    
-    // Mengisi nomor kontak
-    let numbers = schedule.originalNumbers || schedule.numbers || [];
-    const plainNumbers = numbers.map(num => String(num).replace("@c.us", "").replace(/^62/, "0"));
+  const roomSelect = document.getElementById("edit-meetingRoom");
+  if (roomSelect) {
+    await loadMeetingRooms(roomSelect, schedule.meetingRoom);
+  }
 
-    const numbersInput = document.getElementById('edit-meetingNumbers');
-    if (numbersInput) {
-        numbersInput.value = plainNumbers.join(', ');
-    }
-    
-    // Reset dan isi ulang selected meeting numbers
-    selectedMeetingNumbers.clear();
-    plainNumbers.forEach(num => selectedMeetingNumbers.add(num));
-    
-    // Render daftar kontak untuk edit
-    renderMeetingContactListForEdit();
+  const startTime = new Date(schedule.scheduledTime);
+  const startTimeInput = document.getElementById("edit-meetingStartTime");
+  if (startTimeInput) {
+    startTimeInput.value = new Date(
+      startTime.getTime() - startTime.getTimezoneOffset() * 60000
+    )
+      .toISOString()
+      .slice(0, 16);
+  }
 
-     const fileNamesDisplay = document.getElementById("edit-meetingFileNames");
-    const keepFileCheckboxDiv = document.getElementById("edit-meetingKeepFileCheckboxDiv");
-    
-    if (schedule.filesData && schedule.filesData.length > 0) {
-    const fileNames = schedule.filesData.map(file => {
-        // Ambil nama file yang benar (hilangkan prefix timestamp jika ada)
-        return file.name || file.filename || "File";
-    }).join("<br>");
-    fileNamesDisplay.innerHTML = `<strong>File saat ini:</strong><br>${fileNames}`;
-    keepFileCheckboxDiv.style.display = 'flex';
-    document.getElementById("edit-meetingKeepOriginalFile").checked = true;
-} else if (schedule.file) {
-    // Fallback untuk format lama
-    const fileName = schedule.file.replace(/^\d+-/, "");
-    fileNamesDisplay.innerHTML = `<strong>File saat ini:</strong><br>${fileName}`;
-    keepFileCheckboxDiv.style.display = 'flex';
-    document.getElementById("edit-meetingKeepOriginalFile").checked = true;
-} else if (schedule.meetingFile) {
-    // Fallback untuk format meeting lama
-    const fileName = schedule.meetingFile.replace(/^\d+-/, "");
-    fileNamesDisplay.innerHTML = `<strong>File saat ini:</strong><br>${fileName}`;
-    keepFileCheckboxDiv.style.display = 'flex';
-    document.getElementById("edit-meetingKeepOriginalFile").checked = true;
-} else {
+  if (schedule.meetingEndTime) {
+    const endTime = new Date(schedule.meetingEndTime);
+    const endTimeInput = document.getElementById("edit-meetingEndTime");
+    if (endTimeInput) {
+      endTimeInput.value = new Date(
+        endTime.getTime() - endTime.getTimezoneOffset() * 60000
+      )
+        .toISOString()
+        .slice(0, 16);
+    }
+  }
+
+  let numbers = schedule.originalNumbers || schedule.numbers || [];
+  const plainNumbers = numbers.map((num) =>
+    String(num).replace("@c.us", "").replace(/^62/, "0")
+  );
+
+  const numbersInput = document.getElementById("edit-meetingNumbers");
+  if (numbersInput) {
+    numbersInput.value = plainNumbers.join(", ");
+  }
+
+  selectedMeetingNumbers.clear();
+  plainNumbers.forEach((num) => selectedMeetingNumbers.add(num));
+  renderMeetingContactListForEdit();
+
+  const fileNamesDisplay = document.getElementById("edit-meetingFileNames");
+
+  existingEditMeetingFiles = [];
+  removedExistingEditMeetingFiles = [];
+  selectedEditMeetingFiles = [];
+
+  if (schedule.filesData && schedule.filesData.length > 0) {
+    existingEditMeetingFiles = schedule.filesData.map((f) => ({ name: f.name || f.filename || f, size: f.size || 0, meta: f }));
+    fileNamesDisplay.innerHTML = "";
+  } else if (schedule.file || schedule.meetingFile) {
+    const fileName = (schedule.filesData && schedule.filesData[0] && (schedule.filesData[0].name || schedule.filesData[0].filename)) || (schedule.file || schedule.meetingFile).replace(/^\d+-/, "");
+    existingEditMeetingFiles = [{ name: fileName, size: 0 }];
+    fileNamesDisplay.innerHTML = "";
+  } else {
+    existingEditMeetingFiles = [];
     fileNamesDisplay.innerHTML = "Tidak ada file yang dilampirkan.";
-    keepFileCheckboxDiv.style.display = 'none';
-}
-    
-    // Event listener untuk file upload
-    const fileUpload = document.getElementById("edit-meetingFileUpload");
-    if (fileUpload) {
-        fileUpload.addEventListener("change", function () {
-            if (this.files.length > 0) {
-                let fileNames = Array.from(this.files).map(f => f.name).join("<br>");
-                fileNamesDisplay.innerHTML = `<strong>File terpilih:</strong><br>${fileNames}`;
-                keepFileCheckboxDiv.style.display = 'none';
-                document.getElementById("edit-meetingKeepOriginalFile").checked = false;
-            }
-        });
-    }
-}
+  }
 
+  const clearAllEditBtn = document.getElementById("clearAllEditMeetingFilesBtn");
+  if (clearAllEditBtn) {
+    clearAllEditBtn.onclick = function () {
+      removedExistingEditMeetingFiles = existingEditMeetingFiles.map((e) => e.name || e.filename || e);
+      existingEditMeetingFiles = [];
+      selectedEditMeetingFiles = [];
+      renderEditMeetingFilePreview();
+    };
+  }
+
+  const fileUpload = document.getElementById("edit-meetingFileUpload");
+  if (fileUpload) {
+    fileUpload.addEventListener("change", function () {
+      if (this.files && this.files.length > 0) {
+        for (const f of this.files) {
+          if (!selectedEditMeetingFiles.some((sf) => sf.name === f.name && sf.size === f.size)) {
+            selectedEditMeetingFiles.push(f);
+          }
+        }
+        this.value = "";
+        renderEditMeetingFilePreview();
+      }
+    });
+  }
+
+  renderEditMeetingFilePreview();
+}
 
 // FUNGSI BARU (Tambahkan ini di bawah populateMeetingEditForm)
 function renderMeetingContactListForEdit() {
-    const list = document.getElementById("edit-meetingContactList");
-    if (!list) return;
-    
-    list.innerHTML = "";
-    
-    const searchInput = document.getElementById("edit-meetingContactSearch");
-    const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    
-    // Filter kontak berdasarkan pencarian
-    const filteredContacts = contacts.filter(contact => 
-        contact.name.toLowerCase().includes(searchTerm) || 
-        contact.number.includes(searchTerm)
-    );
-    
-    if (filteredContacts.length === 0) {
-        list.innerHTML = "<p>Tidak ada kontak ditemukan.</p>";
-        return;
-    }
-    
-    filteredContacts.forEach(contact => {
-        const label = document.createElement("label");
-        const isChecked = selectedMeetingNumbers.has(contact.number) ? "checked" : "";
-        label.innerHTML = `
+  const list = document.getElementById("edit-meetingContactList");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  const searchInput = document.getElementById("edit-meetingContactSearch");
+  const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : "";
+
+  // Filter kontak berdasarkan pencarian
+  const filteredContacts = contacts.filter(
+    (contact) =>
+      contact.name.toLowerCase().includes(searchTerm) ||
+      contact.number.includes(searchTerm)
+  );
+
+  if (filteredContacts.length === 0) {
+    list.innerHTML = "<p>Tidak ada kontak ditemukan.</p>";
+    return;
+  }
+
+  filteredContacts.forEach((contact) => {
+    const label = document.createElement("label");
+    const isChecked = selectedMeetingNumbers.has(contact.number)
+      ? "checked"
+      : "";
+    label.innerHTML = `
             <input type="checkbox" class="meeting-contact-checkbox-edit" value="${contact.number}" ${isChecked}> 
             <strong>${contact.name}</strong> — ${contact.number}
         `;
-        list.appendChild(label);
-    });
-    
-    // Add event listeners untuk checkbox yang baru dibuat
-    document.querySelectorAll('.meeting-contact-checkbox-edit').forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            if (this.checked) {
-                selectedMeetingNumbers.add(this.value);
-            } else {
-                selectedMeetingNumbers.delete(this.value);
-            }
-            // Update manual numbers input
-            const numbersInput = document.getElementById('edit-meetingNumbers');
-            if (numbersInput) {
-                numbersInput.value = Array.from(selectedMeetingNumbers).join(', ');
-            }
-        });
+    list.appendChild(label);
+  });
+
+  // Add event listeners untuk checkbox yang baru dibuat
+  document
+    .querySelectorAll(".meeting-contact-checkbox-edit")
+    .forEach((checkbox) => {
+      checkbox.addEventListener("change", function () {
+        if (this.checked) {
+          selectedMeetingNumbers.add(this.value);
+        } else {
+          selectedMeetingNumbers.delete(this.value);
+        }
+        // Update manual numbers input
+        const numbersInput = document.getElementById("edit-meetingNumbers");
+        if (numbersInput) {
+          numbersInput.value = Array.from(selectedMeetingNumbers).join(", ");
+        }
+      });
     });
 }
-
 
 // MODIFIKASI KECIL pada fungsi loadMeetingRooms
 async function loadMeetingRooms(selectElement = null, selectedValue = null) {
-    try {
-        const res = await fetch("/meeting-rooms");
-        if (!res.ok) throw new Error("Gagal mengambil daftar ruangan.");
-        
-        const rooms = await res.json();
-        
-        // Tentukan element yang akan digunakan
-        const roomSelect = selectElement || document.getElementById("meetingRoom");
-        
-        if (roomSelect) {
-            roomSelect.innerHTML = '<option value="">Pilih Ruangan</option>';
-            
-            rooms.forEach(room => {
-                const option = document.createElement("option");
-                option.value = room;
-                option.textContent = room;
-                
-                // Set sebagai selected jika cocok dengan selectedValue
-                if (room === selectedValue) {
-                    option.selected = true;
-                }
-                
-                roomSelect.appendChild(option);
-            });
-            
-            console.log(`Berhasil memuat ${rooms.length} ruangan rapat`);
-        } else {
-            console.error("Element select untuk meeting room tidak ditemukan!");
+  try {
+    const res = await fetch("/meeting-rooms");
+    if (!res.ok) throw new Error("Gagal mengambil daftar ruangan.");
+
+    const rooms = await res.json();
+
+    // Tentukan element yang akan digunakan
+    const roomSelect = selectElement || document.getElementById("meetingRoom");
+
+    if (roomSelect) {
+      roomSelect.innerHTML = '<option value="">Pilih Ruangan</option>';
+
+      rooms.forEach((room) => {
+        const option = document.createElement("option");
+        option.value = room;
+        option.textContent = room;
+
+        // Set sebagai selected jika cocok dengan selectedValue
+        if (room === selectedValue) {
+          option.selected = true;
         }
-    } catch (error) {
-        console.error("Error loading meeting rooms:", error);
-        Swal.fire("Error", "Gagal memuat daftar ruangan rapat", "error");
+
+        roomSelect.appendChild(option);
+      });
+
+      console.log(`Berhasil memuat ${rooms.length} ruangan rapat`);
+    } else {
+      console.error("Element select untuk meeting room tidak ditemukan!");
     }
+  } catch (error) {
+    console.error("Error loading meeting rooms:", error);
+    Swal.fire("Error", "Gagal memuat daftar ruangan rapat", "error");
+  }
 }
 
 function createMeetingEditFormHtml(schedule) {
-    return `
+  return `
         <h2>Edit Jadwal Rapat</h2>
         <form id="editMeetingForm" enctype="multipart/form-data">
             <input type="hidden" name="id" value="${schedule.id}">
-            
             <label for="edit-meetingTitle">Judul Rapat:</label>
             <input type="text" id="edit-meetingTitle" name="meetingTitle" required>
-            
             <label for="edit-meetingContactSearch">Pilih Kontak:</label>
             <input type="text" id="edit-meetingContactSearch" placeholder="Cari kontak...">
             <div id="edit-meetingContactList" class="contact-checklist-box"></div>
-            
             <label for="edit-meetingNumbers">Nomor Manual (pisahkan koma):</label>
             <input type="text" id="edit-meetingNumbers" name="manualNumbers" placeholder="0812...">
-            
-            <!-- TAMBAHAN FILE UPLOAD -->
             <div class="file-upload-section">
                 <label>File untuk Rapat:</label>
-                <div id="edit-meetingFileNames" class="file-name"></div>
-                <div class="file-upload-container" onclick="document.getElementById('edit-meetingFileUpload').click()">
+                <div class="file-upload-container">
                     <input type="file" id="edit-meetingFileUpload" name="files" multiple accept="image/*,video/*,application/pdf">
-                    <span class="file-upload-label">Klik untuk ganti/tambah file</span>
+                    <span class="file-upload-label" data-input="edit-meetingFileUpload">Klik untuk ganti/tambah file</span>
+                    <div id="edit-meetingFileNames" class="customFilePreview">Tidak ada file terpilih</div>
                 </div>
+                <button type="button" id="clearAllEditMeetingFilesBtn" style="display: none; background-color: #dc3545; margin-top: 6px;">Hapus Seluruh File</button>
             </div>
-            <div id="edit-meetingKeepFileCheckboxDiv" style="display: none; align-items: center; gap: 7px; margin-top: 14px;">
-                <input type="checkbox" id="edit-meetingKeepOriginalFile" name="keepOriginalFile" value="true">
-                <label for="edit-meetingKeepOriginalFile" style="margin: 0;">Pertahankan file lama</label>
-            </div>
-            <!-- END TAMBAHAN -->
-            
             <label for="edit-meetingRoom">Ruangan:</label>
             <select id="edit-meetingRoom" name="meetingRoom" required>
-                <option value="">Loading...</option>
+                <option value="">Pilih Ruangan</option>
             </select>
-            
             <label for="edit-meetingStartTime">Waktu Mulai:</label>
             <input type="datetime-local" id="edit-meetingStartTime" name="startTime" required>
-            
             <label for="edit-meetingEndTime">Waktu Selesai:</label>
             <input type="datetime-local" id="edit-meetingEndTime" name="endTime" required>
-            
             <button type="submit">Update Rapat</button>
             <button type="button" id="cancel-edit-meeting-btn" style="background-color: #6c757d; margin-top: 10px;">Batal</button>
         </form>
     `;
 }
-
 
 // Event listeners for filter buttons
 function initFilterButtons() {
@@ -1642,11 +1684,6 @@ function initReminderForm() {
     const manualInput = document.getElementById("manualNumbers").value;
     const fileInput = document.getElementById("fileUpload");
     const uploadedFiles = fileInput.files;
-    const keepOriginalFileCheckbox =
-      document.getElementById("keepOriginalFile");
-    const keepOriginalFile = keepOriginalFileCheckbox
-      ? keepOriginalFileCheckbox.checked
-      : false;
 
     const selectedContactNumbers = Array.from(selectedNumbers);
     const manualNumbers = manualInput
@@ -1677,8 +1714,7 @@ function initReminderForm() {
       hasExistingFiles =
         currentSchedule &&
         currentSchedule.filesData &&
-        currentSchedule.filesData.length > 0 &&
-        keepOriginalFile;
+        currentSchedule.filesData.length > 0;
     }
 
     if (!hasFilesUploaded && !hasMessage && !hasExistingFiles) {
@@ -1714,15 +1750,8 @@ function initReminderForm() {
       formData.append("message", message);
     }
 
-    if (uploadedFiles.length > 0) {
-      for (let i = 0; i < uploadedFiles.length; i++) {
-        formData.append("files", uploadedFiles[i]);
-      }
-      formData.append("keepOriginalFile", "false");
-    } else if (isEditing) {
-      formData.append("keepOriginalFile", keepOriginalFile.toString());
-    } else {
-      formData.append("keepOriginalFile", "false");
+    if (selectedFiles.length > 0) {
+      selectedFiles.forEach((f) => formData.append("files", f));
     }
 
     let url = "/add-reminder";
@@ -1751,24 +1780,29 @@ function initReminderForm() {
       const text = await res.text();
       Swal.close();
 
+      // ...existing code...
       if (res.ok) {
         Swal.fire({
           title: isEditing ? "Jadwal Diupdate!" : "Pesan Terjadwal!",
           html: `
-                        <b>Kontak:</b> ${finalNumbers.join(", ")}<br>
-                        <b>Pesan:</b> ${
-                          message ? message : "(Tanpa Pesan Teks)"
-                        }<br>
-                        <b>Waktu Kirim:</b> ${new Date(datetime).toLocaleString(
-                          "id-ID"
-                        )}
-                    `,
+      <b>Kontak:</b> ${finalNumbers.join(", ")}<br>
+      <b>Pesan:</b> ${message ? message : "(Tanpa Pesan Teks)"}<br>
+      <b>Waktu Kirim:</b> ${new Date(datetime).toLocaleString("id-ID")}
+    `,
           icon: "success",
         });
 
+        // reset form UI + internal selected files
         this.reset();
         selectedNumbers.clear();
         renderContactList();
+
+        // clear selectedFiles array and preview + file input element
+        selectedFiles = [];
+        const fileInputEl = document.getElementById("fileUpload");
+        if (fileInputEl) fileInputEl.value = "";
+        if (typeof renderFilePreview === "function") renderFilePreview();
+
         const fileNamesDisplay = document.getElementById("fileNames");
         if (fileNamesDisplay) {
           fileNamesDisplay.textContent = "Belum ada file terpilih";
@@ -1781,13 +1815,6 @@ function initReminderForm() {
         if (manualNumbersInput) {
           manualNumbersInput.value = "";
         }
-
-        const keepFileCheckboxDiv = document.getElementById(
-          "keepFileCheckboxDiv"
-        );
-        const keepFileCheckbox = document.getElementById("keepOriginalFile");
-        if (keepFileCheckboxDiv) keepFileCheckboxDiv.style.display = "none";
-        if (keepFileCheckbox) keepFileCheckbox.checked = false;
 
         renderScheduleTable();
 
@@ -1918,9 +1945,6 @@ function initMeetingForm() {
     const submitButton = document.querySelector(
       '#addMeetingForm button[type="submit"]'
     );
-    submitButton.disabled = true; // Langsung nonaktifkan tombol
-    submitButton.textContent = "Memproses..."; // Beri feedback ke pengguna
-    // --------------------------------
 
     const title = document.getElementById("meetingTitle").value.trim();
     const room = document.getElementById("meetingRoom").value;
@@ -1983,7 +2007,7 @@ function initMeetingForm() {
     formData.append("numbers", JSON.stringify(allNumbers));
 
     // 3. Tambahkan file ke FormData
-    for (const file of fileInput.files) {
+    for (const file of selectedMeetingFiles) {
       formData.append("files", file); // 'files' harus cocok dengan nama di backend multer
     }
     // --- AKHIR PERBAIKAN FILE ---
@@ -2007,19 +2031,31 @@ function initMeetingForm() {
       const result = await res.json();
       Swal.close();
 
+      // ...existing code...
       if (res.ok && result.success) {
         Swal.fire({
           title: isEditing ? "Jadwal Rapat Diupdate!" : "Jadwal Rapat Terbuat!",
           icon: "success",
         });
 
+        // reset form UI + internal arrays
         this.reset();
         if (submitButton) {
           delete submitButton.dataset.editId;
           submitButton.textContent = "Jadwalkan Rapat";
         }
-        selectedMeetingNumbers.clear(); // Kosongkan nomor terpilih
-        document.getElementById("meetingFileNames").innerHTML = ""; // Kosongkan nama file
+        selectedMeetingNumbers.clear();
+
+        // clear selected meeting files and preview + input element
+        selectedMeetingFiles = [];
+        const meetingFileInputEl = document.getElementById("meetingFileUpload");
+        if (meetingFileInputEl) meetingFileInputEl.value = "";
+        if (typeof renderMeetingFilePreview === "function")
+          renderMeetingFilePreview();
+
+        // also clear displayed names fallback
+        const meetingFileNamesEl = document.getElementById("meetingFileNames");
+        if (meetingFileNamesEl) meetingFileNamesEl.innerHTML = "";
 
         renderScheduleTable();
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2875,75 +2911,140 @@ function showNotification(messageData) {
 }
 
 async function handleReminderFormSubmit(e) {
-    e.preventDefault();
-    const form = e.target;
-    const editId = form.querySelector('input[name="id"]')?.value;
-    const isEditing = !!editId;
+  e.preventDefault();
+  const form = e.target;
+  const editId = form.querySelector('input[name="id"]')?.value;
+  const isEditing = !!editId;
 
-    const formData = new FormData(form);
-    
-    const manualNumbers = formData.get('manualNumbers').split(',').map(n => n.trim()).filter(Boolean);
-    const finalNumbers = JSON.stringify(Array.from(new Set([...selectedNumbers, ...manualNumbers])));
-    formData.set('numbers', finalNumbers);
+  const formData = new FormData(form);
+  formData.delete("fileUpload");
 
-    let url = isEditing ? `/edit-schedule/${editId}` : "/add-reminder";
-    let method = isEditing ? "PUT" : "POST";
+  // Prefer files chosen in the edit modal (selectedEditFiles) when editing
+  if (isEditing && Array.isArray(selectedEditFiles) && selectedEditFiles.length > 0) {
+    selectedEditFiles.forEach((f) => formData.append("files", f));
+  } else if (Array.isArray(selectedFiles) && selectedFiles.length > 0) {
+    selectedFiles.forEach((f) => formData.append("files", f));
+  }
 
-    try {
-        Swal.fire({ title: "Memproses...", text: "Mohon tunggu", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const res = await fetch(url, { method: method, body: formData });
-        const text = await res.text();
-        Swal.close();
+  // append deleted existing filenames if any
+  if (isEditing && removedExistingEditFiles.length > 0) {
+    formData.append("deletedFiles", JSON.stringify(removedExistingEditFiles));
+  }
 
-        if (res.ok) {
-            Swal.fire(isEditing ? "Jadwal Diupdate!" : "Pesan Terjadwal!", text, "success");
-            renderScheduleTable();
-            closeEditModal();
-        } else {
-            Swal.fire("Gagal", text, "error");
-        }
-    } catch (err) {
-        Swal.close();
-        Swal.fire("Gagal koneksi ke server", err.message, "error");
+  const manualNumbers = formData
+    .get("manualNumbers")
+    .split(",")
+    .map((n) => n.trim())
+    .filter(Boolean);
+  const finalNumbers = JSON.stringify(
+    Array.from(new Set([...selectedNumbers, ...manualNumbers]))
+  );
+  formData.set("numbers", finalNumbers);
+
+  let url = isEditing ? `/edit-schedule/${editId}` : "/add-reminder";
+  let method = isEditing ? "PUT" : "POST";
+
+  try {
+    Swal.fire({
+      title: "Memproses...",
+      text: "Mohon tunggu",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+    const res = await fetch(url, { method: method, body: formData });
+    const text = await res.text();
+    Swal.close();
+
+    if (res.ok) {
+      Swal.fire(
+        isEditing ? "Jadwal Diupdate!" : "Pesan Terjadwal!",
+        text,
+        "success"
+      );
+
+      // clear internal selected files and UI preview
+      selectedFiles = [];
+      selectedEditFiles = [];
+      existingEditFiles = [];
+      removedExistingEditFiles = [];
+
+      const fileInputEl = document.getElementById("fileUpload");
+      if (fileInputEl) fileInputEl.value = "";
+      if (typeof renderFilePreview === "function") renderFilePreview();
+      if (typeof renderEditFilePreview === "function") renderEditFilePreview();
+
+      renderScheduleTable();
+      closeEditModal();
+    } else {
+      Swal.fire("Gagal", text, "error");
     }
+  } catch (err) {
+    Swal.close();
+    Swal.fire("Gagal koneksi ke server", err.message, "error");
+  }
 }
-
 
 async function handleMeetingFormSubmit(e) {
-    e.preventDefault();
-    const form = e.target;
-    const editId = form.querySelector('input[name="id"]')?.value;
-    const isEditing = !!editId;
+  e.preventDefault();
 
-    const formData = new FormData(form);
-    const manualNumbers = formData.get('manualNumbers').split(',').map(n => n.trim()).filter(Boolean);
-    const finalNumbers = JSON.stringify(Array.from(new Set([...selectedMeetingNumbers, ...manualNumbers])));
-    formData.set('numbers', finalNumbers);
-    
-    formData.delete('manualNumbers');
+  const form = e.target;
+  const formData = e._formData instanceof FormData ? e._formData : new FormData(form);
+  const manualNumbers = (formData.get("manualNumbers") || "")
+    .toString()
+    .split(",")
+    .map((n) => n.trim())
+    .filter(Boolean);
+  const finalNumbers = JSON.stringify(Array.from(new Set([...selectedMeetingNumbers, ...manualNumbers])));
+  formData.set("numbers", finalNumbers);
+  formData.delete("manualNumbers");
 
-    let url = isEditing ? `/edit-meeting/${editId}` : "/add-meeting";
-    let method = isEditing ? "PUT" : "POST";
+  // append new files
+  if (Array.isArray(selectedEditMeetingFiles) && selectedEditMeetingFiles.length > 0) {
+    formData.delete("files");
+    selectedEditMeetingFiles.forEach((f) => formData.append("files", f));
+  } else if (Array.isArray(selectedMeetingFiles) && selectedMeetingFiles.length > 0) {
+    formData.delete("files");
+    selectedMeetingFiles.forEach((f) => formData.append("files", f));
+  }
 
-    try {
-        Swal.fire({ title: "Memproses...", text: "Mohon tunggu", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const res = await fetch(url, { method: method, body: formData });
-        const result = await res.json();
-        Swal.close();
+  // append deleted existing meeting files if any
+  const editId = form.querySelector('input[name="id"]')?.value;
+  const isEditing = !!editId;
+  if (isEditing && removedExistingEditMeetingFiles.length > 0) {
+    formData.append("deletedFiles", JSON.stringify(removedExistingEditMeetingFiles));
+  }
 
-        if (res.ok && result.success) {
-            Swal.fire(isEditing ? "Rapat Diupdate!" : "Rapat Terjadwal!", result.message, "success");
-            renderScheduleTable();
-            closeEditModal();
-        } else {
-            Swal.fire("Gagal", result.message || "Terjadi kesalahan", "error");
-        }
-    } catch (err) {
-        Swal.close();
-        Swal.fire("Gagal koneksi ke server", err.message, "error");
+  // continue with existing fetch logic (unchanged)...
+  const url = isEditing ? `/edit-meeting/${editId}` : "/add-meeting";
+  const method = isEditing ? "PUT" : "POST";
+
+  try {
+    Swal.fire({ title: "Memproses...", text: "Mohon tunggu", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    const res = await fetch(url, { method: method, body: formData });
+    const result = await res.json();
+    Swal.close();
+    if (res.ok && result.success) {
+      Swal.fire(isEditing ? "Rapat Diupdate!" : "Rapat Terjadwal!", result.message, "success");
+
+      // clear buffers
+      selectedMeetingFiles = [];
+      selectedEditMeetingFiles = [];
+      existingEditMeetingFiles = [];
+      removedExistingEditMeetingFiles = [];
+
+      if (typeof renderMeetingFilePreview === "function") renderMeetingFilePreview();
+      if (typeof renderEditMeetingFilePreview === "function") renderEditMeetingFilePreview();
+
+      renderScheduleTable();
+      closeEditModal();
+    } else {
+      Swal.fire("Gagal", result.message || "Terjadi kesalahan", "error");
     }
+  } catch (err) {
+    Swal.close();
+    Swal.fire("Gagal koneksi ke server", err.message, "error");
+  }
 }
-
 
 // Initial calls
 function initApp() {
@@ -3125,11 +3226,422 @@ chatFileInput.addEventListener("change", () => {
   selectedFilePreviewEl = wrap;
 });
 
+// ...existing code...
+
+// Store selected files in an array
+let selectedFiles = [];
+
+// Reference to file input and preview container (guarded)
+const fileInput = document.getElementById("fileUpload");
+const filePreview = document.getElementById("customFilePreview");
+const clearAllBtn = document.getElementById("clearAllFilesBtn");
+
+if (fileInput && filePreview && clearAllBtn) {
+  // When user selects files
+  fileInput.addEventListener("change", function () {
+    for (const file of this.files) {
+      if (
+        !selectedFiles.some((f) => f.name === file.name && f.size === file.size)
+      ) {
+        selectedFiles.push(file);
+      }
+    }
+    this.value = ""; // reset input so same file can be added later
+    renderFilePreview();
+  });
+
+  // Render file preview
+  function renderFilePreview() {
+    if (typeof filePreview === "undefined" || !filePreview) return;
+    filePreview.innerHTML = "";
+    if (!selectedFiles || selectedFiles.length === 0) {
+      filePreview.innerHTML = "<span>Tidak ada file terpilih</span>";
+      if (typeof clearAllBtn !== "undefined" && clearAllBtn)
+        clearAllBtn.style.display = "none";
+      return;
+    }
+
+    selectedFiles.forEach((file, idx) => {
+      const div = document.createElement("div");
+      div.className = "file-chip";
+
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "file-name-text";
+      nameSpan.textContent = file.name;
+
+      const sizeSpan = document.createElement("span");
+      sizeSpan.className = "file-size-text";
+      sizeSpan.textContent = ` (${Math.round(file.size / 1024)} KB)`;
+
+      div.appendChild(nameSpan);
+      div.appendChild(sizeSpan);
+
+      // keep a hidden remove button if logic uses it (CSS hides it)
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "remove-file-btn";
+      btn.dataset.idx = idx;
+      btn.textContent = "×";
+      div.appendChild(btn);
+
+      filePreview.appendChild(div);
+    });
+
+    if (typeof clearAllBtn !== "undefined" && clearAllBtn)
+      clearAllBtn.style.display = "inline-block";
+  }
+
+  // Clear all files
+  clearAllBtn.addEventListener("click", function () {
+    selectedFiles = [];
+    renderFilePreview();
+  });
+
+  // initial render
+  renderFilePreview();
+}
+
+// Store selected files for meeting form
+let selectedMeetingFiles = [];
+
+// Reference to meeting file input and preview container (guarded)
+const meetingFileInput = document.getElementById("meetingFileUpload");
+const meetingFilePreview = document.getElementById("meetingFileNames");
+
+// create and append clear button only when preview container exists
+let meetingClearAllBtn = document.getElementById("clearAllMeetingFilesBtn");
+if (!meetingClearAllBtn && meetingFilePreview) {
+  const fileUploadContainer = meetingFilePreview.parentNode; // .file-upload-container
+  if (fileUploadContainer && fileUploadContainer.parentNode) {
+    meetingClearAllBtn = document.createElement("button");
+    meetingClearAllBtn.type = "button";
+    meetingClearAllBtn.id = "clearAllMeetingFilesBtn";
+    meetingClearAllBtn.textContent = "Hapus Seluruh File";
+    meetingClearAllBtn.style.display = "none";
+    meetingClearAllBtn.style.marginTop = "6px";
+    fileUploadContainer.parentNode.insertBefore(
+      meetingClearAllBtn,
+      fileUploadContainer.nextSibling
+    );
+  }
+}
+if (meetingFileInput && meetingFilePreview) {
+  meetingFileInput.addEventListener("change", function () {
+    for (const file of this.files) {
+      if (
+        !selectedMeetingFiles.some(
+          (f) => f.name === file.name && f.size === file.size
+        )
+      ) {
+        selectedMeetingFiles.push(file);
+      }
+    }
+    this.value = "";
+    renderMeetingFilePreview();
+  });
+
+  function renderMeetingFilePreview() {
+    if (typeof meetingFilePreview === "undefined" || !meetingFilePreview)
+      return;
+    meetingFilePreview.innerHTML = "";
+    if (!selectedMeetingFiles || selectedMeetingFiles.length === 0) {
+      meetingFilePreview.innerHTML = "<span>Belum ada file terpilih</span>";
+      if (typeof meetingClearAllBtn !== "undefined" && meetingClearAllBtn)
+        meetingClearAllBtn.style.display = "none";
+      return;
+    }
+
+    selectedMeetingFiles.forEach((file, idx) => {
+      const div = document.createElement("div");
+      div.className = "file-chip";
+
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "file-name-text";
+      nameSpan.textContent = file.name;
+
+      const sizeSpan = document.createElement("span");
+      sizeSpan.className = "file-size-text";
+      sizeSpan.textContent = ` (${Math.round(file.size / 1024)} KB)`;
+
+      div.appendChild(nameSpan);
+      div.appendChild(sizeSpan);
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "remove-meeting-file-btn";
+      btn.dataset.idx = idx;
+      btn.textContent = "×";
+      div.appendChild(btn);
+
+      meetingFilePreview.appendChild(div);
+    });
+
+    if (typeof meetingClearAllBtn !== "undefined" && meetingClearAllBtn)
+      meetingClearAllBtn.style.display = "inline-block";
+  }
+
+  if (meetingClearAllBtn) {
+    meetingClearAllBtn.addEventListener("click", function () {
+      selectedMeetingFiles = [];
+      renderMeetingFilePreview();
+    });
+  }
+
+  // initial render
+  renderMeetingFilePreview();
+}
+
+// --------- EDIT MEETING MODAL ---------
+let selectedEditMeetingFiles = [];
+let editMeetingFileInput = null;
+let editMeetingFilePreview = null;
+let editMeetingClearAllBtn = null;
+
+function initEditMeetingFileLogic() {
+  selectedEditMeetingFiles = [];
+  editMeetingFileInput = document.getElementById("edit-meetingFileUpload");
+  editMeetingFilePreview = document.getElementById("edit-meetingFileNames");
+
+  if (!editMeetingFilePreview) return;
+
+  // create clear button only if needed and not already present
+  editMeetingClearAllBtn = document.getElementById(
+    "clearAllEditMeetingFilesBtn"
+  );
+  if (!editMeetingClearAllBtn && editMeetingFilePreview.parentNode) {
+    editMeetingClearAllBtn = document.createElement("button");
+    editMeetingClearAllBtn.type = "button";
+    editMeetingClearAllBtn.id = "clearAllEditMeetingFilesBtn";
+    editMeetingClearAllBtn.textContent = "Clear All Files";
+    editMeetingClearAllBtn.style.display = "none";
+    editMeetingClearAllBtn.style.marginTop = "6px";
+    editMeetingFilePreview.parentNode.appendChild(editMeetingClearAllBtn);
+  }
+
+  if (editMeetingFileInput) {
+    editMeetingFileInput.addEventListener("change", function () {
+      for (const file of this.files) {
+        if (
+          !selectedEditMeetingFiles.some(
+            (f) => f.name === file.name && f.size === file.size
+          )
+        ) {
+          selectedEditMeetingFiles.push(file);
+        }
+      }
+      this.value = "";
+      renderEditMeetingFilePreview();
+    });
+  }
+
+  if (editMeetingClearAllBtn) {
+    editMeetingClearAllBtn.addEventListener("click", function () {
+      selectedEditMeetingFiles = [];
+      renderEditMeetingFilePreview();
+    });
+  }
+
+  renderEditMeetingFilePreview();
+}
+
+function renderEditMeetingFilePreview() {
+  if (typeof editMeetingFilePreview === "undefined" || !editMeetingFilePreview) return;
+  editMeetingFilePreview.innerHTML = "";
+  const clearBtn = editMeetingClearAllBtn;
+
+  const total = (existingEditMeetingFiles ? existingEditMeetingFiles.length : 0) + (selectedEditMeetingFiles ? selectedEditMeetingFiles.length : 0);
+  if (total === 0) {
+    editMeetingFilePreview.innerHTML = "<span>Belum ada file terpilih</span>";
+    if (clearBtn) clearBtn.style.display = "none";
+    return;
+  }
+
+  // existing meeting files first
+  existingEditMeetingFiles.forEach((ef, idx) => {
+    const div = document.createElement("div");
+    div.className = "file-chip existing";
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "file-name-text";
+    nameSpan.textContent = ef.name || ef.filename || ef;
+    const sizeSpan = document.createElement("span");
+    sizeSpan.className = "file-size-text";
+    sizeSpan.textContent = ef.size ? ` (${Math.round(ef.size / 1024)} KB)` : "";
+    div.appendChild(nameSpan);
+    div.appendChild(sizeSpan);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "remove-edit-meeting-file-btn";
+    btn.dataset.idx = idx;
+    btn.dataset.existing = "true";
+    btn.textContent = "×";
+    div.appendChild(btn);
+
+    editMeetingFilePreview.appendChild(div);
+  });
+
+  // newly selected meeting files
+  selectedEditMeetingFiles.forEach((file, idx) => {
+    const div = document.createElement("div");
+    div.className = "file-chip";
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "file-name-text";
+    nameSpan.textContent = file.name;
+    const sizeSpan = document.createElement("span");
+    sizeSpan.className = "file-size-text";
+    sizeSpan.textContent = ` (${Math.round(file.size / 1024)} KB)`;
+    div.appendChild(nameSpan);
+    div.appendChild(sizeSpan);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "remove-edit-meeting-file-btn";
+    btn.dataset.idx = idx;
+    btn.dataset.existing = "false";
+    btn.textContent = "×";
+    div.appendChild(btn);
+
+    editMeetingFilePreview.appendChild(div);
+  });
+
+  if (clearBtn) clearBtn.style.display = "inline-block";
+}
+
+// Delegated click handlers for per-file delete buttons (schedule / meeting / edit)
+(function attachPerFileRemoveHandlers() {
+  // schedule (reminder) preview
+  const customPreview = document.getElementById("customFilePreview");
+  if (customPreview) {
+    customPreview.addEventListener("click", function (e) {
+      const btn = e.target.closest("button.remove-file-btn");
+      if (!btn) return;
+      const idx = Number(btn.dataset.idx);
+      if (!Number.isNaN(idx) && Array.isArray(selectedFiles)) {
+        selectedFiles.splice(idx, 1);
+        if (typeof renderFilePreview === "function") renderFilePreview();
+      }
+    });
+  }
+
+  // meeting preview
+  const meetingPreview = document.getElementById("meetingFileNames");
+  if (meetingPreview) {
+    meetingPreview.addEventListener("click", function (e) {
+      const btn = e.target.closest("button.remove-meeting-file-btn");
+      if (!btn) return;
+      const idx = Number(btn.dataset.idx);
+      if (!Number.isNaN(idx) && Array.isArray(selectedMeetingFiles)) {
+        selectedMeetingFiles.splice(idx, 1);
+        if (typeof renderMeetingFilePreview === "function")
+          renderMeetingFilePreview();
+      }
+    });
+  }
+
+  // edit-meeting preview
+  const editMeetingPreview =
+    document.getElementById("edit-meetingFileNames") ||
+    document.getElementById("edit-fileNames");
+  if (editMeetingPreview) {
+    editMeetingPreview.addEventListener("click", function (e) {
+      const btn = e.target.closest("button.remove-edit-meeting-file-btn");
+      if (!btn) return;
+      const idx = Number(btn.dataset.idx);
+      if (!Number.isNaN(idx) && Array.isArray(selectedEditMeetingFiles)) {
+        selectedEditMeetingFiles.splice(idx, 1);
+        if (typeof renderEditMeetingFilePreview === "function")
+          renderEditMeetingFilePreview();
+      }
+    });
+  }
+})();
+
+// On edit meeting form submit, append files from selectedEditMeetingFiles inside handler
+document.addEventListener("submit", function (e) {
+  if (e.target && e.target.id === "editMeetingForm") {
+    e.preventDefault();
+    // build formData here and include selectedEditMeetingFiles
+    const form = e.target;
+    const formData = new FormData(form);
+    formData.delete("files");
+    selectedEditMeetingFiles.forEach((f) => formData.append("files", f));
+    // call your async submit handler (already exists)
+    handleMeetingFormSubmit({
+      preventDefault: () => {},
+      target: form,
+      _formData: formData,
+    });
+    // Note: handleMeetingFormSubmit currently expects Event; you can adapt it to accept formData or create a new helper to POST formData
+  }
+});
+
+// --------- INIT ON MODAL OPEN ---------
+function afterEditMeetingModalOpen() {
+  initEditMeetingFileLogic();
+}
+
+// Update delegated click handler to handle removal of existing vs new edit files
+document.addEventListener("click", function (e) {
+  // remove in edit-message preview (remove-file-btn)
+  const remBtn = e.target.closest("button.remove-file-btn");
+  if (remBtn && document.getElementById("edit-fileNames") && document.getElementById("edit-fileNames").contains(remBtn)) {
+    const isExisting = remBtn.dataset.existing === "true";
+    const idx = Number(remBtn.dataset.idx);
+    if (isExisting) {
+      // move existing file to removedExistingEditFiles
+      const removed = existingEditFiles.splice(idx, 1);
+      if (removed && removed[0]) removedExistingEditFiles.push(removed[0].name || removed[0].filename || removed[0]);
+    } else {
+      // remove from newly selected edit files
+      selectedEditFiles.splice(idx, 1);
+    }
+    renderEditFilePreview();
+    return;
+  }
+
+  // remove in edit-meeting preview
+  const editMeetBtn = e.target.closest("button.remove-edit-meeting-file-btn");
+  if (editMeetBtn && document.getElementById("edit-meetingFileNames") && document.getElementById("edit-meetingFileNames").contains(editMeetBtn)) {
+    const isExisting = editMeetBtn.dataset.existing === "true";
+    const idx = Number(editMeetBtn.dataset.idx);
+    if (isExisting) {
+      const removed = existingEditMeetingFiles.splice(idx, 1);
+      if (removed && removed[0]) removedExistingEditMeetingFiles.push(removed[0].name || removed[0].filename || removed[0]);
+    } else {
+      selectedEditMeetingFiles.splice(idx, 1);
+    }
+    renderEditMeetingFilePreview();
+    return;
+  }
+
+  // remove-edit-files for edit reminder (buttons created with class remove-file-btn)
+  const remEditBtn = e.target.closest("button.remove-file-btn");
+  if (remEditBtn && document.getElementById("edit-fileNames")) {
+    const idx = Number(remEditBtn.dataset.idx);
+    if (!Number.isNaN(idx) && Array.isArray(selectedFiles)) {
+      selectedFiles.splice(idx, 1);
+      if (typeof renderFilePreview === "function") renderFilePreview();
+    }
+  }
+});
+
+document.addEventListener("click", function (e) {
+  const label = e.target.closest && e.target.closest(".file-upload-label");
+  if (!label) return;
+  const inputId = (label.dataset && label.dataset.input) || label.getAttribute("data-input");
+  if (!inputId) return;
+  const input = document.getElementById(inputId);
+  if (input) {
+    // allow default focus behavior then open file picker
+    input.focus();
+    input.click();
+  }
+});
+
+
 // simpan nomor aktif saat user memilih percakapan
 // pastikan kamu set ini di handler ketika user klik sebuah chat
 window.activeChatNumber = window.activeChatNumber || null;
-
-
 
 // Jalankan aplikasi ketika DOM siap
 document.addEventListener("DOMContentLoaded", initApp);
