@@ -110,9 +110,15 @@ main {
 /* Tambahan CSS untuk tab button di form container */
 .tabs {
     display: flex;
-    justify-content: center;
-    margin-bottom: 17.5px; /* 25 * 0.7 */
-    border-bottom: 2px solid #e9ecef; /* Garis abu-abu tipis di bawah semua tab */
+    justify-content: center; /* Menggantikan flex-start agar lebih rapi saat hanya satu tab */
+    margin-bottom: 17.5px;
+    border-bottom: 2px solid #e9ecef;
+    min-height: 42px; /* Menetapkan tinggi minimum agar tidak collaps */
+    box-sizing: border-box;
+}
+
+#main-tabs {
+    display: flex; /* Pastikan ini flex untuk menampilkan isinya */
 }
 
 
@@ -157,7 +163,8 @@ form label {
 form input[type="text"],
 form input[type="datetime-local"],
 form textarea,
-form select {
+form select,
+.phone-num-input {
     width: 100%;
     padding: 8.4px 10.5px; /* 12px,15px *0.7 */
     border: 1px solid #dcdcdc; /* Lighter border */
@@ -286,11 +293,6 @@ textarea {
     transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.file-upload-container:hover {
-    background-color: #f5f5f5;
-    border-color: #007bff;
-}
-
 .file-upload-container input[type="file"] {
     display: none;
 }
@@ -301,6 +303,11 @@ textarea {
     cursor: pointer;
     color: #007bff;
     font-weight: 600;
+}
+
+.file-upload-label:hover {
+    background-color: #f5f5f5;
+    border-color: #007bff;
 }
 
 .file-name {
@@ -561,6 +568,60 @@ form button:hover {
     box-shadow: 0 2.8px 5.6px rgba(0, 123, 255, 0.3);
 }
 
+.edit-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(3px);
+}
+
+.edit-modal-content {
+    background-color: #fff;
+    margin: 2% auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.edit-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.edit-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-modal-close:hover {
+    background-color: #f0f0f0;
+    color: #333;
+} 
+
 .cancel-btn,
 .delete-history-btn {
     background-color: #dc3545; /* Red for danger */
@@ -712,6 +773,80 @@ footer {
     padding: 4.2px 8.4px; /* 6px,12px *0.7 */
     margin: 0 2.8px; /* 4px *0.7 */
     font-size: 0.85rem; /* tetap rem */
+}
+
+/* Option B: Stretch each chip to full width and place button at container's far right */
+#customFilePreview,
+#meetingFileNames,
+#edit-meetingFileNames,
+#edit-fileNames {
+  position: relative; /* anchor for absolute-positioned buttons if needed */
+}
+
+/* make chips use full width so their button can be visually aligned */
+.file-chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 56px 6px 8px; /* reserve right padding for the button */
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0; /* allow truncation */
+  background: transparent;
+  border-radius: 6px;
+  margin: 15px 0;
+}
+
+/* truncated filename area */
+.file-chip .file-name-text,
+.file-chip span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* absolute button aligned to the *container* edge of the chip */
+.file-chip button,
+.file-chip .remove-file-btn,
+.file-chip .remove-meeting-file-btn,
+.file-chip .remove-edit-meeting-file-btn {
+  position: absolute;
+  right: 12px; /* fixed distance from the chip's right edge */
+  transform: translateY(-20%);
+  z-index: 3;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background: #dc3545;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Hover state */
+.file-chip button:hover {
+  background: #c82333;
+}
+
+/* small-screen tweak */
+@media (max-width: 480px) {
+  .file-chip {
+    padding-right: 48px;
+  }
+  .file-chip button {
+    width: 32px;
+    height: 32px;
+    right: 8px;
+  }
 }
 
 /* ---- Responsive Design ---- */

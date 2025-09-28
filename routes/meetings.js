@@ -556,6 +556,47 @@ function validateMeetingInput(meetingTitle, numbers, meetingRoom, startTime, end
     return null; // Valid
 }
 
+/**
+ * Kirim notifikasi PEMBATALAN via WhatsApp
+ */
+async function sendCancellationNotification(meeting) {
+    if (!client) {
+        console.error("Client WA belum siap, skip pengiriman notifikasi pembatalan.");
+        return;
+    }
+
+    const message =
+        `🚫 *PEMBERITAHUAN PEMBATALAN RAPAT*\n\n` +
+        `Rapat dengan detail berikut telah dibatalkan:\n` +
+        `🗓️ *Judul:* ${meeting.meetingTitle}\n` +
+        `📍 *Ruangan:* ${meeting.meetingRoom}\n` +
+        `⏰ *Waktu Semula:* ${meeting.date} pukul ${meeting.startTime}\n\n` +
+        `Mohon maaf atas ketidaknyamanannya.`;
+
+    let numbersArray = [];
+    try {
+        numbersArray = JSON.parse(meeting.numbers);
+    } catch (e) {
+        console.error("Gagal parsing JSON numbers di sendCancellationNotification:", e);
+        return;
+    }
+
+    if (!Array.isArray(numbersArray) || numbersArray.length === 0) return;
+
+    for (const num of numbersArray) {
+        try {
+            const formattedNum = formatNumber(num);
+            if (formattedNum) {
+                await client.sendMessage(formattedNum, message);
+                console.log(`Notifikasi pembatalan rapat terkirim ke: ${num}`);
+            }
+        } catch (err) {
+            console.error(`Gagal kirim notifikasi pembatalan ke ${num}:`, err.message);
+        }
+    }
+}
+
+
 // Auto update expired meetings setiap 5 menit
 setInterval(() => {
     updateExpiredMeetings();
@@ -880,7 +921,7 @@ router.post("/add-meeting", upload.array('files', 5), async (req, res) => {
 
 router.put("/edit-meeting/:id", upload.array('files', 5), async (req, res) => {
     const { id } = req.params;
-    const { meetingTitle, numbers, meetingRoom, startTime, endTime } = req.body;
+    const { meetingTitle, numbers, meetingRoom, startTime, endTime, deletedFiles, keepExistingFiles } = req.body;
     const newFiles = req.files;
 
     try {
@@ -891,7 +932,7 @@ router.put("/edit-meeting/:id", upload.array('files', 5), async (req, res) => {
             return res.status(400).json({ success: false, message: validationError });
         }
 
-        // 2. Ambil data meeting lama (menggunakan Promise)
+        // 2. Ambil data meeting lama
         const currentMeeting = await new Promise((resolve, reject) => {
             db.get("SELECT filesData FROM meetings WHERE id = ?", [id], (err, row) => {
                 if (err) return reject(new Error("Gagal mengakses database."));
@@ -904,54 +945,97 @@ router.put("/edit-meeting/:id", upload.array('files', 5), async (req, res) => {
             return res.status(404).json({ success: false, message: "Jadwal rapat tidak ditemukan." });
         }
 
-       // 3. Logika Penanganan File yang Jelas dan Aman
-let finalFilesData = currentMeeting.filesData; // Default: pertahankan file lama
-const hasNewFiles = newFiles && newFiles.length > 0;
+        // 3. Parse parameters
+        let deletedNames = [];
+        if (deletedFiles) {
+            try {
+                deletedNames = Array.isArray(deletedFiles) ? deletedFiles : JSON.parse(deletedFiles);
+            } catch (e) {
+                deletedNames = [];
+            }
+        }
 
-// Ambil status checkbox dari body request. 
-// Nilainya akan 'on' jika dicentang, dan `undefined` jika tidak dicentang.
-const keepOriginalFile = req.body.meetingKeepOriginalFile;
+        let keepExistingNames = [];
+        if (keepExistingFiles) {
+            try {
+                keepExistingNames = Array.isArray(keepExistingFiles) ? keepExistingFiles : JSON.parse(keepExistingFiles);
+            } catch (e) {
+                keepExistingNames = [];
+            }
+        }
 
-// KONDISI 1: Ada file baru diupload (Ganti file lama)
-if (hasNewFiles) {
-    console.log(`File baru terdeteksi untuk meeting ID ${id}. File lama akan diganti.`);
-    
-    // Hapus file fisik yang lama dari server
-    const oldFiles = JSON.parse(currentMeeting.filesData || '[]');
-    if (Array.isArray(oldFiles)) {
-        oldFiles.forEach(file => deleteFileIfExists(file.path));
-    }
+        const oldFiles = currentMeeting.filesData ? JSON.parse(currentMeeting.filesData) : [];
 
-    // Siapkan data JSON untuk file yang baru
-    finalFilesData = JSON.stringify(newFiles.map(f => ({
-        path: f.path, 
-        name: f.originalname, 
-        mimetype: f.mimetype
-    })));
-} 
-// KONDISI 2 (BARU): TIDAK ada file baru DAN checkbox TIDAK dicentang (Hapus file lama)
-else if (!keepOriginalFile && currentMeeting.filesData) {
-    console.log(`Menghapus file lama untuk meeting ID ${id} karena checkbox tidak dicentang.`);
+        // ===== LOGIKA BARU: GABUNGKAN FILE LAMA YANG DI-KEEP DENGAN FILE BARU =====
+        let finalFilesArray = [];
 
-    // Hapus file fisik yang lama dari server
-    const oldFiles = JSON.parse(currentMeeting.filesData || '[]');
-    if (Array.isArray(oldFiles)) {
-        oldFiles.forEach(file => deleteFileIfExists(file.path));
-    }
+        // 1. Tambahkan file existing yang masih di-keep (tidak dihapus user)
+        if (keepExistingNames.length > 0) {
+            const keptFiles = oldFiles.filter(f => {
+                const name = f.name || f.filename || f;
+                return keepExistingNames.includes(name);
+            });
+            finalFilesArray.push(...keptFiles);
+            console.log(`[Meeting ${id}] Kept ${keptFiles.length} existing files:`, keptFiles.map(f => f.name));
+        } else if (deletedNames.length === 0 && (!newFiles || newFiles.length === 0)) {
+            // Jika tidak ada perubahan file sama sekali, pertahankan semua file lama
+            finalFilesArray.push(...oldFiles);
+        }
 
-    finalFilesData = null; // Set data di database menjadi null
-}
-// KONDISI 3 (Implisit): Tidak ada file baru DAN checkbox dicentang.
-// Tidak ada kode yang dijalankan, sehingga `finalFilesData` tetap berisi data file yang lama.
-        // 4. Update database
+        // 2. Tambahkan file baru yang diupload
+        if (newFiles && newFiles.length > 0) {
+            const newFilesData = newFiles.map(f => ({
+                path: f.path,
+                name: f.originalname,
+                mimetype: f.mimetype
+            }));
+            finalFilesArray.push(...newFilesData);
+            console.log(`[Meeting ${id}] Added ${newFiles.length} new files:`, newFilesData.map(f => f.name));
+        }
+
+        // 3. Hapus file yang diminta dihapus user
+        if (deletedNames.length > 0) {
+            const toDelete = oldFiles.filter(f => {
+                const name = f.name || f.filename || f;
+                return deletedNames.includes(name);
+            });
+            toDelete.forEach((file) => {
+                deleteFileIfExists(file.path);
+                console.log(`[Meeting ${id}] Deleted file: ${file.name || file.filename}`);
+            });
+        }
+
+        // 4. Hapus file lama yang TIDAK di-keep (kecuali yang sudah ada di finalFilesArray)
+        if (keepExistingNames.length > 0) {
+            const filesToDelete = oldFiles.filter(f => {
+                const name = f.name || f.filename || f;
+                return !keepExistingNames.includes(name) && !deletedNames.includes(name);
+            });
+            filesToDelete.forEach((file) => {
+                deleteFileIfExists(file.path);
+                console.log(`[Meeting ${id}] Deleted old file not kept: ${file.name || file.filename}`);
+            });
+        }
+
+        // 5. Convert array ke JSON atau null
+        const finalFilesData = finalFilesArray.length > 0 
+            ? JSON.stringify(finalFilesArray) 
+            : null;
+
+        console.log(`[Meeting ${id}] Final files count: ${finalFilesArray.length}`);
+
+        // 4. Update database with new data
         const startParsed = parseDateTime(startTime);
         const endParsed = parseDateTime(endTime);
         const formattedNumbers = JSON.parse(numbers).map(num => formatNumber(num)).filter(Boolean);
+        
+        // Reset status to 'terjadwal'
         const query = `
             UPDATE meetings SET 
                 meetingTitle = ?, numbers = ?, meetingRoom = ?, date = ?, startTime = ?, endTime = ?, 
-                start_epoch = ?, end_epoch = ?, filesData = ?, updatedAt = CURRENT_TIMESTAMP 
+                start_epoch = ?, end_epoch = ?, filesData = ?, updatedAt = CURRENT_TIMESTAMP, status = 'terjadwal' 
             WHERE id = ?`;
+        
         const params = [
             meetingTitle, JSON.stringify(formattedNumbers), meetingRoom,
             startParsed.date, startParsed.time, endParsed.time,
@@ -965,10 +1049,26 @@ else if (!keepOriginalFile && currentMeeting.filesData) {
             });
         });
 
-        console.log(`Meeting ID ${id} berhasil diupdate.`);
-        // Jadwalkan ulang reminder... (jika diperlukan)
+        console.log(`Meeting ID ${id} berhasil diupdate di database.`);
+
+        // Reschedule reminder
+        const updatedMeetingData = {
+            id: id,
+            meetingTitle: meetingTitle,
+            numbers: JSON.stringify(formattedNumbers),
+            meetingRoom: meetingRoom,
+            date: startParsed.date,
+            startTime: startParsed.time,
+            endTime: endParsed.time,
+            start_epoch: startParsed.epoch,
+            end_epoch: endParsed.epoch,
+            status: "terjadwal",
+            filesData: finalFilesData
+        };
         
-        res.json({ success: true, message: "Jadwal rapat berhasil diupdate!" });
+        scheduleMeetingReminder(updatedMeetingData);
+        
+        res.json({ success: true, message: "Jadwal rapat berhasil diupdate dan dijadwalkan ulang!" });
 
     } catch (error) {
         if (newFiles) newFiles.forEach(f => deleteFileIfExists(f.path));
@@ -976,7 +1076,6 @@ else if (!keepOriginalFile && currentMeeting.filesData) {
         res.status(500).json({ success: false, message: error.message || "Terjadi kesalahan server." });
     }
 });
-
 
 /**
  * PUT cancel meeting
@@ -990,9 +1089,9 @@ router.put('/cancel-meeting/:id', async (req, res) => {
     }
 
     try {
-        // LANGKAH 1 (BARU): Ambil data file SEBELUM mengubah status
+        // LANGKAH 1 (BARU): Ambil data meeting SEBELUM mengubah status
         const meeting = await new Promise((resolve, reject) => {
-            db.get("SELECT filesData FROM meetings WHERE id = ?", [id], (err, row) => {
+            db.get("SELECT * FROM meetings WHERE id = ?", [id], (err, row) => {
                 if (err) return reject(new Error("Gagal mengakses database."));
                 resolve(row);
             });
@@ -1001,6 +1100,14 @@ router.put('/cancel-meeting/:id', async (req, res) => {
         if (!meeting) {
             return res.status(404).json({ success: false, message: "Meeting tidak ditemukan" });
         }
+        
+        let notificationSent = false;
+        // --- PENAMBAHAN FITUR: Kirim notifikasi pembatalan HANYA JIKA status 'terkirim' ---
+        if (meeting.status === 'terkirim') {
+            await sendCancellationNotification(meeting);
+            notificationSent = true;
+        }
+        // --- AKHIR PENAMBAHAN FITUR ---
 
         // LANGKAH 2: Update status menjadi 'dibatalkan'
         await new Promise((resolve, reject) => {
@@ -1031,9 +1138,13 @@ router.put('/cancel-meeting/:id', async (req, res) => {
             console.log(`Reminder untuk meeting ${id} dibatalkan`);
         }
 
+        const message = notificationSent 
+            ? "Meeting berhasil dibatalkan dan pesan pembatalan telah terkirim."
+            : "Meeting berhasil dibatalkan.";
+
         res.json({
             success: true,
-            message: "Meeting berhasil dibatalkan dan file terkait telah dihapus"
+            message: message
         });
 
     } catch (error) {

@@ -791,13 +791,11 @@ router.put("/edit-schedule/:id", (req, res) => {
         let newFilesDataTemp = null;
 
         if (newFiles && newFiles.length > 0) {
-            newFilesDataTemp = JSON.stringify(
-                newFiles.map((file) => ({
-                    path: file.path,
-                    name: file.originalname,
-                    mimetype: file.mimetype,
-                }))
-            );
+            newFilesDataTemp = newFiles.map((file) => ({
+                path: file.path,
+                name: file.originalname,
+                mimetype: file.mimetype,
+            }));
         }
 
         if (err instanceof multer.MulterError) {
@@ -817,8 +815,27 @@ router.put("/edit-schedule/:id", (req, res) => {
             return res.status(400).send(`Tipe file tidak didukung: ${err.message}`);
         }
 
-        let { numbers, message, datetime, keepOriginalFile } = req.body;
-        const shouldKeepOriginalFile = keepOriginalFile === "true";
+        let { numbers, message, datetime, deletedFiles, keepExistingFiles } = req.body;
+
+        // Parse deletedFiles if provided
+        let deletedNames = [];
+        if (deletedFiles) {
+            try {
+                deletedNames = Array.isArray(deletedFiles) ? deletedFiles : JSON.parse(deletedFiles);
+            } catch (e) {
+                deletedNames = [];
+            }
+        }
+
+        // Parse keepExistingFiles if provided
+        let keepExistingNames = [];
+        if (keepExistingFiles) {
+            try {
+                keepExistingNames = Array.isArray(keepExistingFiles) ? keepExistingFiles : JSON.parse(keepExistingFiles);
+            } catch (e) {
+                keepExistingNames = [];
+            }
+        }
 
         // Validasi nomor
         let parsedNumbers;
@@ -864,13 +881,61 @@ router.put("/edit-schedule/:id", (req, res) => {
                     ? JSON.parse(oldSchedule.filesData)
                     : [];
 
-                // Validasi data lengkap
-                if (
-                    !message &&
-                    (!newFiles || newFiles.length === 0) &&
-                    !shouldKeepOriginalFile &&
-                    oldFilesDataParsed.length === 0
-                ) {
+                // ===== LOGIKA BARU: GABUNGKAN FILE LAMA YANG DI-KEEP DENGAN FILE BARU =====
+                let finalFilesArray = [];
+
+                // 1. Tambahkan file existing yang masih di-keep (tidak dihapus user)
+                if (keepExistingNames.length > 0) {
+                    const keptFiles = oldFilesDataParsed.filter(f => {
+                        const name = f.name || f.filename || f;
+                        return keepExistingNames.includes(name);
+                    });
+                    finalFilesArray.push(...keptFiles);
+                    console.log(`Kept ${keptFiles.length} existing files:`, keptFiles.map(f => f.name));
+                } else if (deletedNames.length === 0 && (!newFiles || newFiles.length === 0)) {
+                    // Jika tidak ada perubahan file sama sekali, pertahankan semua file lama
+                    finalFilesArray.push(...oldFilesDataParsed);
+                }
+
+                // 2. Tambahkan file baru yang diupload
+                if (newFilesDataTemp && newFilesDataTemp.length > 0) {
+                    finalFilesArray.push(...newFilesDataTemp);
+                    console.log(`Added ${newFilesDataTemp.length} new files:`, newFilesDataTemp.map(f => f.name));
+                }
+
+                // 3. Hapus file yang diminta dihapus user
+                if (deletedNames.length > 0) {
+                    const toDelete = oldFilesDataParsed.filter(f => {
+                        const name = f.name || f.filename || f;
+                        return deletedNames.includes(name);
+                    });
+                    toDelete.forEach((file) => {
+                        deleteFileIfExists(file.path);
+                        console.log(`Deleted file: ${file.name || file.filename}`);
+                    });
+                }
+
+                // 4. Hapus file lama yang TIDAK di-keep (kecuali yang sudah ada di finalFilesArray)
+                if (keepExistingNames.length > 0) {
+                    const filesToDelete = oldFilesDataParsed.filter(f => {
+                        const name = f.name || f.filename || f;
+                        return !keepExistingNames.includes(name) && !deletedNames.includes(name);
+                    });
+                    filesToDelete.forEach((file) => {
+                        deleteFileIfExists(file.path);
+                        console.log(`Deleted old file not kept: ${file.name || file.filename}`);
+                    });
+                }
+
+                // 5. Convert array ke JSON atau null
+                const finalFilesData = finalFilesArray.length > 0 
+                    ? JSON.stringify(finalFilesArray) 
+                    : null;
+
+                console.log(`Final files count: ${finalFilesArray.length}`);
+
+                // Validasi: harus ada pesan atau file
+                if (!message && finalFilesArray.length === 0) {
                     if (newFiles && Array.isArray(newFiles)) {
                         newFiles.forEach((file) => deleteFileIfExists(file.path));
                     }
@@ -879,46 +944,6 @@ router.put("/edit-schedule/:id", (req, res) => {
                         .send(
                             "Data tidak lengkap: Pesan atau setidaknya satu file harus disediakan."
                         );
-                }
-
-                // Validasi format nomor
-                const invalidNumbers = validateNumbers(parsedNumbers);
-                if (invalidNumbers.length > 0) {
-                    if (newFiles && Array.isArray(newFiles)) {
-                        newFiles.forEach((file) => deleteFileIfExists(file.path));
-                    }
-                    return res
-                        .status(400)
-                        .send(
-                            `Nomor tidak valid: ${invalidNumbers.join(
-                                ", "
-                            )}. Pastikan format 08xxxxxxxxxx atau 628xxxxxxxxxx.`
-                        );
-                }
-
-                // Validasi waktu jadwal
-                const timeValidation = validateScheduleTime(datetime);
-                if (!timeValidation.isValid) {
-                    if (newFiles && Array.isArray(newFiles)) {
-                        newFiles.forEach((file) => deleteFileIfExists(file.path));
-                    }
-                    return res.status(400).send(timeValidation.error);
-                }
-                datetime = timeValidation.adjustedTime;
-
-                // Tentukan file data final
-                let finalFilesData = null;
-
-                if (newFiles && newFiles.length > 0) {
-                    // Gunakan file baru, hapus file lama
-                    finalFilesData = newFilesDataTemp;
-                    oldFilesDataParsed.forEach((file) => deleteFileIfExists(file.path));
-                } else if (shouldKeepOriginalFile && oldFilesDataParsed.length > 0) {
-                    // Pertahankan file lama
-                    finalFilesData = JSON.stringify(oldFilesDataParsed);
-                } else {
-                    // Hapus semua file lama
-                    oldFilesDataParsed.forEach((file) => deleteFileIfExists(file.path));
                 }
 
                 // Batalkan job lama

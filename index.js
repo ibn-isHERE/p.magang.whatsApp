@@ -35,6 +35,11 @@ if (!fs.existsSync(mediaDir)) {
     fs.mkdirSync(mediaDir, { recursive: true });
 }
 app.use('/media', express.static(mediaDir));
+const chatMediaDir = path.join(__dirname, 'uploads', 'chat_media');
+if (!fs.existsSync(chatMediaDir)) {
+    fs.mkdirSync(chatMediaDir, { recursive: true });
+}
+app.use('/uploads/chat_media', express.static(chatMediaDir));
 
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -111,6 +116,115 @@ client.on("ready", () => {
     }
 });
 
+const userState = {}; // Untuk menyimpan state chat pengguna
+const inactivityTimers = {}; // Untuk menyimpan timer inaktivitas
+
+// **FUNGSI DIPERBARUI**: Untuk mengakhiri sesi chat
+async function endChatSession(fromNumber) {
+    console.log(`Mengakhiri sesi untuk ${fromNumber} karena tidak aktif.`);
+
+    const endMessageText = `--- Sesi berakhir otomatis pada ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB ---`;
+    
+    // Kirim notifikasi ke pengguna
+    await client.sendMessage(`${fromNumber}@c.us`, 'Sesi chat Anda telah berakhir karena tidak ada aktivitas. Ketik "menu" untuk memulai kembali. Terima kasih.');
+
+    // Simpan pesan sistem di database agar terlihat oleh admin
+    const sessionEndData = {
+        fromNumber: fromNumber,
+        message: endMessageText,
+        direction: 'out', // Dianggap sebagai pesan keluar dari sistem
+        timestamp: new Date().toISOString(),
+        messageType: 'system', // Tipe pesan baru untuk styling
+        isRead: true, // Sudah dibaca oleh admin
+        status: 'history'
+    };
+
+    const insertQuery = `
+        INSERT INTO chats (fromNumber, message, direction, timestamp, messageType, isRead, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+    
+    db.run(insertQuery, [
+        sessionEndData.fromNumber, sessionEndData.message, sessionEndData.direction,
+        sessionEndData.timestamp, sessionEndData.messageType, sessionEndData.isRead, sessionEndData.status
+    ], function(err) {
+        if (err) {
+            console.error('❌ Error menyimpan pesan akhir sesi:', err);
+            return;
+        }
+        // Kirim update ke frontend admin
+        const completeMessageData = { id: this.lastID, ...sessionEndData };
+        io.emit('newIncomingMessage', completeMessageData); 
+        console.log(`✅ Pesan akhir sesi untuk ${fromNumber} berhasil disimpan.`);
+    });
+    
+    // Hapus state dan timer
+    delete userState[fromNumber];
+    if (inactivityTimers[fromNumber]) {
+        clearTimeout(inactivityTimers[fromNumber].warning);
+        clearTimeout(inactivityTimers[fromNumber].end);
+        delete inactivityTimers[fromNumber];
+    }
+
+    // Pindahkan sisa chat ke history di database
+    db.run("UPDATE chats SET status = 'history' WHERE fromNumber = ?", [fromNumber], (err) => {
+        if (err) {
+            console.error(`Gagal memindahkan chat ${fromNumber} ke history:`, err);
+        } else {
+            console.log(`Chat untuk ${fromNumber} berhasil dipindahkan ke history.`);
+            io.emit('sessionEnded', { fromNumber });
+        }
+    });
+}
+
+
+// **FUNGSI DIPERBARUI**: Untuk mengatur atau mereset timer inaktivitas
+function setInactivityTimer(fromNumber) {
+    // Hapus timer lama jika ada
+    if (inactivityTimers[fromNumber]) {
+        clearTimeout(inactivityTimers[fromNumber].warning);
+        clearTimeout(inactivityTimers[fromNumber].end);
+    }
+
+    inactivityTimers[fromNumber] = {
+        // Timer 1: Peringatan setelah 10 menit
+        warning: setTimeout(() => {
+            const warningMessage = "Apakah masih ada yang perlu dibantu? Jika tidak, cukup abaikan pesan ini, maka sesi ini akan ditutup dalam 5 menit. Terima kasih.";
+            client.sendMessage(`${fromNumber}@c.us`, warningMessage);
+            console.log(`Mengirim peringatan inaktivitas ke ${fromNumber}.`);
+
+            // **BARU**: Simpan pesan peringatan ini ke database
+            const warningData = {
+                fromNumber: fromNumber,
+                message: `[Pesan Otomatis] ${warningMessage}`,
+                direction: 'out',
+                timestamp: new Date().toISOString(),
+                messageType: 'system',
+                isRead: true,
+                status: 'active'
+            };
+            const insertQuery = `INSERT INTO chats (fromNumber, message, direction, timestamp, messageType, isRead, status) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+            db.run(insertQuery, [warningData.fromNumber, warningData.message, warningData.direction, warningData.timestamp, warningData.messageType, warningData.isRead, warningData.status], function(err) {
+                if (err) {
+                    console.error('❌ Error menyimpan pesan peringatan:', err);
+                } else {
+                    const completeMessageData = { id: this.lastID, ...warningData };
+                    io.emit('newIncomingMessage', completeMessageData);
+                    console.log(`✅ Pesan peringatan untuk ${fromNumber} berhasil disimpan.`);
+                }
+            });
+
+            // Timer 2: Akhiri sesi 5 menit setelah peringatan
+            inactivityTimers[fromNumber].end = setTimeout(() => {
+                endChatSession(fromNumber);
+            }, 5 * 60 * 1000); // 5 menit
+
+        }, 10 * 60 * 1000), // 10 menit
+        end: null
+    };
+}
+
+
 client.on('message', async (message) => {
     try {
         if (!message.from.endsWith('@c.us') || message.fromMe) {
@@ -118,33 +232,83 @@ client.on('message', async (message) => {
         }
 
         const fromNumber = message.from.replace('@c.us', '');
+        const messageBody = message.body.trim().toLowerCase();
+
+        // ** PENYESUAIAN MENU BPS **
+        const menu = {
+            '1': 'Anda dapat mencari dan mengunduh data statistik melalui website resmi BPS di bps.go.id atau melalui aplikasi AllStats BPS.',
+            '2': 'Untuk melihat publikasi terbaru dari BPS, silakan kunjungi halaman publikasi kami di bps.go.id/publication.',
+            '3': 'Layanan konsultasi statistik tersedia pada jam kerja (Senin-Jumat, 08:00 - 16:00 WIB). Untuk memulai, silakan pilih opsi "Chat dengan Admin" pada menu sebelumnya.',
+            '4': 'Chat dengan Petugas Layanan.',
+        };
+
+        const welcomeMessage = `
+Selamat datang di Layanan Informasi Badan Pusat Statistik (BPS).
+Ada yang bisa kami bantu?
+
+Silakan balas dengan mengetik nomor pilihan Anda:
+1. Permintaan Data Statistik
+2. Publikasi Statistik
+3. Konsultasi Statistik
+4. Chat dengan Petugas Layanan
+`;
         
-        // --- AWAL PERBAIKAN UTAMA ---
-        // Langkah 1: Cek apakah nomor ini ada di history
-        db.get("SELECT id FROM chats WHERE fromNumber = ? AND status = 'history' LIMIT 1", [fromNumber], (err, row) => {
-            if (err) {
-                console.error("Error saat memeriksa status history:", err);
+        // **LOGIKA DIPERBARUI**: Reset timer setiap ada pesan masuk dari user
+        if (userState[fromNumber] === 'CHATTING') {
+            setInactivityTimer(fromNumber);
+        }
+
+        if (!userState[fromNumber] || userState[fromNumber] === 'MENU_UTAMA') {
+             if (['halo', 'hi', 'menu', 'hai'].includes(messageBody)) {
+                client.sendMessage(message.from, welcomeMessage);
+                userState[fromNumber] = 'MENU_UTAMA';
                 return;
             }
 
-            // Jika ditemukan di history, 'bangunkan' seluruh percakapan
-            if (row) {
-                console.log(`[LOGIC] Pesan masuk dari nomor di history (${fromNumber}). Mengaktifkan kembali seluruh percakapan.`);
-                db.run("UPDATE chats SET status = 'active' WHERE fromNumber = ?", [fromNumber], (updateErr) => {
-                    if (updateErr) {
-                        console.error("Gagal mengaktifkan kembali percakapan:", updateErr);
-                    } else {
-                        console.log(`[LOGIC] Percakapan untuk ${fromNumber} berhasil diaktifkan kembali.`);
-                        // Lanjutkan untuk menyimpan pesan baru setelah status diupdate
-                        saveNewMessage(message);
-                    }
-                });
-            } else {
-                // Jika tidak ada di history, langsung simpan pesan baru
-                saveNewMessage(message);
+            if (!userState[fromNumber]) {
+                client.sendMessage(message.from, welcomeMessage);
+                userState[fromNumber] = 'MENU_UTAMA';
+                return;
             }
-        });
-        // --- AKHIR PERBAIKAN UTAMA ---
+
+            if (menu[messageBody]) {
+                if (messageBody === '4') {
+                    userState[fromNumber] = 'CHATTING';
+                    client.sendMessage(message.from, 'Anda sekarang terhubung dengan petugas layanan kami. Silakan sampaikan pertanyaan atau keperluan Anda.');
+                    saveNewMessage(message); 
+                    setInactivityTimer(fromNumber); // **BARU**: Mulai timer saat chat admin dimulai
+                } else {
+                    client.sendMessage(message.from, menu[messageBody]);
+                    
+                }
+            } else {
+                client.sendMessage(message.from, 'Pilihan tidak valid. Silakan pilih nomor dari menu.\n\n' + welcomeMessage);
+            }
+            return;
+        }
+
+
+        if (userState[fromNumber] === 'CHATTING') {
+            db.get("SELECT id FROM chats WHERE fromNumber = ? AND status = 'history' LIMIT 1", [fromNumber], (err, row) => {
+                if (err) {
+                    console.error("Error saat memeriksa status history:", err);
+                    return;
+                }
+                if (row) {
+                    console.log(`[LOGIC] Pesan masuk dari nomor di history (${fromNumber}). Mengaktifkan kembali seluruh percakapan.`);
+                    db.run("UPDATE chats SET status = 'active' WHERE fromNumber = ?", [fromNumber], (updateErr) => {
+                        if (updateErr) {
+                            console.error("Gagal mengaktifkan kembali percakapan:", updateErr);
+                        } else {
+                            console.log(`[LOGIC] Percakapan untuk ${fromNumber} berhasil diaktifkan kembali.`);
+                            saveNewMessage(message);
+                        }
+                    });
+                } else {
+                    saveNewMessage(message);
+                }
+            });
+        }
 
     } catch (error) {
         console.error('❌ Error global di message handler:', error);
@@ -243,7 +407,7 @@ app.use("/", meetingsModule.router);
 app.use("/api/contacts", createContactsRouter(db));
 app.use("/api/chats", createChatsRouter(db, client, io));
 
-// ✅ ENDPOINT BARU: Upload dan kirim media dari admin
+// **ENDPOINT DIPERBARUI**: Reset timer saat admin mengirim pesan
 app.post('/api/chats/send-media', uploadChatMedia.single('media'), async (req, res) => {
     try {
         const { to, message: caption } = req.body;
@@ -275,6 +439,11 @@ app.post('/api/chats/send-media', uploadChatMedia.single('media'), async (req, r
 
         // Kirim media ke WhatsApp
         await client.sendMessage(formattedNumber, media, { caption: caption || '' });
+
+        // **BARU**: Reset timer inaktivitas
+        if (userState[to] === 'CHATTING') {
+            setInactivityTimer(to);
+        }
 
         // Pindahkan file ke folder media permanen
         const permanentPath = path.join(mediaDir, req.file.filename);
@@ -370,9 +539,6 @@ app.get("/get-all-schedules", (req, res) => {
   let scheduleQuery = `SELECT *, 'message' as type FROM schedules`;
   let scheduleParams = [];
   
-  // ==========================================================
-  // PERBAIKAN #1: Ambil kolom 'filesData' yang asli dari database
-  // ==========================================================
   let meetingQuery = `SELECT
     id,
     numbers,
@@ -384,10 +550,9 @@ app.get("/get-all-schedules", (req, res) => {
     date,
     startTime,
     endTime,
-    datetime(end_epoch / 1000, 'unixepoch', 'localtime') as meetingEndTime, -- <-- PERBAIKAN DI SINI
+    datetime(end_epoch / 1000, 'unixepoch', 'localtime') as meetingEndTime, 
     'meeting' as type
   FROM meetings`;
-  // ==========================================================
   
   let meetingParams = [];
 
@@ -412,7 +577,6 @@ app.get("/get-all-schedules", (req, res) => {
 
       try {
         const processedSchedules = scheduleRows.map((row) => {
-          // ... (bagian ini sudah benar)
           return {
             id: row.id,
             numbers: JSON.parse(row.numbers || '[]'),
@@ -431,13 +595,7 @@ app.get("/get-all-schedules", (req, res) => {
             originalNumbers: JSON.parse(row.numbers || '[]'),
             message: row.message,
             meetingTitle: row.message,
-            
-            // ==========================================================
-            // PERBAIKAN #2: Parse 'filesData' dari database, bukan array kosong
-            // ==========================================================
             filesData: JSON.parse(row.filesData || '[]'),
-            // ==========================================================
-
             scheduledTime: row.scheduledTime,
             meetingEndTime: row.meetingEndTime,
             status: row.status,
@@ -451,7 +609,6 @@ app.get("/get-all-schedules", (req, res) => {
 
         const allSchedules = [...processedSchedules, ...processedMeetings];
         
-        // ... (logika sorting Anda tetap sama)
         allSchedules.sort((a, b) => {
           const isActiveA = a.status === "terjadwal" || a.status === "terkirim";
           const isActiveB = b.status === "terjadwal" || b.status === "terkirim";
@@ -493,7 +650,6 @@ app.get("/system-stats", (req, res) => {
           db.get(
             `SELECT COUNT(*) as totalContacts FROM contacts`,
             (errContacts, contactCount) => {
-              // DITAMBAHKAN: Stats untuk chats
               db.get(
                 `SELECT COUNT(*) as totalChats, 
                         COUNT(CASE WHEN direction = 'in' AND isRead = FALSE THEN 1 END) as unreadMessages,
@@ -504,30 +660,22 @@ app.get("/system-stats", (req, res) => {
                     messages: {
                       total: messageCount ? messageCount.totalMessages : 0,
                     },
-
                     meetings: {
                       total: meetingCount ? meetingCount.totalMeetings : 0,
                     },
-
                     contacts: {
                       total: contactCount ? contactCount.totalContacts : 0,
                     },
-
-                    // DITAMBAHKAN: Chat stats
                     chats: {
                       total: chatStats ? chatStats.totalChats : 0,
                       unread: chatStats ? chatStats.unreadMessages : 0,
                       uniqueContacts: chatStats ? chatStats.uniqueContacts : 0,
                     },
-
                     whatsappStatus: client.info ? "connected" : "disconnected",
-
                     serverUptime: process.uptime(),
-
                     timestamp: new Date().toISOString(),
                   }; 
 
-                  // Get detailed status counts if needed
                   db.all(
                     `SELECT status, COUNT(*) as count FROM schedules GROUP BY status`,
                     (errStatus, statusRows) => {
