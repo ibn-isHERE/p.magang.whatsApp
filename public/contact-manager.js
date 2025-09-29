@@ -1,5 +1,5 @@
 // contact-manager.js - Contact Management Module
-
+import { showEditContactModal, closeEditContactModal } from './ui-helpers.js';
 let contacts = [];
 let filteredContacts = [];
 export let selectedNumbers = new Set();
@@ -46,12 +46,15 @@ function renderContactManagementTable() {
       <td>${contact.name}</td>
       <td>${contact.number}</td>
       <td class="action-buttons">
-        <button class="edit-btn" onclick="window.showEditContactForm(${contact.id}, '${contact.name}', '${contact.number}')">
+        
+        <button class="edit-contact-btn" data-id="${contact.id}" data-name="${contact.name}" data-number="${contact.number}">
           <i class="material-icons">edit</i>
         </button>
-        <button class="cancel-btn" onclick="window.deleteContact(${contact.id}, '${contact.name}')">
+        
+        <button class="delete-contact-btn" data-id="${contact.id}" data-name="${contact.name}">
           <i class="material-icons">delete</i>
         </button>
+        
       </td>
     `;
     managementTbody.appendChild(row);
@@ -62,13 +65,56 @@ function renderContactManagementTable() {
  * Shows edit contact form with data
  */
 export function showEditContactForm(id, name, number) {
-  document.getElementById("contact-crud-id").value = id;
-  document.getElementById("contact-crud-name").value = name;
-  document.getElementById("contact-crud-number").value = number;
-  document.getElementById("contact-crud-submit").textContent = "Update Kontak";
-  document.getElementById("contact-crud-cancel").style.display = "inline-block";
+  const modalBody = document.getElementById("editContactModalBody");
+  if (!modalBody) return;
 
-  document.getElementById("contactsFormContainer").scrollIntoView({ behavior: "smooth" });
+  // 1. Buat elemen form secara dinamis
+  modalBody.innerHTML = `
+    <form id="editContactForm">
+      <input type="hidden" id="edit-contact-id" value="${id}">
+      
+      <label for="edit-contact-name">Nama Kontak:</label>
+      <input type="text" id="edit-contact-name" class="phone-num-input" value="${name}" required>
+      
+      <label for="edit-contact-number">Nomor (contoh: 0812...):</label>
+      <input type="tel" id="edit-contact-number" class="phone-num-input" value="${number}" required>
+      
+      <button type="submit" id="updateContactBtn">Update Kontak</button>
+      <button type="button" id="cancelEditContactBtn" style="background-color: #6c757d; margin-top: 10px;">Batal</button>
+    </form>
+  `;
+
+  // 2. Tampilkan modal
+  showEditContactModal();
+
+  // 3. Tambahkan event listener untuk form di dalam modal
+  document.getElementById("editContactForm").addEventListener("submit", handleEditContactSubmit);
+  document.getElementById("cancelEditContactBtn").addEventListener("click", closeEditContactModal);
+}
+
+async function handleEditContactSubmit(event) {
+    event.preventDefault();
+
+    const id = document.getElementById('edit-contact-id').value;
+    const name = document.getElementById('edit-contact-name').value;
+    const number = document.getElementById('edit-contact-number').value;
+
+    try {
+        const res = await fetch(`/api/contacts/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, number }),
+        });
+
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "Terjadi kesalahan.");
+
+        Swal.fire("Sukses!", `Kontak berhasil diupdate.`, "success");
+        closeEditContactModal(); // Tutup modal setelah sukses
+        fetchAndRenderContacts(); // Muat ulang daftar kontak
+    } catch (error) {
+        Swal.fire("Error", error.message, "error");
+    }
 }
 
 /**

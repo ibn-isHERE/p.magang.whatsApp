@@ -222,6 +222,22 @@ export function showBrowserNotification(messageData) {
   }
 }
 
+export function showEditContactModal() {
+  const modal = document.getElementById("editContactModal");
+  if (modal) {
+    modal.style.display = "block";
+  }
+}
+
+export function closeEditContactModal() {
+  const modal = document.getElementById("editContactModal");
+  if (modal) {
+    modal.style.display = "none";
+    // Bersihkan kontennya agar siap untuk edit berikutnya
+    document.getElementById("editContactModalBody").innerHTML = "";
+  }
+}
+
 /**
  * Internal function to show notification
  */

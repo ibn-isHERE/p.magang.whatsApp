@@ -697,6 +697,10 @@ footer {
 /* ===== CSS UNTUK MANAJEMEN KONTAK ===== */
 /* ======================================= */
 
+/* ======================================= */
+/* ===== CSS UNTUK MANAJEMEN KONTAK ===== */
+/* ======================================= */
+
 /* Memberi gaya pada form tambah/edit dan import di tab kontak */
 #contact-crud-form,
 #import-form {
@@ -767,12 +771,40 @@ footer {
     text-align: center;
 }
 
-/* Tombol Aksi di dalam tabel (Edit & Hapus) */
-#contact-management-table .action-buttons .edit-btn,
-#contact-management-table .action-buttons .cancel-btn {
+/* --- PERBAIKAN UTAMA DI SINI --- */
+
+/* Gaya dasar untuk SEMUA tombol aksi di tabel kontak */
+#contact-management-table .action-buttons button {
     padding: 4.2px 8.4px; /* 6px,12px *0.7 */
     margin: 0 2.8px; /* 4px *0.7 */
     font-size: 0.85rem; /* tetap rem */
+    font-weight: 600;
+    border: none;
+    border-radius: 4.2px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+/* Tombol Edit Kontak (Biru) */
+#contact-management-table .action-buttons .edit-contact-btn {
+    background-color: #007bff;
+    color: white;
+}
+
+#contact-management-table .action-buttons .edit-contact-btn:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+/* Tombol Hapus Kontak (Merah) */
+#contact-management-table .action-buttons .delete-contact-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+#contact-management-table .action-buttons .delete-contact-btn:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
 }
 
 /* Option B: Stretch each chip to full width and place button at container's far right */

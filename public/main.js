@@ -1,13 +1,14 @@
 // main.js - Main Application Entry Point
 
 // Import UI helpers
-import { 
-  showForm as showFormOriginal, 
-  showEditModal, 
+import {
+  showForm as showFormOriginal,
+  showEditModal,
   closeEditModal,
   showMediaModal,
   closeMediaModal,
-  formatTimeDifference
+  formatTimeDifference,
+  closeEditContactModal // <-- TAMBAHKAN BARIS INI
 } from './ui-helpers.js';
 
 /**
@@ -77,7 +78,7 @@ window.showMediaModal = showMediaModal;
 window.closeMediaModal = closeMediaModal;
 window.showEditContactForm = showEditContactForm;
 window.deleteContact = deleteContact;
-
+window.closeEditContactModal = closeEditContactModal; 
 /**
  * Initializes file upload listener for message form
  */
@@ -572,6 +573,31 @@ function initApp() {
   
   // Initialize media modal
   initMediaModalListeners();
+
+  const contactTable = document.getElementById("contact-management-table");
+  if (contactTable) {
+      contactTable.addEventListener('click', function(e) {
+          // Cari tombol yang paling dekat dengan target klik
+          const target = e.target.closest('button');
+          if (!target) return;
+
+          const id = target.dataset.id;
+          const name = target.dataset.name;
+
+          // Jika tombol edit kontak yang diklik
+          if (target.classList.contains('edit-contact-btn')) {
+              const number = target.dataset.number;
+              // Panggil fungsi yang benar dari contact-manager.js
+              showEditContactForm(id, name, number);
+          }
+
+          // Jika tombol hapus kontak yang diklik
+          if (target.classList.contains('delete-contact-btn')) {
+              // Panggil fungsi yang benar dari contact-manager.js
+              deleteContact(id, name);
+          }
+      });
+  }
 
   // Contact CRUD form
   const contactForm = document.getElementById("contact-crud-form");
