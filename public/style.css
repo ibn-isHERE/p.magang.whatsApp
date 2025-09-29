@@ -1163,8 +1163,6 @@ html { box-sizing: border-box; }
   }
 
   /* Jika ada elemen anak (chips, lists, preview) yang memaksa overflow, pastikan mereka shrink */
-  .file-chip,
-  .contact-checklist-box,
   .customFilePreview,
   .chat-main-container,
   .table-wrapper {
