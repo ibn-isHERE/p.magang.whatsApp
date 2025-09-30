@@ -338,7 +338,7 @@ async function saveNewMessage(message) {
                 else if (media.mimetype.startsWith('video/')) messageType = 'video';
                 else messageType = 'document';
 
-                messageContent = message.body || `[${messageType}]`;
+                messageContent = message.body || '';
                 mediaData = { filename: media.filename || fileName, mimetype: media.mimetype, size: media.data.length, url: mediaUrl };
             }
         } catch (mediaError) {
