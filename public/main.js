@@ -626,7 +626,7 @@ function initApp() {
 
   // Start periodic updates
   setInterval(updateCountdownTimers, 1000);
-  setInterval(renderScheduleTable, 5000);
+  setInterval(renderScheduleTable, 7000);
 
   console.log("✅ App initialization complete");
 }
