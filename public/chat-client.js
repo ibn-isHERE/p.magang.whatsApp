@@ -409,7 +409,7 @@ function renderChatMessages(messages) {
         <div class="message-media-container" onclick="window.showMediaModal('${mediaUrl}', 'image')">
           <img src="${mediaUrl}" class="chat-image" alt="${payload && payload.originalname ? payload.originalname : "Gambar"}">
         </div>
-        ${payload && payload.caption ? `<div class="message-caption">${payload.caption}</div>` : ""}
+        ${ (payload && typeof payload === 'object' && payload.caption) || (typeof payload === 'string' && payload) ? `<div class="message-caption">${typeof payload === 'object' ? payload.caption : payload}</div>` : "" }
         <div class="message-time">${messageTime}</div>
       `;
     } else if (mtype === "video" && mediaUrl) {
@@ -417,7 +417,7 @@ function renderChatMessages(messages) {
         <div class="message-media-container" onclick="window.showMediaModal('${mediaUrl}', 'video')">
           <video src="${mediaUrl}" class="chat-video-preview" controls preload="metadata"></video>
         </div>
-        ${payload && payload.caption ? `<div class="message-caption">${payload.caption}</div>` : ""}
+        ${ (payload && typeof payload === 'object' && payload.caption) || (typeof payload === 'string' && payload) ? `<div class="message-caption">${typeof payload === 'object' ? payload.caption : payload}</div>` : "" }
         <div class="message-time">${messageTime}</div>
       `;
     } else if ((mtype === "document" || mtype === "file") && mediaUrl) {
