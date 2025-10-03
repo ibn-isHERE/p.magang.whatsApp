@@ -16,6 +16,9 @@ export function showForm(formId) {
 
   const scheduleContainer = document.getElementById("scheduleContainer");
   const chatMainContainer = document.getElementById("chatMainContainer");
+  const contactMainContainer = document.getElementById("contactMainContainer");
+  const contactGroupContainer = document.getElementById("contactGroupContainer");
+  const contactMainContainerContacts = document.getElementById("contactMainContainerContacts");
 
   if (formId === "chat") {
     const chatSidebarContainer = document.getElementById("chatSidebarContainer");
@@ -28,6 +31,55 @@ export function showForm(formId) {
     if (chatMainContainer) {
       chatMainContainer.style.display = "flex";
     }
+    if (contactMainContainer) {
+      contactMainContainer.style.display = "none";
+    }
+    if (contactGroupContainer) {
+      contactGroupContainer.style.display = "none";
+    }
+    if (contactMainContainerContacts) {
+      contactMainContainerContacts.style.display = "none";
+    }
+  } else if (formId === "contacts") {
+    const contactsFormContainer = document.getElementById("contactsFormContainer");
+    if (contactsFormContainer) {
+      contactsFormContainer.style.display = "block";
+    }
+    if (contactMainContainer) {
+      contactMainContainer.style.display = "flex";
+    }
+    if (chatMainContainer) {
+      chatMainContainer.style.display = "none";
+    }
+    if (scheduleContainer) {
+      scheduleContainer.style.display = "none";
+    }
+    if (contactGroupContainer) {
+      contactGroupContainer.style.display = "none";
+    }
+    if (contactMainContainerContacts) {
+      contactMainContainerContacts.style.display = "flex";
+    }
+  } else if (formId === "group") {
+    const groupsFormContainer = document.getElementById("groupsFormContainer");
+    if (groupsFormContainer) {
+      groupsFormContainer.style.display = "block";
+    }
+    if (contactMainContainer) {
+      contactMainContainer.style.display = "flex";
+    }
+    if (chatMainContainer) {
+      chatMainContainer.style.display = "none";
+    }
+    if (scheduleContainer) {
+      scheduleContainer.style.display = "none";
+    }
+    if (contactGroupContainer) {
+      contactGroupContainer.style.display = "flex";
+    }
+    if (contactMainContainerContacts) {
+      contactMainContainerContacts.style.display = "none";
+    }
   } else {
     // Show selected form
     const selectedForm = document.getElementById(formId + "FormContainer");
@@ -39,6 +91,15 @@ export function showForm(formId) {
     }
     if (chatMainContainer) {
       chatMainContainer.style.display = "none";
+    }
+    if (contactMainContainer) {
+      contactMainContainer.style.display = "none";
+    }
+    if (contactGroupContainer) {
+      contactGroupContainer.style.display = "none";
+    }
+    if (contactMainContainerContacts) {
+      contactMainContainerContacts.style.display = "none";
     }
   }
 
@@ -194,7 +255,6 @@ export function playNotificationSound() {
     audio = document.createElement("audio");
     audio.id = "notificationSound";
     audio.preload = "auto";
-    audio.src = "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBj+a2/LDciUFL";
     document.body.appendChild(audio);
   }
   
