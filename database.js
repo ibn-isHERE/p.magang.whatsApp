@@ -68,6 +68,9 @@ db.serialize(() => {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             number TEXT NOT NULL UNIQUE,
+            instansi TEXT NOT NULL,
+            jabatan TEXT NOT NULL,
+            grup TEXT,
             createdAt TEXT DEFAULT CURRENT_TIMESTAMP
         )`,
         (err) => {
@@ -173,6 +176,24 @@ db.serialize(() => {
         }
     });
 });
+
+// 6. Tabel untuk manajemen grup (groups)
+db.run(
+    `CREATE TABLE IF NOT EXISTS groups (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        members TEXT NOT NULL,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    (err) => {
+        if (err) {
+            console.error("Gagal membuat tabel 'groups':", err.message);
+        } else {
+            console.log("Tabel 'groups' siap digunakan.");
+        }
+    }
+);
+
 
 // Mengekspor objek 'db' agar bisa digunakan di file lain (seperti index.js)
 module.exports = db;
