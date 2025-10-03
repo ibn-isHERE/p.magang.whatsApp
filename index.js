@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const http = require('http');
 const cors = require("cors");
+const db = require('./database');
 const { Client, LocalAuth, MessageMedia } = require("whatsapp-web.js");
 const qrcode = require("qrcode-terminal");
 const path = require("path");
@@ -392,20 +393,20 @@ client.on("disconnected", (reason) => {
 
 client.initialize();
 
-// Inisialisasi Database SQLite dari file terpisah
-const db = require("./database.js");
 
 // Import modules
 const schedulesModule = require("./routes/schedules.js");
 const meetingsModule = require("./routes/meetings");
 const createContactsRouter = require("./routes/contacts");
 const createChatsRouter = require("./routes/chats");
+const createGroupsRouter = require('./routes/groups');
 
 // Setup routers
 app.use("/", schedulesModule.router);
 app.use("/", meetingsModule.router);
 app.use("/api/contacts", createContactsRouter(db));
 app.use("/api/chats", createChatsRouter(db, client, io));
+app.use('/api/groups', createGroupsRouter(db));
 
 // **ENDPOINT DIPERBARUI**: Reset timer saat admin mengirim pesan
 app.post('/api/chats/send-media', uploadChatMedia.single('media'), async (req, res) => {
