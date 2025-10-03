@@ -1,9 +1,13 @@
 // contact-manager.js - Contact Management Module
-import { showEditContactModal, closeEditContactModal } from './ui-helpers.js';
-let contacts = [];
+import { showEditContactModal, closeEditContactModal } from "./ui-helpers.js";
+
+// MODIFIKASI: Ubah menjadi export let agar dapat diakses oleh module lain
+export let contacts = []; 
 let filteredContacts = [];
+let groups = []; // Store groups for dropdown
 export let selectedNumbers = new Set();
 export let selectedMeetingNumbers = new Set();
+
 
 /**
  * Fetches contacts from server and renders them
@@ -33,42 +37,119 @@ export async function fetchAndRenderContacts() {
 }
 
 /**
+ * Fetches groups and updates dropdown
+ */
+export async function fetchGroupsForDropdown() {
+  try {
+    const res = await fetch("/api/groups");
+    const result = await res.json();
+
+    if (res.ok && result.data) {
+      groups = result.data.sort((a, b) => a.name.localeCompare(b.name));
+      updateAllGroupDropdowns();
+    }
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+  }
+}
+
+/**
+ * Updates all group dropdowns in the application
+ */
+export function updateAllGroupDropdowns() {
+  // Update dropdown in add contact form
+  const addContactDropdown = document.getElementById("contact-crud-grup");
+  if (addContactDropdown) {
+    updateSingleDropdown(addContactDropdown);
+  }
+}
+
+/**
+ * Updates a single dropdown with current groups
+ */
+function updateSingleDropdown(dropdown) {
+  const currentValue = dropdown.value;
+  dropdown.innerHTML = '<option value="">-- Pilih Grup --</option>';
+  
+  groups.forEach((group) => {
+    const option = document.createElement("option");
+    option.value = group.name;
+    option.textContent = group.name;
+    dropdown.appendChild(option);
+  });
+
+  // Restore previous selection if it still exists
+  if (currentValue && groups.some(g => g.name === currentValue)) {
+    dropdown.value = currentValue;
+  }
+}
+
+/**
+ * Renders contacts in the management table
+ */
+// contact-manager.js - Cek fungsi renderContactManagementTable
+
+/**
  * Renders contacts in the management table
  */
 function renderContactManagementTable() {
-  const managementTbody = document.getElementById("contact-management-tbody");
-  if (!managementTbody) return;
+  const tbody = document.getElementById("contact-management-tbody");
+  if (!tbody) return;
 
-  managementTbody.innerHTML = "";
+  tbody.innerHTML = "";
+  
+  if (contacts.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Belum ada kontak</td></tr>';
+    return;
+  }
+
   contacts.forEach((contact) => {
     const row = document.createElement("tr");
+    
+    let groupDisplay = '';
+    // MODIFIKASI: Mengatasi 'grup' sebagai JSON array string
+    try {
+        let groupsArray = contact.grup ? JSON.parse(contact.grup) : [];
+        if (Array.isArray(groupsArray) && groupsArray.length > 0) {
+            groupDisplay = groupsArray.join(', '); // Tampilkan daftar yang dipisahkan koma
+        } else {
+            groupDisplay = '-';
+        }
+    } catch (e) {
+        // Fallback untuk string grup tunggal yang lama
+        groupDisplay = contact.grup || '-';
+    }
+
+
     row.innerHTML = `
       <td>${contact.name}</td>
       <td>${contact.number}</td>
-      <td class="action-buttons">
-        
-        <button class="edit-contact-btn" data-id="${contact.id}" data-name="${contact.name}" data-number="${contact.number}">
-          <i class="material-icons">edit</i>
+      <td>${contact.instansi}</td>
+      <td>${contact.jabatan}</td>
+      <td>${groupDisplay}</td> <td class="action-buttons">
+        <button class="edit-contact-btn" onclick="window.contactModule.showEditContactForm(${contact.id})">
+          <i class="fa-solid fa-edit"></i> Edit
         </button>
-        
-        <button class="delete-contact-btn" data-id="${contact.id}" data-name="${contact.name}">
-          <i class="material-icons">delete</i>
+        <button class="delete-contact-btn" onclick="window.contactModule.deleteContact(${contact.id}, '${contact.name}')">
+          <i class="fa-solid fa-trash"></i> Hapus
         </button>
-        
       </td>
     `;
-    managementTbody.appendChild(row);
+    tbody.appendChild(row);
   });
 }
 
 /**
  * Shows edit contact form with data
  */
-export function showEditContactForm(id, name, number) {
+export async function showEditContactForm(id, name, number, instansi, jabatan, grup) {
   const modalBody = document.getElementById("editContactModalBody");
   if (!modalBody) return;
 
-  // 1. Buat elemen form secara dinamis
+  // Fetch groups terlebih dahulu
+  await fetchGroupsForDropdown();
+
+  // Buat form
   modalBody.innerHTML = `
     <form id="editContactForm">
       <input type="hidden" id="edit-contact-id" value="${id}">
@@ -78,43 +159,97 @@ export function showEditContactForm(id, name, number) {
       
       <label for="edit-contact-number">Nomor (contoh: 0812...):</label>
       <input type="tel" id="edit-contact-number" class="phone-num-input" value="${number}" required>
-      
+
+      <label for="edit-contact-instansi">Instansi:</label>
+      <select id="edit-contact-instansi" class="phone-num-input" required>
+        <option value="">-- Pilih Instansi --</option>
+        <option value="Tim ZI">Tim ZI</option>
+        <option value="Tim Umum">Tim Umum</option>
+        <option value="Tim Statistik Sosial">Tim Statistik Sosial</option>
+        <option value="Tim Statistik Distribusi">Tim Statistik Distribusi</option>
+        <option value="Tim Neraca Wilayah dan Analisis Statistik">Tim Neraca Wilayah dan Analisis Statistik</option>
+        <option value="Tim Statistik Produksi">Tim Statistik Produksi</option>
+        <option value="Tim IPDS (TI)">Tim IPDS (TI)</option>
+        <option value="Tim IPDS (DLS)">Tim IPDS (DLS)</option>
+        <option value="Tim Administrasi">Tim Administrasi</option>
+        <option value="Tim Humas dan UKK">Tim Humas dan UKK</option>
+        <option value="Tim Statistik Sektoral">Tim Statistik Sektoral</option>
+        <option value="Tim Manajemen dan Tata Kelola">Tim Manajemen dan Tata Kelola</option>
+      </select>
+
+      <label for="edit-contact-jabatan">Jabatan:</label>
+      <select id="edit-contact-jabatan" class="phone-num-input" required>
+        <option value="">-- Pilih Jabatan --</option>
+        <option value="Kepala Bagian Umum">Kepala Bagian Umum</option>
+        <option value="Pegawai">Pegawai</option>
+      </select>
+
+      <label for="edit-contact-grup">Grup:</label>
+      <select id="edit-contact-grup" class="phone-num-input">
+        <option value="">-- Pilih Grup --</option>
+      </select>
+
       <button type="submit" id="updateContactBtn">Update Kontak</button>
       <button type="button" id="cancelEditContactBtn" style="background-color: #6c757d; margin-top: 10px;">Batal</button>
     </form>
   `;
 
-  // 2. Tampilkan modal
+  // Set nilai untuk select
+  document.getElementById("edit-contact-instansi").value = instansi || "";
+  document.getElementById("edit-contact-jabatan").value = jabatan || "";
+  
+  // Populate grup dropdown dengan data dari API
+  const grupDropdown = document.getElementById("edit-contact-grup");
+  grupDropdown.innerHTML = '<option value="">-- Pilih Grup --</option>';
+  groups.forEach((g) => {
+    const option = document.createElement("option");
+    option.value = g.name;
+    option.textContent = g.name;
+    grupDropdown.appendChild(option);
+  });
+  grupDropdown.value = grup || "";
+
+  // Tampilkan modal
   showEditContactModal();
 
-  // 3. Tambahkan event listener untuk form di dalam modal
-  document.getElementById("editContactForm").addEventListener("submit", handleEditContactSubmit);
-  document.getElementById("cancelEditContactBtn").addEventListener("click", closeEditContactModal);
+  // Event listeners
+  document
+    .getElementById("editContactForm")
+    .addEventListener("submit", handleEditContactSubmit);
+  document
+    .getElementById("cancelEditContactBtn")
+    .addEventListener("click", closeEditContactModal);
 }
 
+/**
+ * Handles edit contact form submission
+ */
 async function handleEditContactSubmit(event) {
-    event.preventDefault();
+  event.preventDefault();
 
-    const id = document.getElementById('edit-contact-id').value;
-    const name = document.getElementById('edit-contact-name').value;
-    const number = document.getElementById('edit-contact-number').value;
+  const id = document.getElementById("edit-contact-id").value;
+  const name = document.getElementById("edit-contact-name").value;
+  const number = document.getElementById("edit-contact-number").value;
+  const instansi = document.getElementById("edit-contact-instansi").value;
+  const jabatan = document.getElementById("edit-contact-jabatan").value;
+  const grup = document.getElementById("edit-contact-grup").value;
 
-    try {
-        const res = await fetch(`/api/contacts/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, number }),
-        });
+  try {
+    const res = await fetch(`/api/contacts/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, number, instansi, jabatan, grup }),
+    });
 
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error || "Terjadi kesalahan.");
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || "Terjadi kesalahan.");
 
-        Swal.fire("Sukses!", `Kontak berhasil diupdate.`, "success");
-        closeEditContactModal(); // Tutup modal setelah sukses
-        fetchAndRenderContacts(); // Muat ulang daftar kontak
-    } catch (error) {
-        Swal.fire("Error", error.message, "error");
-    }
+    Swal.fire("Sukses!", `Kontak berhasil diupdate.`, "success");
+    closeEditContactModal();
+    fetchAndRenderContacts();
+  } catch (error) {
+    Swal.fire("Error", error.message, "error");
+  }
 }
 
 /**
@@ -163,6 +298,9 @@ export async function handleContactFormSubmit(event) {
   const id = document.getElementById("contact-crud-id").value;
   const name = document.getElementById("contact-crud-name").value;
   const number = document.getElementById("contact-crud-number").value;
+  const instansi = document.getElementById("contact-crud-instansi").value;
+  const jabatan = document.getElementById("contact-crud-jabatan").value;
+  const grup = document.getElementById("contact-crud-grup").value;
 
   const isEditing = !!id;
   const url = isEditing ? `/api/contacts/${id}` : "/api/contacts";
@@ -172,13 +310,17 @@ export async function handleContactFormSubmit(event) {
     const res = await fetch(url, {
       method: method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, number }),
+      body: JSON.stringify({ name, number, instansi, jabatan, grup }),
     });
 
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || "Terjadi kesalahan.");
 
-    Swal.fire("Sukses!", `Kontak berhasil ${isEditing ? "diupdate" : "ditambahkan"}.`, "success");
+    Swal.fire(
+      "Sukses!",
+      `Kontak berhasil ${isEditing ? "diupdate" : "ditambahkan"}.`,
+      "success"
+    );
     resetContactCrudForm();
     fetchAndRenderContacts();
   } catch (error) {
@@ -244,7 +386,10 @@ export function renderMeetingContactList() {
   if (!list) return;
 
   list.innerHTML = "";
-  const currentSearch = document.getElementById("meetingContactSearch").value.toLowerCase().trim();
+  const currentSearch = document
+    .getElementById("meetingContactSearch")
+    .value.toLowerCase()
+    .trim();
   const filtered = contacts.filter(
     (c) =>
       c.name.toLowerCase().includes(currentSearch) ||
@@ -260,7 +405,9 @@ export function renderMeetingContactList() {
     const label = document.createElement("label");
     const isChecked = selectedMeetingNumbers.has(contact.number);
     label.innerHTML = `
-      <input type="checkbox" class="meeting-contact-checkbox" value="${contact.number}" ${isChecked ? "checked" : ""} />
+      <input type="checkbox" class="meeting-contact-checkbox" value="${
+        contact.number
+      }" ${isChecked ? "checked" : ""} />
       <strong>${contact.name}</strong> – ${contact.number}
     `;
     list.appendChild(label);
@@ -296,6 +443,17 @@ export function initContactListeners() {
       renderContactList();
     });
   }
+
+  // Initialize contact form listener
+  const contactForm = document.getElementById("contact-crud-form");
+  if (contactForm) {
+    contactForm.addEventListener("submit", handleContactFormSubmit);
+  }
+
+  const cancelBtn = document.getElementById("contact-crud-cancel");
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", resetContactCrudForm);
+  }
 }
 
 /**
@@ -312,7 +470,9 @@ export function initMeetingContactListeners() {
 
   if (selectAllCheckbox) {
     selectAllCheckbox.addEventListener("change", function () {
-      const checkboxes = contactListDiv.querySelectorAll(".meeting-contact-checkbox");
+      const checkboxes = contactListDiv.querySelectorAll(
+        ".meeting-contact-checkbox"
+      );
       checkboxes.forEach((checkbox) => {
         checkbox.checked = this.checked;
         if (this.checked) {
@@ -354,7 +514,8 @@ export function renderContactListForEdit() {
     checkbox.addEventListener("change", function () {
       if (this.checked) selectedNumbers.add(this.value);
       else selectedNumbers.delete(this.value);
-      document.getElementById("edit-manualNumbers").value = Array.from(selectedNumbers).join(", ");
+      document.getElementById("edit-manualNumbers").value =
+        Array.from(selectedNumbers).join(", ");
     });
   });
 }
@@ -384,7 +545,9 @@ export function renderMeetingContactListForEdit() {
 
   filteredContacts.forEach((contact) => {
     const label = document.createElement("label");
-    const isChecked = selectedMeetingNumbers.has(contact.number) ? "checked" : "";
+    const isChecked = selectedMeetingNumbers.has(contact.number)
+      ? "checked"
+      : "";
     label.innerHTML = `
       <input type="checkbox" class="meeting-contact-checkbox-edit" value="${contact.number}" ${isChecked}> 
       <strong>${contact.name}</strong> – ${contact.number}
@@ -392,19 +555,21 @@ export function renderMeetingContactListForEdit() {
     list.appendChild(label);
   });
 
-  document.querySelectorAll(".meeting-contact-checkbox-edit").forEach((checkbox) => {
-    checkbox.addEventListener("change", function () {
-      if (this.checked) {
-        selectedMeetingNumbers.add(this.value);
-      } else {
-        selectedMeetingNumbers.delete(this.value);
-      }
-      const numbersInput = document.getElementById("edit-meetingNumbers");
-      if (numbersInput) {
-        numbersInput.value = Array.from(selectedMeetingNumbers).join(", ");
-      }
+  document
+    .querySelectorAll(".meeting-contact-checkbox-edit")
+    .forEach((checkbox) => {
+      checkbox.addEventListener("change", function () {
+        if (this.checked) {
+          selectedMeetingNumbers.add(this.value);
+        } else {
+          selectedMeetingNumbers.delete(this.value);
+        }
+        const numbersInput = document.getElementById("edit-meetingNumbers");
+        if (numbersInput) {
+          numbersInput.value = Array.from(selectedMeetingNumbers).join(", ");
+        }
+      });
     });
-  });
 }
 
 /**
@@ -412,4 +577,11 @@ export function renderMeetingContactListForEdit() {
  */
 export function getContacts() {
   return contacts;
+}
+
+/**
+ * Get groups array
+ */
+export function getGroups() {
+  return groups;
 }
