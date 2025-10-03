@@ -8,7 +8,7 @@ import {
   showMediaModal,
   closeMediaModal,
   formatTimeDifference,
-  closeEditContactModal // <-- TAMBAHKAN BARIS INI
+  closeEditContactModal
 } from './ui-helpers.js';
 
 /**
@@ -20,6 +20,9 @@ function showForm(formId) {
   // Additional logic after showing form
   if (formId === "contacts") {
     fetchAndRenderContacts();
+  }
+  if (formId === "group") {
+    fetchAndRenderGroups();
   }
   if (formId === "meeting") {
     renderMeetingContactList();
@@ -45,8 +48,21 @@ import {
   initContactListeners,
   initMeetingContactListeners,
   selectedNumbers,
-  selectedMeetingNumbers
+  selectedMeetingNumbers,
+  fetchGroupsForDropdown,
+  updateAllGroupDropdowns
 } from './contact-manager.js';
+
+// Import group manager
+import { 
+  fetchAndRenderGroups, 
+  showEditGroupForm, 
+  deleteGroup, 
+  handleGroupFormSubmit,
+  resetGroupForm,
+  initGroupFormListeners,
+  renderGroupContactChecklist 
+} from './group-manager.js'; 
 
 // Import schedule manager
 import { 
@@ -70,6 +86,14 @@ import {
   getUnreadCount
 } from './chat-client.js';
 
+window.groupModule = {
+  fetchAndRenderGroups,
+  showEditGroupForm,
+  deleteGroup,
+  resetGroupForm,
+  renderGroupContactChecklist // Agar bisa dipanggil dari tempat lain
+};
+
 // Make functions globally accessible for inline event handlers
 window.showForm = showForm;
 window.showEditModal = showEditModal;
@@ -78,7 +102,8 @@ window.showMediaModal = showMediaModal;
 window.closeMediaModal = closeMediaModal;
 window.showEditContactForm = showEditContactForm;
 window.deleteContact = deleteContact;
-window.closeEditContactModal = closeEditContactModal; 
+window.closeEditContactModal = closeEditContactModal;
+
 /**
  * Initializes file upload listener for message form
  */
@@ -139,7 +164,6 @@ function initFileUploadListener() {
       btn.dataset.idx = idx;
       btn.textContent = "×";
       
-      // Add click handler directly to button
       btn.onclick = function() {
         const currentFiles = selectedFiles || [];
         currentFiles.splice(idx, 1);
@@ -148,7 +172,6 @@ function initFileUploadListener() {
       };
       
       div.appendChild(btn);
-
       filePreview.appendChild(div);
     });
 
@@ -234,7 +257,6 @@ function initMeetingFileUploadListener() {
       btn.dataset.idx = idx;
       btn.textContent = "×";
       
-      // Add click handler directly to button
       btn.onclick = function() {
         const currentFiles = selectedMeetingFiles || [];
         currentFiles.splice(idx, 1);
@@ -243,7 +265,6 @@ function initMeetingFileUploadListener() {
       };
       
       div.appendChild(btn);
-
       meetingFilePreview.appendChild(div);
     });
 
@@ -352,7 +373,6 @@ function initReminderForm() {
         selectedNumbers.clear();
         renderContactList();
 
-        // Reset file arrays dan UI
         setSelectedFiles([]);
         const fileInputEl = document.getElementById("fileUpload");
         if (fileInputEl) fileInputEl.value = "";
@@ -471,7 +491,6 @@ function initMeetingForm() {
         }
         selectedMeetingNumbers.clear();
         
-        // Reset meeting file arrays dan UI
         setSelectedMeetingFiles([]);
         const meetingFileInputEl = document.getElementById("meetingFileUpload");
         if (meetingFileInputEl) meetingFileInputEl.value = "";
@@ -501,14 +520,6 @@ function initMeetingForm() {
       submitButton.textContent = isStillEditing ? "Update Jadwal Rapat" : "Jadwalkan Rapat";
     }
   });
-}
-
-/**
- * Initializes delegated click handlers for file removal buttons
- */
-function initDelegatedFileRemoveHandlers() {
-  // This function is now deprecated as we're using direct onclick handlers
-  // Keeping it for backward compatibility but it's empty
 }
 
 /**
@@ -543,6 +554,37 @@ function initMediaModalListeners() {
 }
 
 /**
+ * Initializes filter buttons for contact/group tabs
+ */
+function initContactGroupFilterButtons() {
+  const filterButtons = document.querySelectorAll('.filter-button[onclick*="showForm"]');
+  
+  filterButtons.forEach(button => {
+    button.addEventListener('click', async (e) => {
+      // Remove active class from all filter buttons
+      filterButtons.forEach(btn => btn.classList.remove('active'));
+      // Add active class to clicked button
+      e.target.classList.add('active');
+      
+      // Get the form type from onclick attribute
+      const onclickAttr = e.target.getAttribute('onclick');
+      const match = onclickAttr.match(/showForm\('(.+?)'\)/);
+      
+      if (match && match[1]) {
+        const formType = match[1];
+        
+        // If switching to group view, fetch and render groups
+        if (formType === 'group') {
+          await fetchAndRenderGroups();
+        } else if (formType === 'contacts') {
+          await fetchAndRenderContacts();
+        }
+      }
+    });
+  });
+}
+
+/**
  * Initializes afterEditMeetingModalOpen helper
  */
 window.afterEditMeetingModalOpen = function() {
@@ -553,7 +595,7 @@ window.afterEditMeetingModalOpen = function() {
 /**
  * Main application initialization
  */
-function initApp() {
+async function initApp() {
   console.log("🚀 Initializing app...");
 
   // Initialize contact management
@@ -562,7 +604,6 @@ function initApp() {
   // Initialize file uploads
   initFileUploadListener();
   initMeetingFileUploadListener();
-  initDelegatedFileRemoveHandlers();
   initFileUploadLabelHandlers();
   
   // Initialize schedule management
@@ -573,37 +614,58 @@ function initApp() {
   
   // Initialize media modal
   initMediaModalListeners();
+  
+  // Initialize contact/group filter buttons
+  initContactGroupFilterButtons();
 
+  // Event delegation for contact table actions
   const contactTable = document.getElementById("contact-management-table");
   if (contactTable) {
-      contactTable.addEventListener('click', function(e) {
-          // Cari tombol yang paling dekat dengan target klik
-          const target = e.target.closest('button');
-          if (!target) return;
+    contactTable.addEventListener('click', function(e) {
+      const target = e.target.closest('button');
+      if (!target) return;
 
-          const id = target.dataset.id;
-          const name = target.dataset.name;
+      const id = target.dataset.id;
+      const name = target.dataset.name;
 
-          // Jika tombol edit kontak yang diklik
-          if (target.classList.contains('edit-contact-btn')) {
-              const number = target.dataset.number;
-              // Panggil fungsi yang benar dari contact-manager.js
-              showEditContactForm(id, name, number);
-          }
+      if (target.classList.contains('edit-contact-btn')) {
+        const number = target.dataset.number;
+        const instansi = target.dataset.instansi;
+        const jabatan = target.dataset.jabatan;
+        const grup = target.dataset.grup;
+        showEditContactForm(id, name, number, instansi, jabatan, grup);
+      }
 
-          // Jika tombol hapus kontak yang diklik
-          if (target.classList.contains('delete-contact-btn')) {
-              // Panggil fungsi yang benar dari contact-manager.js
-              deleteContact(id, name);
-          }
-      });
+      if (target.classList.contains('delete-contact-btn')) {
+        deleteContact(id, name);
+      }
+    });
   }
 
   // Contact CRUD form
-  const contactForm = document.getElementById("contact-crud-form");
+const contactForm = document.getElementById("contact-crud-form");
   if (contactForm) {
-    contactForm.addEventListener("submit", handleContactFormSubmit);
+    contactForm.addEventListener("submit", async (e) => {
+      await handleContactFormSubmit(e);
+      await fetchGroupsForDropdown();
+      // PENTING: Render ulang checklist grup setelah kontak berubah
+      window.groupModule.renderGroupContactChecklist(); 
+    });
   }
+
+   const groupForm = document.getElementById("group-crud-form");
+  if (groupForm) {
+    groupForm.addEventListener("submit", handleGroupFormSubmit); 
+  }
+
+    // NEW: Group Cancel listener
+  const groupCancelBtn = document.getElementById("group-crud-cancel");
+  if (groupCancelBtn) {
+    groupCancelBtn.addEventListener("click", resetGroupForm);
+  }
+  
+  // Initialize group form listeners (search, select all)
+  initGroupFormListeners();
 
   const contactCancelBtn = document.getElementById("contact-crud-cancel");
   if (contactCancelBtn) {
@@ -611,11 +673,24 @@ function initApp() {
   }
 
   // Load initial data
-  fetchAndRenderContacts().then(() => {
+  console.log("📊 Loading initial data...");
+  
+  try {
+    // Fetch groups first, then contacts
+    await fetchAndRenderGroups();
+    await fetchGroupsForDropdown();
+    await fetchAndRenderContacts();
+    
     // After contacts are loaded, render the contact lists
     renderContactList();
     renderMeetingContactList();
-  });
+    window.groupModule.renderGroupContactChecklist(); 
+    
+    console.log("✅ Initial data loaded successfully");
+  } catch (error) {
+    console.error("❌ Error loading initial data:", error);
+  }
+  
   loadMeetingRooms();
   updateFilterButtonActiveState("all");
   renderScheduleTable();
@@ -630,6 +705,8 @@ function initApp() {
 
   console.log("✅ App initialization complete");
 }
+
+window.showForm = showForm;
 
 // Initialize app when DOM is ready
 document.addEventListener("DOMContentLoaded", initApp);
