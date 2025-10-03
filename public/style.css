@@ -424,6 +424,74 @@ form button:hover {
   font-size: 1.8rem; /* tetap rem */
 }
 
+.contact-main-container {
+  background: white;
+  padding: 21px; /* 30 *0.7 */
+  border-radius: 10.5px; /* 15 *0.7 */
+  box-shadow: 0 7px 21px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  box-sizing: border-box;
+  border: 1px solid #e0e0e0;
+}
+
+.contact-main-container h3 {
+  text-align: center;
+  margin-bottom: 17.5px; /* 25 *0.7 */
+  font-weight: 700;
+  color: #003366;
+  font-size: 1.8rem; /* tetap rem */
+}
+
+.contact-group-container {
+  background: white;
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.contact-select-container {
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+
+#group-contact-search {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+}
+
+.checkbox-list {
+  max-height: 200px; /* Batasi tinggi agar dapat di-scroll */
+  overflow-y: auto;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+
+.checkbox-list label {
+  display: block;
+  margin-bottom: 5px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 3px;
+  transition: background-color 0.1s;
+}
+
+.checkbox-list label:hover {
+  background-color: #f0f0f0;
+}
+
+.checkbox-list input[type="checkbox"] {
+  margin-right: 10px;
+}
+
 /* --- Filter Buttons --- */
 .filter-buttons {
   display: flex;
@@ -475,6 +543,8 @@ form button:hover {
 }
 
 /* ---- Table Styles ---- */
+
+/* schedule table */
 #scheduleTable {
   width: 100%;
   min-width: 700px; /* 1000 *0.7 */
@@ -557,8 +627,91 @@ form button:hover {
 #scheduleTable td.action-buttons {
   text-align: center;
   vertical-align: middle !important;
-  padding-top: 0;
-  padding-bottom: 0;
+}
+
+/* contact management table */
+#contact-management-table {
+  width: 100%;
+  min-width: 700px; /* 1000 *0.7 */
+  border-collapse: separate; /* Use separate to allow border-radius on cells */
+  border-spacing: 0; /* Remove default spacing */
+}
+
+#contact-management-table thead {
+  position: sticky;
+  top: 0;
+  background-color: #f1f3f5; /* Slightly darker header background */
+  z-index: 1;
+}
+
+#contact-management-table th,
+#contact-management-table td {
+  border-bottom: 1px solid #e9ecef; /* Only bottom border */
+  padding: 10.5px 8.4px; /* 15px,12px *0.7 */
+  text-align: left;
+  font-size: 0.95rem; /* tetap rem */
+  vertical-align: middle; /* Align text vertically in middle */
+  word-wrap: break-word;
+}
+
+#contact-management-table th {
+  background-color: #e9ecef;
+  font-weight: 700; /* Bolder headers */
+  color: #495057;
+  text-transform: uppercase; /* Uppercase headers */
+  letter-spacing: 0.35px; /* 0.5 *0.7 */
+  /* Add border-radius to top corners of first and last th */
+}
+
+#contact-management-table th:first-child {
+  border-top-left-radius: 7px; /* 10 *0.7 */
+}
+
+#contact-management-table th:last-child {
+  border-top-right-radius: 7px; /* 10 *0.7 */
+}
+
+#contact-management-table tbody tr:last-child td {
+  border-bottom: none; /* No bottom border for last row */
+}
+
+/* Atur lebar kolom tabel (adjust as needed) */
+#contact-management-table th:nth-child(1),
+#contact-management-table td:nth-child(1) {
+  width: 91px;
+  min-width: 91px;
+} /* 130 *0.7 ≈91 */
+#contact-management-table th:nth-child(2),
+#contact-management-table td:nth-child(2) {
+  width: 112px;
+  min-width: 112px;
+} /* 160 *0.7 ≈112 */
+#contact-management-table th:nth-child(3),
+#contact-management-table td:nth-child(3) {
+  width: auto;
+  min-width: 175px;
+  white-space: normal;
+} /* 250 *0.7 */
+#contact-management-table th:nth-child(4),
+#contact-management-table td:nth-child(4) {
+  width: 63px;
+  min-width: 63px;
+  text-align: center;
+} /* 90 *0.7 */
+#contact-management-table th:nth-child(5),
+#contact-management-table td:nth-child(5) {
+  width: 70px;
+  min-width: 70px;
+  text-align: center;
+} /* 100 *0.7 */
+#contact-management-table th:nth-child(6),
+#contact-management-table td:nth-child(6) {
+  text-align: center;
+  vertical-align: middle !important;
+}
+#contact-management-table td.action-buttons {
+  text-align: center;
+  vertical-align: middle !important;
 }
 
 /* ---- Table Status & Actions ---- */
@@ -769,15 +922,6 @@ footer {
   margin-bottom: 17.5px; /* 25 *0.7 */
 }
 
-/* Tabel untuk daftar kontak */
-#contact-management-table {
-  width: 100%;
-  border-collapse: separate; /* Gunakan separate agar border-radius berfungsi */
-  border-spacing: 0;
-  margin-top: 1em;
-  font-size: 1rem; /* tetap rem */
-}
-
 /* Header dan sel pada tabel */
 #contact-management-table th,
 #contact-management-table td {
@@ -804,11 +948,6 @@ footer {
 /* Efek "Zebra" pada baris tabel agar mudah dibaca */
 #contact-management-table tbody tr:nth-child(even) {
   background-color: #f8f9fa;
-}
-
-/* Efek hover saat mouse di atas baris tabel */
-#contact-management-table tbody tr:hover {
-  background-color: #e6f7ff; /* Warna biru muda saat di-hover */
 }
 
 /* Penataan untuk kolom Aksi agar tombolnya rapi */
@@ -1162,7 +1301,7 @@ html { box-sizing: border-box; }
     border-collapse: separate;
   }
 
-  /* Jika ada elemen anak (chips, lists, preview) yang memaksa overflow, pastikan mereka shrink */
+  /* Jika ada elemen anak (chips, lists, preview) yang memaksa overflow, pastikan mereka shrink */ 
   .customFilePreview,
   .chat-main-container,
   .table-wrapper {
