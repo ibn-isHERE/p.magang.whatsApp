@@ -365,7 +365,7 @@
     flex-direction: column;
     height: calc(100vh - 126px); /* 180 *0.7 */
     max-height: calc(100vh - 126px);
-    background: white;
+    background: #f0f0f0;
     border-radius: 10.5px; /* 15 *0.7 */
     box-shadow: 0 7px 21px rgba(0, 0, 0, 0.1);
     border: 1px solid #e0e0e0;
