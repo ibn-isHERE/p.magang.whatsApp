@@ -292,8 +292,19 @@ export async function deleteContact(id, name) {
 /**
  * Handles contact form submission (add/edit)
  */
+let isSubmittingContact = false;
+
+/**
+ * Handles contact form submission (add/edit)
+ */
 export async function handleContactFormSubmit(event) {
   event.preventDefault();
+
+  // PROTEKSI DOUBLE SUBMIT
+  if (isSubmittingContact) {
+    console.log("Request sedang diproses, mengabaikan submit duplikat");
+    return;
+  }
 
   const id = document.getElementById("contact-crud-id").value;
   const name = document.getElementById("contact-crud-name").value;
@@ -305,6 +316,15 @@ export async function handleContactFormSubmit(event) {
   const isEditing = !!id;
   const url = isEditing ? `/api/contacts/${id}` : "/api/contacts";
   const method = isEditing ? "PUT" : "POST";
+
+  // Disable submit button
+  const submitBtn = document.getElementById("contact-crud-submit");
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Memproses...";
+  }
+
+  isSubmittingContact = true;
 
   try {
     const res = await fetch(url, {
@@ -325,6 +345,13 @@ export async function handleContactFormSubmit(event) {
     fetchAndRenderContacts();
   } catch (error) {
     Swal.fire("Error", error.message, "error");
+  } finally {
+    // Reset flag dan enable button kembali
+    isSubmittingContact = false;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = isEditing ? "Update Kontak" : "Tambah Kontak";
+    }
   }
 }
 

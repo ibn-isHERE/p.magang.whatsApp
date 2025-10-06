@@ -10,7 +10,6 @@ let groups = [];
 // New Set to manage selected contact numbers for the group form
 export let selectedGroupMembers = new Set();
 
-
 /**
  * Fetches groups from server and renders them
  */
@@ -25,9 +24,8 @@ export async function fetchAndRenderGroups() {
 
     groups = result.data.sort((a, b) => a.name.localeCompare(b.name));
     renderGroupTable();
-    // Panggil render checklist untuk memastikan kontak grup siap dimuat saat tab grup dibuka
     renderGroupContactChecklist(); 
-    updateGroupDropdowns(); // Untuk dropdown di form kontak
+    updateGroupDropdowns();
   } catch (error) {
     console.error("Error fetching groups:", error);
     Swal.fire("Error", error.message, "error");
@@ -44,19 +42,30 @@ function renderGroupTable() {
   tbody.innerHTML = "";
   
   if (groups.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="2" style="text-align: center;">Belum ada grup</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Belum ada grup</td></tr>';
     return;
   }
 
   groups.forEach((group) => {
     const row = document.createElement("tr");
+    
+    // Parse members to count
+    let memberCount = 0;
+    try {
+      const members = JSON.parse(group.members || '[]');
+      memberCount = members.length;
+    } catch (e) {
+      console.error("Error parsing group members:", e);
+    }
+    
     row.innerHTML = `
       <td>${group.name}</td>
+      <td style="text-align: center;">${memberCount}</td>
       <td class="action-buttons">
-        <button class="edit-contact-btn" onclick="window.groupModule.showEditGroupForm(${group.id})">
+        <button class="edit-group-btn" onclick="window.groupModule.showEditGroupForm(${group.id})">
           <i class="fa-solid fa-edit"></i> Edit
         </button>
-        <button class="delete-contact-btn" onclick="window.groupModule.deleteGroup(${group.id})">
+        <button class="delete-group-btn" onclick="window.groupModule.deleteGroup(${group.id})">
           <i class="fa-solid fa-trash"></i> Hapus
         </button>
       </td>
@@ -66,8 +75,7 @@ function renderGroupTable() {
 }
 
 /**
- * Placeholder for updating dropdowns (e.g., in contact-crud-form)
- * Assuming this function exists and is responsible for populating <select id="contact-crud-grup">
+ * Updates group dropdowns in contact form
  */
 function updateGroupDropdowns() {
   const select = document.getElementById("contact-crud-grup");
@@ -82,7 +90,6 @@ function updateGroupDropdowns() {
     select.appendChild(option);
   });
 }
-
 
 /**
  * Renders contact checklist for group management form
@@ -120,11 +127,9 @@ export function renderGroupContactChecklist(searchTerm = "") {
     list.appendChild(label);
   });
   
-  // Re-attach listeners after rendering
   attachGroupContactListeners();
   updateGroupMembersInput();
 }
-
 
 /**
  * Attaches event listeners to the group contact checkboxes
@@ -133,33 +138,42 @@ function attachGroupContactListeners() {
   document
     .querySelectorAll(".group-contact-checkbox")
     .forEach((checkbox) => {
-      // Pastikan listener hanya ter-attach sekali
       checkbox.removeEventListener("change", handleGroupCheckboxChange);
       checkbox.addEventListener("change", handleGroupCheckboxChange);
     });
 }
 
 function handleGroupCheckboxChange() {
-    if (this.checked) {
-      selectedGroupMembers.add(this.value);
-    } else {
-      selectedGroupMembers.delete(this.value);
-    }
-    updateGroupMembersInput();
+  if (this.checked) {
+    selectedGroupMembers.add(this.value);
+  } else {
+    selectedGroupMembers.delete(this.value);
+  }
+  updateGroupMembersInput();
+  updateSelectAllState();
 }
 
+/**
+ * Updates the select all checkbox state
+ */
+function updateSelectAllState() {
+  const selectAllCheckbox = document.getElementById("selectAllGroupContacts");
+  if (!selectAllCheckbox) return;
+  
+  const allCheckboxes = document.querySelectorAll(".group-contact-checkbox");
+  const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
+  selectAllCheckbox.checked = allChecked && allCheckboxes.length > 0;
+}
 
 /**
  * Updates the hidden input field with the current selected members (as JSON string)
  */
 function updateGroupMembersInput() {
-    const membersInput = document.getElementById("group-crud-members");
-    if (membersInput) {
-        // Kirim contact numbers array sebagai JSON string ke backend
-        membersInput.value = JSON.stringify(Array.from(selectedGroupMembers));
-    }
+  const membersInput = document.getElementById("group-crud-members");
+  if (membersInput) {
+    membersInput.value = JSON.stringify(Array.from(selectedGroupMembers));
+  }
 }
-
 
 /**
  * Shows the edit group form populated with data
@@ -174,26 +188,25 @@ export function showEditGroupForm(id) {
   const submitButton = document.getElementById("group-crud-submit");
   const cancelButton = document.getElementById("group-crud-cancel");
 
-  // 1. Reset selection
+  // Reset selection
   selectedGroupMembers.clear();
   
-  // 2. Populate selected members set from group data
+  // Populate selected members set from group data
   let membersArray = [];
   try {
-    // group.members should be a JSON string of contact numbers from the backend
     membersArray = JSON.parse(group.members || '[]');
     membersArray.forEach(number => selectedGroupMembers.add(number));
   } catch (e) {
     console.error("Error parsing group members:", e);
   }
 
-  // 3. Populate form fields
+  // Populate form fields
   idInput.value = group.id;
   nameInput.value = group.name;
-  submitButton.textContent = "Ubah Grup";
+  submitButton.textContent = "Update Grup";
   cancelButton.style.display = "inline-block";
   
-  // 4. Re-render the contact list to show selections
+  // Re-render the contact list to show selections
   renderGroupContactChecklist(); 
   
   // Scroll to the form
@@ -213,7 +226,6 @@ export async function handleGroupFormSubmit(e) {
   
   const id = idInput.value;
   const name = nameInput.value.trim();
-  // Ambil JSON string dari hidden input
   const contactNumbers = membersInput.value; 
 
   if (!name) {
@@ -239,10 +251,10 @@ export async function handleGroupFormSubmit(e) {
       throw new Error(result.error || `Gagal ${id ? 'mengubah' : 'menambah'} grup.`);
     }
     
-    // PENTING: Refresh kontak untuk menampilkan keanggotaan grup yang baru
+    // Refresh kontak untuk menampilkan keanggotaan grup yang baru
     await fetchAndRenderContacts(); 
     
-    Swal.fire("Sukses", result.message || `Grup berhasil di${id ? 'ubah' : 'tambah'}.`, "success");
+    Swal.fire("Sukses", result.message || `Grup berhasil ${id ? 'diubah' : 'ditambah'}.`, "success");
     resetGroupForm();
     fetchAndRenderGroups();
     
@@ -260,7 +272,7 @@ export async function deleteGroup(id) {
   if (!group) return;
 
   const result = await Swal.fire({
-    title: "Yakin?",
+    title: "Hapus Grup?",
     text: `Anda akan menghapus grup "${group.name}". Tindakan ini akan menghapus grup dari semua kontak yang menggunakannya!`,
     icon: "warning",
     showCancelButton: true,
@@ -277,7 +289,7 @@ export async function deleteGroup(id) {
         throw new Error(error.error || "Gagal menghapus grup.");
       }
 
-      // PENTING: Refresh kontak setelah penghapusan untuk sinkronisasi
+      // Refresh kontak setelah penghapusan untuk sinkronisasi
       await fetchAndRenderContacts(); 
 
       Swal.fire("Terhapus!", "Grup berhasil dihapus dan kontak disinkronkan.", "success");
@@ -299,7 +311,7 @@ export function resetGroupForm() {
     document.getElementById("group-crud-submit").textContent = "Tambah Grup";
     document.getElementById("group-crud-cancel").style.display = "none";
     
-    // Hapus anggota terpilih dan render ulang checklist
+    // Clear selected members and re-render checklist
     selectedGroupMembers.clear();
     renderGroupContactChecklist(); 
   }
@@ -322,7 +334,6 @@ export function initGroupFormListeners() {
       const allCheckboxes = document.querySelectorAll(".group-contact-checkbox");
       const isChecked = this.checked;
       
-      // Clear all and then populate based on checked state
       selectedGroupMembers.clear();
 
       allCheckboxes.forEach((checkbox) => {
@@ -335,6 +346,13 @@ export function initGroupFormListeners() {
     });
   }
 
-  // Render awal saat inisialisasi
+  // Initial render when initialized
   renderGroupContactChecklist();
+}
+
+/**
+ * Get groups array
+ */
+export function getGroups() {
+  return groups;
 }

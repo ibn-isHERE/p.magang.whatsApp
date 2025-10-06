@@ -20,9 +20,19 @@ function showForm(formId) {
   // Additional logic after showing form
   if (formId === "contacts") {
     fetchAndRenderContacts();
+    // Show contact main container
+    const contactMainContainer = document.getElementById("contactMainContainer");
+    const groupMainContainer = document.getElementById("groupMainContainer");
+    if (contactMainContainer) contactMainContainer.style.display = "flex";
+    if (groupMainContainer) groupMainContainer.style.display = "none";
   }
   if (formId === "group") {
     fetchAndRenderGroups();
+    // Show group main container
+    const contactMainContainer = document.getElementById("contactMainContainer");
+    const groupMainContainer = document.getElementById("groupMainContainer");
+    if (contactMainContainer) contactMainContainer.style.display = "none";
+    if (groupMainContainer) groupMainContainer.style.display = "flex";
   }
   if (formId === "meeting") {
     renderMeetingContactList();
@@ -91,7 +101,12 @@ window.groupModule = {
   showEditGroupForm,
   deleteGroup,
   resetGroupForm,
-  renderGroupContactChecklist // Agar bisa dipanggil dari tempat lain
+  renderGroupContactChecklist
+};
+
+window.contactModule = {
+  showEditContactForm,
+  deleteContact
 };
 
 // Make functions globally accessible for inline event handlers
@@ -554,37 +569,6 @@ function initMediaModalListeners() {
 }
 
 /**
- * Initializes filter buttons for contact/group tabs
- */
-function initContactGroupFilterButtons() {
-  const filterButtons = document.querySelectorAll('.filter-button[onclick*="showForm"]');
-  
-  filterButtons.forEach(button => {
-    button.addEventListener('click', async (e) => {
-      // Remove active class from all filter buttons
-      filterButtons.forEach(btn => btn.classList.remove('active'));
-      // Add active class to clicked button
-      e.target.classList.add('active');
-      
-      // Get the form type from onclick attribute
-      const onclickAttr = e.target.getAttribute('onclick');
-      const match = onclickAttr.match(/showForm\('(.+?)'\)/);
-      
-      if (match && match[1]) {
-        const formType = match[1];
-        
-        // If switching to group view, fetch and render groups
-        if (formType === 'group') {
-          await fetchAndRenderGroups();
-        } else if (formType === 'contacts') {
-          await fetchAndRenderContacts();
-        }
-      }
-    });
-  });
-}
-
-/**
  * Initializes afterEditMeetingModalOpen helper
  */
 window.afterEditMeetingModalOpen = function() {
@@ -614,9 +598,6 @@ async function initApp() {
   
   // Initialize media modal
   initMediaModalListeners();
-  
-  // Initialize contact/group filter buttons
-  initContactGroupFilterButtons();
 
   // Event delegation for contact table actions
   const contactTable = document.getElementById("contact-management-table");
@@ -643,22 +624,22 @@ async function initApp() {
   }
 
   // Contact CRUD form
-const contactForm = document.getElementById("contact-crud-form");
+  const contactForm = document.getElementById("contact-crud-form");
   if (contactForm) {
     contactForm.addEventListener("submit", async (e) => {
       await handleContactFormSubmit(e);
       await fetchGroupsForDropdown();
-      // PENTING: Render ulang checklist grup setelah kontak berubah
       window.groupModule.renderGroupContactChecklist(); 
     });
   }
 
-   const groupForm = document.getElementById("group-crud-form");
+  // Group CRUD form
+  const groupForm = document.getElementById("group-crud-form");
   if (groupForm) {
     groupForm.addEventListener("submit", handleGroupFormSubmit); 
   }
 
-    // NEW: Group Cancel listener
+  // Group Cancel listener
   const groupCancelBtn = document.getElementById("group-crud-cancel");
   if (groupCancelBtn) {
     groupCancelBtn.addEventListener("click", resetGroupForm);

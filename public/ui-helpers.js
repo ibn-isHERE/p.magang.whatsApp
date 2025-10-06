@@ -4,106 +4,72 @@
  * Shows a specific form/tab and hides others
  */
 export function showForm(formId) {
-  // Hide all forms
+  // Hide all forms with class form-content
   document.querySelectorAll(".form-content").forEach((form) => {
     form.style.display = "none";
+    form.classList.remove("active");
   });
 
-  // Remove active from tab buttons
+  // Remove active from all tab buttons
   document.querySelectorAll(".tab-button").forEach((button) => {
     button.classList.remove("active");
   });
 
+  // Get all main containers
   const scheduleContainer = document.getElementById("scheduleContainer");
   const chatMainContainer = document.getElementById("chatMainContainer");
   const contactMainContainer = document.getElementById("contactMainContainer");
-  const contactGroupContainer = document.getElementById("contactGroupContainer");
-  const contactMainContainerContacts = document.getElementById("contactMainContainerContacts");
+  const groupMainContainer = document.getElementById("groupMainContainer");
 
-  if (formId === "chat") {
-    const chatSidebarContainer = document.getElementById("chatSidebarContainer");
-    if (chatSidebarContainer) {
-      chatSidebarContainer.style.display = "block";
+  // Hide all main containers first
+  if (scheduleContainer) scheduleContainer.style.display = "none";
+  if (chatMainContainer) chatMainContainer.style.display = "none";
+  if (contactMainContainer) contactMainContainer.style.display = "none";
+  if (groupMainContainer) groupMainContainer.style.display = "none";
+
+  // Show the appropriate form and container based on formId
+  if (formId === "message") {
+    const messageForm = document.getElementById("messageFormContainer");
+    if (messageForm) {
+      messageForm.style.display = "block";
+      messageForm.classList.add("active");
     }
-    if (scheduleContainer) {
-      scheduleContainer.style.display = "none";
+    if (scheduleContainer) scheduleContainer.style.display = "block";
+  } 
+  else if (formId === "meeting") {
+    const meetingForm = document.getElementById("meetingFormContainer");
+    if (meetingForm) {
+      meetingForm.style.display = "block";
+      meetingForm.classList.add("active");
     }
-    if (chatMainContainer) {
-      chatMainContainer.style.display = "flex";
+    if (scheduleContainer) scheduleContainer.style.display = "block";
+  } 
+  else if (formId === "contacts") {
+    const contactsForm = document.getElementById("contactsFormContainer");
+    if (contactsForm) {
+      contactsForm.style.display = "block";
+      contactsForm.classList.add("active");
     }
-    if (contactMainContainer) {
-      contactMainContainer.style.display = "none";
+    if (contactMainContainer) contactMainContainer.style.display = "flex";
+  } 
+  else if (formId === "group") {
+    const groupsForm = document.getElementById("groupsFormContainer");
+    if (groupsForm) {
+      groupsForm.style.display = "block";
+      groupsForm.classList.add("active");
     }
-    if (contactGroupContainer) {
-      contactGroupContainer.style.display = "none";
+    if (groupMainContainer) groupMainContainer.style.display = "flex";
+  } 
+  else if (formId === "chat") {
+    const chatForm = document.getElementById("chatSidebarContainer");
+    if (chatForm) {
+      chatForm.style.display = "block";
+      chatForm.classList.add("active");
     }
-    if (contactMainContainerContacts) {
-      contactMainContainerContacts.style.display = "none";
-    }
-  } else if (formId === "contacts") {
-    const contactsFormContainer = document.getElementById("contactsFormContainer");
-    if (contactsFormContainer) {
-      contactsFormContainer.style.display = "block";
-    }
-    if (contactMainContainer) {
-      contactMainContainer.style.display = "flex";
-    }
-    if (chatMainContainer) {
-      chatMainContainer.style.display = "none";
-    }
-    if (scheduleContainer) {
-      scheduleContainer.style.display = "none";
-    }
-    if (contactGroupContainer) {
-      contactGroupContainer.style.display = "none";
-    }
-    if (contactMainContainerContacts) {
-      contactMainContainerContacts.style.display = "flex";
-    }
-  } else if (formId === "group") {
-    const groupsFormContainer = document.getElementById("groupsFormContainer");
-    if (groupsFormContainer) {
-      groupsFormContainer.style.display = "block";
-    }
-    if (contactMainContainer) {
-      contactMainContainer.style.display = "flex";
-    }
-    if (chatMainContainer) {
-      chatMainContainer.style.display = "none";
-    }
-    if (scheduleContainer) {
-      scheduleContainer.style.display = "none";
-    }
-    if (contactGroupContainer) {
-      contactGroupContainer.style.display = "flex";
-    }
-    if (contactMainContainerContacts) {
-      contactMainContainerContacts.style.display = "none";
-    }
-  } else {
-    // Show selected form
-    const selectedForm = document.getElementById(formId + "FormContainer");
-    if (selectedForm) {
-      selectedForm.style.display = "block";
-    }
-    if (scheduleContainer) {
-      scheduleContainer.style.display = "block";
-    }
-    if (chatMainContainer) {
-      chatMainContainer.style.display = "none";
-    }
-    if (contactMainContainer) {
-      contactMainContainer.style.display = "none";
-    }
-    if (contactGroupContainer) {
-      contactGroupContainer.style.display = "none";
-    }
-    if (contactMainContainerContacts) {
-      contactMainContainerContacts.style.display = "none";
-    }
+    if (chatMainContainer) chatMainContainer.style.display = "flex";
   }
 
-  // Set active tab
+  // Set active tab button
   const selectedTab = document.querySelector(`[onclick="showForm('${formId}')"]`);
   if (selectedTab) {
     selectedTab.classList.add("active");
@@ -248,7 +214,7 @@ export function formatTimeDifference(scheduledTimeStr) {
  * Plays notification sound
  */
 export function playNotificationSound() {
-  console.log("🔊 Playing notification sound...");
+  console.log("Playing notification sound...");
   
   let audio = document.getElementById("notificationSound");
   if (!audio) {
@@ -259,7 +225,7 @@ export function playNotificationSound() {
   }
   
   audio.play().catch((e) => {
-    console.log("🔇 Could not play notification sound:", e.message);
+    console.log("Could not play notification sound:", e.message);
   });
 }
 
@@ -267,7 +233,7 @@ export function playNotificationSound() {
  * Shows browser notification
  */
 export function showBrowserNotification(messageData) {
-  console.log("🔔 Showing browser notification for:", messageData);
+  console.log("Showing browser notification for:", messageData);
   
   if ("Notification" in window) {
     if (Notification.permission === "default") {
@@ -293,7 +259,6 @@ export function closeEditContactModal() {
   const modal = document.getElementById("editContactModal");
   if (modal) {
     modal.style.display = "none";
-    // Bersihkan kontennya agar siap untuk edit berikutnya
     document.getElementById("editContactModalBody").innerHTML = "";
   }
 }
