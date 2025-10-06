@@ -11,7 +11,7 @@ let jobs = {}; // Untuk menyimpan job terjadwal
 let client = null;
 
 function setWhatsappClient(whatsappClient) {
-  client = whatsappClient;z
+  client = whatsappClient;
 }
 
 /**
