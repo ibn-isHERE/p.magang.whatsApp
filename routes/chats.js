@@ -163,12 +163,25 @@ function createChatsRouter(db, whatsappClient, io) {
     });
   });
 
-  router.put("/end-chat/:number", (req, res) => {
+  router.put("/end-chat/:number", async (req, res) => {
     const { number } = req.params;
     const endMessage = `--- Sesi chat berakhir pada ${new Date().toLocaleString(
       "id-ID",
       { timeZone: "Asia/Jakarta" }
     )} WIB ---`;
+
+    // BARU: Kirim notifikasi ke user terlebih dahulu
+    try {
+      const formattedNumber = number.includes('@c.us') ? number : `${number}@c.us`;
+      await whatsappClient.sendMessage(
+        formattedNumber, 
+        '✅ *Sesi chat telah diakhiri oleh admin.*\n\nTerima kasih telah menggunakan layanan AsaMPedaS BPS Provinsi Riau.\n\nKetik *menu* untuk memulai percakapan baru.'
+      );
+      console.log(`📤 Notifikasi end session dikirim ke ${number}`);
+    } catch (sendError) {
+      console.error(`❌ Error mengirim notifikasi ke ${number}:`, sendError);
+      // Lanjut proses meski gagal kirim notifikasi
+    }
 
     db.serialize(() => {
       db.run("BEGIN TRANSACTION");
@@ -189,13 +202,11 @@ function createChatsRouter(db, whatsappClient, io) {
               });
           }
 
-          // --- AWAL PERBAIKAN ---
-          // Langkah 2: Tambahkan pesan penutup sesi dengan direction 'out' yang valid
+          // Langkah 2: Tambahkan pesan penutup sesi
           const insertQuery = `
                 INSERT INTO chats (fromNumber, message, direction, timestamp, messageType, status) 
                 VALUES (?, ?, 'out', ?, 'system', 'history')
             `;
-          // --- AKHIR PERBAIKAN ---
 
           db.run(
             insertQuery,
@@ -222,9 +233,18 @@ function createChatsRouter(db, whatsappClient, io) {
                       message: "Gagal melakukan commit transaksi.",
                     });
                 }
+
                 console.log(
                   `[LOGIC] Sesi untuk ${number} telah diakhiri dan dipindahkan ke history.`
                 );
+
+                // PENTING: Clear state dan timer via messageHandler
+                const messageHandler = req.app.get('messageHandler');
+                if (messageHandler) {
+                  messageHandler.clearUserState(number);
+                  console.log(`🔄 State dan timer cleared untuk ${number} (manual end)`);
+                }
+
                 res.json({
                   success: true,
                   message: "Chat berhasil diarsipkan.",

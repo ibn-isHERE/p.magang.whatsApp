@@ -14,6 +14,11 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const xlsx = require('xlsx');
 
+// ========================================
+// IMPORT MESSAGE HANDLER BARU
+// ========================================
+const MessageHandler = require('./handlers/messageHandler');
+
 const app = express();
 const port = 3000;
 
@@ -36,6 +41,7 @@ if (!fs.existsSync(mediaDir)) {
     fs.mkdirSync(mediaDir, { recursive: true });
 }
 app.use('/media', express.static(mediaDir));
+
 const chatMediaDir = path.join(__dirname, 'uploads', 'chat_media');
 if (!fs.existsSync(chatMediaDir)) {
     fs.mkdirSync(chatMediaDir, { recursive: true });
@@ -46,7 +52,6 @@ const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
-
 
 const chatMediaStorage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -65,7 +70,6 @@ const uploadChatMedia = multer({
         fileSize: 16 * 1024 * 1024 // 16MB limit
     },
     fileFilter: (req, file, cb) => {
-        // Support berbagai format media
         const allowedMimes = [
             'image/jpeg', 'image/png', 'image/gif', 'image/webp',
             'video/mp4', 'video/quicktime', 'video/x-msvideo',
@@ -97,6 +101,11 @@ app.locals.whatsappClient = client;
 app.set('whatsappClient', client);
 app.set('io', io);
 
+// ========================================
+// INISIALISASI MESSAGE HANDLER
+// ========================================
+let messageHandler;
+
 client.on("qr", (qr) => {
     console.log("Pindai kode QR ini dengan aplikasi WhatsApp Anda:");
     qrcode.generate(qr, { small: true });
@@ -104,6 +113,14 @@ client.on("qr", (qr) => {
 
 client.on("ready", () => {
     console.log("Client WhatsApp siap digunakan!");
+    
+    // Inisialisasi message handler setelah client ready
+    messageHandler = new MessageHandler(db, client, io, mediaDir);
+    console.log("✅ Message Handler initialized");
+    
+    // PENTING: Set messageHandler ke app agar bisa diakses dari routes
+    app.set('messageHandler', messageHandler);
+    console.log("✅ MessageHandler set to app");
     
     // Set client ke schedules module
     schedulesModule.setWhatsappClient(client);
@@ -117,270 +134,18 @@ client.on("ready", () => {
     }
 });
 
-const userState = {}; // Untuk menyimpan state chat pengguna
-const inactivityTimers = {}; // Untuk menyimpan timer inaktivitas
-
-// **FUNGSI DIPERBARUI**: Untuk mengakhiri sesi chat
-async function endChatSession(fromNumber) {
-    console.log(`Mengakhiri sesi untuk ${fromNumber} karena tidak aktif.`);
-
-    const endMessageText = `--- Sesi berakhir otomatis pada ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })} WIB ---`;
-    
-    // Kirim notifikasi ke pengguna
-    await client.sendMessage(`${fromNumber}@c.us`, 'Sesi chat Anda telah berakhir karena tidak ada aktivitas. Ketik "menu" untuk memulai kembali. Terima kasih.');
-
-    // Simpan pesan sistem di database agar terlihat oleh admin
-    const sessionEndData = {
-        fromNumber: fromNumber,
-        message: endMessageText,
-        direction: 'out', // Dianggap sebagai pesan keluar dari sistem
-        timestamp: new Date().toISOString(),
-        messageType: 'system', // Tipe pesan baru untuk styling
-        isRead: true, // Sudah dibaca oleh admin
-        status: 'history'
-    };
-
-    const insertQuery = `
-        INSERT INTO chats (fromNumber, message, direction, timestamp, messageType, isRead, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
-    
-    db.run(insertQuery, [
-        sessionEndData.fromNumber, sessionEndData.message, sessionEndData.direction,
-        sessionEndData.timestamp, sessionEndData.messageType, sessionEndData.isRead, sessionEndData.status
-    ], function(err) {
-        if (err) {
-            console.error('❌ Error menyimpan pesan akhir sesi:', err);
-            return;
-        }
-        // Kirim update ke frontend admin
-        const completeMessageData = { id: this.lastID, ...sessionEndData };
-        io.emit('newIncomingMessage', completeMessageData); 
-        console.log(`✅ Pesan akhir sesi untuk ${fromNumber} berhasil disimpan.`);
-    });
-    
-    // Hapus state dan timer
-    delete userState[fromNumber];
-    if (inactivityTimers[fromNumber]) {
-        clearTimeout(inactivityTimers[fromNumber].warning);
-        clearTimeout(inactivityTimers[fromNumber].end);
-        delete inactivityTimers[fromNumber];
-    }
-
-    // Pindahkan sisa chat ke history di database
-    db.run("UPDATE chats SET status = 'history' WHERE fromNumber = ?", [fromNumber], (err) => {
-        if (err) {
-            console.error(`Gagal memindahkan chat ${fromNumber} ke history:`, err);
-        } else {
-            console.log(`Chat untuk ${fromNumber} berhasil dipindahkan ke history.`);
-            io.emit('sessionEnded', { fromNumber });
-        }
-    });
-}
-
-
-// **FUNGSI DIPERBARUI**: Untuk mengatur atau mereset timer inaktivitas
-function setInactivityTimer(fromNumber) {
-    // Hapus timer lama jika ada
-    if (inactivityTimers[fromNumber]) {
-        clearTimeout(inactivityTimers[fromNumber].warning);
-        clearTimeout(inactivityTimers[fromNumber].end);
-    }
-
-    inactivityTimers[fromNumber] = {
-        // Timer 1: Peringatan setelah 10 menit
-        warning: setTimeout(() => {
-            const warningMessage = "Apakah masih ada yang perlu dibantu? Jika tidak, cukup abaikan pesan ini, maka sesi ini akan ditutup dalam 5 menit. Terima kasih.";
-            client.sendMessage(`${fromNumber}@c.us`, warningMessage);
-            console.log(`Mengirim peringatan inaktivitas ke ${fromNumber}.`);
-
-            // **BARU**: Simpan pesan peringatan ini ke database
-            const warningData = {
-                fromNumber: fromNumber,
-                message: `[Pesan Otomatis] ${warningMessage}`,
-                direction: 'out',
-                timestamp: new Date().toISOString(),
-                messageType: 'system',
-                isRead: true,
-                status: 'active'
-            };
-            const insertQuery = `INSERT INTO chats (fromNumber, message, direction, timestamp, messageType, isRead, status) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-            db.run(insertQuery, [warningData.fromNumber, warningData.message, warningData.direction, warningData.timestamp, warningData.messageType, warningData.isRead, warningData.status], function(err) {
-                if (err) {
-                    console.error('❌ Error menyimpan pesan peringatan:', err);
-                } else {
-                    const completeMessageData = { id: this.lastID, ...warningData };
-                    io.emit('newIncomingMessage', completeMessageData);
-                    console.log(`✅ Pesan peringatan untuk ${fromNumber} berhasil disimpan.`);
-                }
-            });
-
-            // Timer 2: Akhiri sesi 5 menit setelah peringatan
-            inactivityTimers[fromNumber].end = setTimeout(() => {
-                endChatSession(fromNumber);
-            }, 5 * 60 * 1000); // 5 menit
-
-        }, 10 * 60 * 1000), // 10 menit
-        end: null
-    };
-}
-
-
+// ========================================
+// EVENT HANDLER UNTUK PESAN MASUK - VERSI BARU (SIMPLIFIED)
+// ========================================
 client.on('message', async (message) => {
-    try {
-        if (!message.from.endsWith('@c.us') || message.fromMe) {
-            return;
-        }
-
-        const fromNumber = message.from.replace('@c.us', '');
-        const messageBody = message.body.trim().toLowerCase();
-
-        // ** PENYESUAIAN MENU BPS **
-        const menu = {
-            '1': 'Anda dapat mencari dan mengunduh data statistik melalui website resmi BPS di bps.go.id atau melalui aplikasi AllStats BPS.',
-            '2': 'Untuk melihat publikasi terbaru dari BPS, silakan kunjungi halaman publikasi kami di bps.go.id/publication.',
-            '3': 'Layanan konsultasi statistik tersedia pada jam kerja (Senin-Jumat, 08:00 - 16:00 WIB). Untuk memulai, silakan pilih opsi "Chat dengan Admin" pada menu sebelumnya.',
-            '4': 'Chat dengan Petugas Layanan.',
-        };
-
-        const welcomeMessage = `
-Selamat datang di Layanan Informasi Badan Pusat Statistik (BPS).
-Ada yang bisa kami bantu?
-
-Silakan balas dengan mengetik nomor pilihan Anda:
-1. Permintaan Data Statistik
-2. Publikasi Statistik
-3. Konsultasi Statistik
-4. Chat dengan Petugas Layanan
-`;
-        
-        // **LOGIKA DIPERBARUI**: Reset timer setiap ada pesan masuk dari user
-        if (userState[fromNumber] === 'CHATTING') {
-            setInactivityTimer(fromNumber);
-        }
-
-        if (!userState[fromNumber] || userState[fromNumber] === 'MENU_UTAMA') {
-             if (['halo', 'hi', 'menu', 'hai'].includes(messageBody)) {
-                client.sendMessage(message.from, welcomeMessage);
-                userState[fromNumber] = 'MENU_UTAMA';
-                return;
-            }
-
-            if (!userState[fromNumber]) {
-                client.sendMessage(message.from, welcomeMessage);
-                userState[fromNumber] = 'MENU_UTAMA';
-                return;
-            }
-
-            if (menu[messageBody]) {
-                if (messageBody === '4') {
-                    userState[fromNumber] = 'CHATTING';
-                    client.sendMessage(message.from, 'Anda sekarang terhubung dengan petugas layanan kami. Silakan sampaikan pertanyaan atau keperluan Anda.');
-                    saveNewMessage(message); 
-                    setInactivityTimer(fromNumber); // **BARU**: Mulai timer saat chat admin dimulai
-                } else {
-                    client.sendMessage(message.from, menu[messageBody]);
-                    
-                }
-            } else {
-                client.sendMessage(message.from, 'Pilihan tidak valid. Silakan pilih nomor dari menu.\n\n' + welcomeMessage);
-            }
-            return;
-        }
-
-
-        if (userState[fromNumber] === 'CHATTING') {
-            db.get("SELECT id FROM chats WHERE fromNumber = ? AND status = 'history' LIMIT 1", [fromNumber], (err, row) => {
-                if (err) {
-                    console.error("Error saat memeriksa status history:", err);
-                    return;
-                }
-                if (row) {
-                    console.log(`[LOGIC] Pesan masuk dari nomor di history (${fromNumber}). Mengaktifkan kembali seluruh percakapan.`);
-                    db.run("UPDATE chats SET status = 'active' WHERE fromNumber = ?", [fromNumber], (updateErr) => {
-                        if (updateErr) {
-                            console.error("Gagal mengaktifkan kembali percakapan:", updateErr);
-                        } else {
-                            console.log(`[LOGIC] Percakapan untuk ${fromNumber} berhasil diaktifkan kembali.`);
-                            saveNewMessage(message);
-                        }
-                    });
-                } else {
-                    saveNewMessage(message);
-                }
-            });
-        }
-
-    } catch (error) {
-        console.error('❌ Error global di message handler:', error);
+    if (!messageHandler) {
+        console.warn('⚠️ Message handler belum siap');
+        return;
     }
-});
-
-// Fungsi pembantu untuk menyimpan pesan (agar tidak duplikat kode)
-async function saveNewMessage(message) {
-    const fromNumber = message.from.replace('@c.us', '');
-    let messageContent = message.body || '';
-    let messageType = 'chat';
-    let mediaUrl = null;
-    let mediaData = null;
-
-    if (message.hasMedia) {
-        try {
-            const media = await message.downloadMedia();
-            if (media && media.data) {
-                const mimeToExt = { 'image/jpeg': '.jpg', 'image/png': '.png', 'video/mp4': '.mp4', 'application/pdf': '.pdf' };
-                const extension = mimeToExt[media.mimetype] || '.dat';
-                const fileName = `${Date.now()}_${fromNumber}${extension}`;
-                const filePath = path.join(mediaDir, fileName);
-                fs.writeFileSync(filePath, Buffer.from(media.data, 'base64'));
-                mediaUrl = `/media/${fileName}`;
-
-                if (media.mimetype.startsWith('image/')) messageType = 'image';
-                else if (media.mimetype.startsWith('video/')) messageType = 'video';
-                else messageType = 'document';
-
-                messageContent = message.body || '';
-                mediaData = { filename: media.filename || fileName, mimetype: media.mimetype, size: media.data.length, url: mediaUrl };
-            }
-        } catch (mediaError) {
-            console.error('❌ Error mengunduh media:', mediaError);
-        }
-    }
-
-    if (!messageContent && !mediaUrl) return;
-
-    const messageData = {
-        fromNumber: fromNumber,
-        message: messageContent,
-        direction: 'in',
-        timestamp: new Date().toISOString(),
-        messageType: messageType,
-        mediaUrl: mediaUrl,
-        mediaData: mediaData ? JSON.stringify(mediaData) : null,
-        isRead: false,
-        status: 'active'
-    };
-
-    const insertQuery = `
-        INSERT INTO chats (fromNumber, message, direction, timestamp, messageType, mediaUrl, mediaData, isRead, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
     
-    db.run(insertQuery, [
-        messageData.fromNumber, messageData.message, messageData.direction,
-        messageData.timestamp, messageData.messageType, messageData.mediaUrl, 
-        messageData.mediaData, messageData.isRead, messageData.status
-    ], function(err) {
-        if (err) {
-            console.error('❌ Error menyimpan pesan masuk:', err);
-            return;
-        }
-        
-        const completeMessageData = { id: this.lastID, ...messageData, mediaData: mediaData };
-        io.emit('newIncomingMessage', completeMessageData);
-        console.log(`✅ Pesan dari ${fromNumber} berhasil disimpan dengan status 'active'`);
-    });
-}
+    // Delegate semua logic ke MessageHandler
+    await messageHandler.handleIncomingMessage(message);
+});
 
 client.on("auth_failure", (msg) => {
     console.error("Gagal autentikasi WhatsApp:", msg);
@@ -392,7 +157,6 @@ client.on("disconnected", (reason) => {
 });
 
 client.initialize();
-
 
 // Import modules
 const schedulesModule = require("./routes/schedules.js");
@@ -408,7 +172,7 @@ app.use("/api/contacts", createContactsRouter(db));
 app.use("/api/chats", createChatsRouter(db, client, io));
 app.use('/api/groups', createGroupsRouter(db));
 
-// **ENDPOINT DIPERBARUI**: Reset timer saat admin mengirim pesan
+// Endpoint untuk mengirim media
 app.post('/api/chats/send-media', uploadChatMedia.single('media'), async (req, res) => {
     try {
         const { to, message: caption } = req.body;
@@ -434,31 +198,26 @@ app.post('/api/chats/send-media', uploadChatMedia.single('media'), async (req, r
             });
         }
 
-        // Baca file yang diupload
         const media = MessageMedia.fromFilePath(req.file.path);
         const formattedNumber = to.includes('@c.us') ? to : `${to}@c.us`;
 
-        // Kirim media ke WhatsApp
         await client.sendMessage(formattedNumber, media, { caption: caption || '' });
 
-        // **BARU**: Reset timer inaktivitas
-        if (userState[to] === 'CHATTING') {
-            setInactivityTimer(to);
+        // Reset timer inaktivitas jika ada
+        if (messageHandler && messageHandler.getUserState(to) === 'CHATTING') {
+            messageHandler.menuHandler.setInactivityTimer(to);
         }
 
-        // Pindahkan file ke folder media permanen
         const permanentPath = path.join(mediaDir, req.file.filename);
         fs.renameSync(req.file.path, permanentPath);
         
         const mediaUrl = `/media/${req.file.filename}`;
         
-        // Tentukan message type berdasarkan mimetype
         let messageType = 'document';
         if (req.file.mimetype.startsWith('image/')) messageType = 'image';
         else if (req.file.mimetype.startsWith('video/')) messageType = 'video';
         else if (req.file.mimetype.startsWith('audio/')) messageType = 'audio';
 
-        // Simpan ke database
         const timestamp = new Date().toISOString();
         const displayMessage = caption || `[${messageType.charAt(0).toUpperCase() + messageType.slice(1)}]`;
         
