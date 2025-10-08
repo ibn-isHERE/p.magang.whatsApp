@@ -1,6 +1,5 @@
-// main.js - Main Application Entry Point
+// main.js - Main Application Entry Point dengan Group Support
 
-// Import UI helpers
 import {
   showForm as showFormOriginal,
   showEditModal,
@@ -11,16 +10,11 @@ import {
   closeEditContactModal
 } from './ui-helpers.js';
 
-/**
- * Wrapper for showForm to handle additional logic
- */
 function showForm(formId) {
   showFormOriginal(formId);
   
-  // Additional logic after showing form
   if (formId === "contacts") {
     fetchAndRenderContacts();
-    // Show contact main container
     const contactMainContainer = document.getElementById("contactMainContainer");
     const groupMainContainer = document.getElementById("groupMainContainer");
     if (contactMainContainer) contactMainContainer.style.display = "flex";
@@ -28,7 +22,6 @@ function showForm(formId) {
   }
   if (formId === "group") {
     fetchAndRenderGroups();
-    // Show group main container
     const contactMainContainer = document.getElementById("contactMainContainer");
     const groupMainContainer = document.getElementById("groupMainContainer");
     if (contactMainContainer) contactMainContainer.style.display = "none";
@@ -36,9 +29,13 @@ function showForm(formId) {
   }
   if (formId === "meeting") {
     renderMeetingContactList();
+    renderMeetingGroupSelectionList();
+  }
+  if (formId === "message") {
+    renderContactList();
+    renderGroupSelectionList();
   }
   if (formId === "chat") {
-    // Chat initialization is handled by initChatSystem
     const { getChatConversations } = window.chatModule || {};
     if (getChatConversations) {
       // Load conversations when chat tab is shown
@@ -46,7 +43,6 @@ function showForm(formId) {
   }
 }
 
-// Import contact manager
 import { 
   fetchAndRenderContacts,
   showEditContactForm,
@@ -59,11 +55,15 @@ import {
   initMeetingContactListeners,
   selectedNumbers,
   selectedMeetingNumbers,
+  selectedGroups,
+  selectedMeetingGroups,
   fetchGroupsForDropdown,
-  updateAllGroupDropdowns
+  updateAllGroupDropdowns,
+  renderGroupSelectionList,
+  renderMeetingGroupSelectionList,
+  getNumbersFromSelectedGroups
 } from './contact-manager.js';
 
-// Import group manager
 import { 
   fetchAndRenderGroups, 
   showEditGroupForm, 
@@ -74,7 +74,6 @@ import {
   renderGroupContactChecklist 
 } from './group-manager.js'; 
 
-// Import schedule manager
 import { 
   renderScheduleTable,
   updateCountdownTimers,
@@ -88,7 +87,6 @@ import {
   setSelectedMeetingFiles
 } from './schedule-manager.js';
 
-// Import chat client
 import { 
   initChatSystem,
   getCurrentChatNumber,
@@ -109,7 +107,6 @@ window.contactModule = {
   deleteContact
 };
 
-// Make functions globally accessible for inline event handlers
 window.showForm = showForm;
 window.showEditModal = showEditModal;
 window.closeEditModal = closeEditModal;
@@ -303,9 +300,17 @@ function initReminderForm() {
     const fileInput = document.getElementById("fileUpload");
     const uploadedFiles = fileInput.files;
 
+    // Ambil nomor dari kontak individual
     const selectedContactNumbers = Array.from(selectedNumbers);
+    
+    // 🆕 Ambil nomor dari grup yang dipilih
+    const groupNumbers = getNumbersFromSelectedGroups(false);
+    
+    // Ambil nomor manual
     const manualNumbers = manualInput.split(",").map((num) => num.trim()).filter((num) => num !== "");
-    const allNumbersSet = new Set([...selectedContactNumbers, ...manualNumbers]);
+    
+    // Gabungkan semua nomor (hapus duplikat)
+    const allNumbersSet = new Set([...selectedContactNumbers, ...groupNumbers, ...manualNumbers]);
     const finalNumbers = Array.from(allNumbersSet).map((num) => num.replace(/\D/g, "").trim()).filter((num) => num !== "");
 
     const submitButton = document.querySelector('#reminderForm button[type="submit"]');
@@ -323,6 +328,11 @@ function initReminderForm() {
 
     if (!hasFilesUploaded && !hasMessage && !hasExistingFiles) {
       Swal.fire("Error", "Mohon isi pesan atau pilih minimal satu file yang ingin dikirim.", "error");
+      return;
+    }
+
+    if (finalNumbers.length === 0) {
+      Swal.fire("Error", "Mohon pilih minimal satu kontak, grup, atau masukkan nomor manual.", "error");
       return;
     }
 
@@ -377,7 +387,7 @@ function initReminderForm() {
         Swal.fire({
           title: isEditing ? "Jadwal Diupdate!" : "Pesan Terjadwal!",
           html: `
-            <b>Kontak:</b> ${finalNumbers.join(", ")}<br>
+            <b>Jumlah Penerima:</b> ${finalNumbers.length} nomor<br>
             <b>Pesan:</b> ${message ? message : "(Tanpa Pesan Teks)"}<br>
             <b>Waktu Kirim:</b> ${new Date(datetime).toLocaleString("id-ID")}
           `,
@@ -386,7 +396,9 @@ function initReminderForm() {
 
         this.reset();
         selectedNumbers.clear();
+        selectedGroups.clear();
         renderContactList();
+        renderGroupSelectionList();
 
         setSelectedFiles([]);
         const fileInputEl = document.getElementById("fileUpload");
@@ -443,9 +455,17 @@ function initMeetingForm() {
     const endTime = document.getElementById("meetingEndTime").value;
     const manualInput = document.getElementById("meetingNumbers").value;
 
+    // Ambil nomor dari kontak individual
     const selectedContactNumbers = Array.from(selectedMeetingNumbers);
+    
+    // 🆕 Ambil nomor dari grup yang dipilih
+    const groupNumbers = getNumbersFromSelectedGroups(true);
+    
+    // Ambil nomor manual
     const manualNumbers = manualInput.split(",").map((num) => num.trim()).filter((num) => num);
-    const allNumbers = [...new Set([...selectedContactNumbers, ...manualNumbers])];
+    
+    // Gabungkan semua nomor (hapus duplikat)
+    const allNumbers = [...new Set([...selectedContactNumbers, ...groupNumbers, ...manualNumbers])];
 
     if (!title || allNumbers.length === 0 || !room || !startTime || !endTime) {
       Swal.fire("Error", "Judul, Peserta, Ruangan, dan Waktu harus diisi.", "error");
@@ -496,6 +516,7 @@ function initMeetingForm() {
       if (res.ok && result.success) {
         Swal.fire({
           title: isEditing ? "Jadwal Rapat Diupdate!" : "Jadwal Rapat Terbuat!",
+          html: `<b>Jumlah Peserta:</b> ${allNumbers.length} nomor`,
           icon: "success",
         });
 
@@ -505,6 +526,9 @@ function initMeetingForm() {
           submitButton.textContent = "Jadwalkan Rapat";
         }
         selectedMeetingNumbers.clear();
+        selectedMeetingGroups.clear();
+        renderMeetingContactList();
+        renderMeetingGroupSelectionList();
         
         setSelectedMeetingFiles([]);
         const meetingFileInputEl = document.getElementById("meetingFileUpload");
@@ -665,6 +689,8 @@ async function initApp() {
     // After contacts are loaded, render the contact lists
     renderContactList();
     renderMeetingContactList();
+    renderGroupSelectionList();
+    renderMeetingGroupSelectionList();
     window.groupModule.renderGroupContactChecklist(); 
     
     console.log("✅ Initial data loaded successfully");

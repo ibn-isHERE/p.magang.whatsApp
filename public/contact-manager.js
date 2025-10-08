@@ -1,13 +1,14 @@
-// contact-manager.js - Contact Management Module
+// contact-manager.js - Contact Management Module dengan Group Selection
 import { showEditContactModal, closeEditContactModal } from "./ui-helpers.js";
 
-// MODIFIKASI: Ubah menjadi export let agar dapat diakses oleh module lain
 export let contacts = []; 
 let filteredContacts = [];
-let groups = []; // Store groups for dropdown
+let groups = []; 
 export let selectedNumbers = new Set();
 export let selectedMeetingNumbers = new Set();
-
+// TAMBAHAN: Set untuk menyimpan grup yang dipilih
+export let selectedGroups = new Set();
+export let selectedMeetingGroups = new Set();
 
 /**
  * Fetches contacts from server and renders them
@@ -21,14 +22,11 @@ export async function fetchAndRenderContacts() {
       throw new Error("Gagal memuat kontak dari server.");
     }
 
-    // Sort alphabetically by name
     result.data.sort((a, b) => a.name.localeCompare(b.name));
     contacts = result.data;
     filteredContacts = contacts;
 
-    // Render to management table
     renderContactManagementTable();
-    // Update checkbox lists
     renderContactList();
   } catch (error) {
     console.error("Error fetching contacts:", error);
@@ -47,6 +45,9 @@ export async function fetchGroupsForDropdown() {
     if (res.ok && result.data) {
       groups = result.data.sort((a, b) => a.name.localeCompare(b.name));
       updateAllGroupDropdowns();
+      // TAMBAHAN: Render daftar grup untuk selection
+      renderGroupSelectionList();
+      renderMeetingGroupSelectionList();
     }
   } catch (error) {
     console.error("Error fetching groups:", error);
@@ -57,7 +58,6 @@ export async function fetchGroupsForDropdown() {
  * Updates all group dropdowns in the application
  */
 export function updateAllGroupDropdowns() {
-  // Update dropdown in add contact form
   const addContactDropdown = document.getElementById("contact-crud-grup");
   if (addContactDropdown) {
     updateSingleDropdown(addContactDropdown);
@@ -78,16 +78,168 @@ function updateSingleDropdown(dropdown) {
     dropdown.appendChild(option);
   });
 
-  // Restore previous selection if it still exists
   if (currentValue && groups.some(g => g.name === currentValue)) {
     dropdown.value = currentValue;
   }
 }
 
 /**
- * Renders contacts in the management table
+ * TAMBAHAN: Renders group selection list untuk message form
  */
-// contact-manager.js - Cek fungsi renderContactManagementTable
+export function renderGroupSelectionList() {
+  const list = document.getElementById("groupSelectionList");
+  if (!list) return;
+
+  list.innerHTML = "";
+  
+  if (groups.length === 0) {
+    list.innerHTML = "<p>Tidak ada grup tersedia.</p>";
+    return;
+  }
+
+  groups.forEach((group) => {
+    const label = document.createElement("label");
+    const isChecked = selectedGroups.has(group.id) ? "checked" : "";
+    
+    // Parse members untuk menampilkan jumlah
+    let memberCount = 0;
+    try {
+      const members = JSON.parse(group.members || '[]');
+      memberCount = members.length;
+    } catch (e) {
+      console.error("Error parsing group members:", e);
+    }
+    
+    label.innerHTML = `
+      <input type="checkbox" class="group-selection-checkbox" value="${group.id}" data-group-name="${group.name}" ${isChecked} />
+      <strong>${group.name}</strong> <small>(${memberCount} anggota)</small>
+    `;
+    list.appendChild(label);
+  });
+
+  // Attach event listeners
+  document.querySelectorAll(".group-selection-checkbox").forEach((checkbox) => {
+    checkbox.addEventListener("change", function () {
+      if (this.checked) {
+        selectedGroups.add(parseInt(this.value));
+      } else {
+        selectedGroups.delete(parseInt(this.value));
+      }
+      updateGroupSelectionInfo();
+    });
+  });
+  
+  updateGroupSelectionInfo();
+}
+
+/**
+ * TAMBAHAN: Renders group selection list untuk meeting form
+ */
+export function renderMeetingGroupSelectionList() {
+  const list = document.getElementById("meetingGroupSelectionList");
+  if (!list) return;
+
+  list.innerHTML = "";
+  
+  if (groups.length === 0) {
+    list.innerHTML = "<p>Tidak ada grup tersedia.</p>";
+    return;
+  }
+
+  groups.forEach((group) => {
+    const label = document.createElement("label");
+    const isChecked = selectedMeetingGroups.has(group.id) ? "checked" : "";
+    
+    let memberCount = 0;
+    try {
+      const members = JSON.parse(group.members || '[]');
+      memberCount = members.length;
+    } catch (e) {
+      console.error("Error parsing group members:", e);
+    }
+    
+    label.innerHTML = `
+      <input type="checkbox" class="meeting-group-selection-checkbox" value="${group.id}" data-group-name="${group.name}" ${isChecked} />
+      <strong>${group.name}</strong> <small>(${memberCount} anggota)</small>
+    `;
+    list.appendChild(label);
+  });
+
+  document.querySelectorAll(".meeting-group-selection-checkbox").forEach((checkbox) => {
+    checkbox.addEventListener("change", function () {
+      if (this.checked) {
+        selectedMeetingGroups.add(parseInt(this.value));
+      } else {
+        selectedMeetingGroups.delete(parseInt(this.value));
+      }
+      updateMeetingGroupSelectionInfo();
+    });
+  });
+  
+  updateMeetingGroupSelectionInfo();
+}
+
+/**
+ * TAMBAHAN: Update info grup yang dipilih untuk message form
+ */
+function updateGroupSelectionInfo() {
+  const infoDiv = document.getElementById("groupSelectionInfo");
+  if (!infoDiv) return;
+  
+  if (selectedGroups.size === 0) {
+    infoDiv.innerHTML = "<small>Belum ada grup dipilih</small>";
+    return;
+  }
+  
+  const selectedGroupNames = Array.from(selectedGroups).map(id => {
+    const group = groups.find(g => g.id === id);
+    return group ? group.name : '';
+  }).filter(name => name);
+  
+  infoDiv.innerHTML = `<small><strong>Grup dipilih:</strong> ${selectedGroupNames.join(', ')}</small>`;
+}
+
+/**
+ * TAMBAHAN: Update info grup yang dipilih untuk meeting form
+ */
+function updateMeetingGroupSelectionInfo() {
+  const infoDiv = document.getElementById("meetingGroupSelectionInfo");
+  if (!infoDiv) return;
+  
+  if (selectedMeetingGroups.size === 0) {
+    infoDiv.innerHTML = "<small>Belum ada grup dipilih</small>";
+    return;
+  }
+  
+  const selectedGroupNames = Array.from(selectedMeetingGroups).map(id => {
+    const group = groups.find(g => g.id === id);
+    return group ? group.name : '';
+  }).filter(name => name);
+  
+  infoDiv.innerHTML = `<small><strong>Grup dipilih:</strong> ${selectedGroupNames.join(', ')}</small>`;
+}
+
+/**
+ * TAMBAHAN: Mendapatkan semua nomor dari grup yang dipilih
+ */
+export function getNumbersFromSelectedGroups(isForMeeting = false) {
+  const selectedGroupSet = isForMeeting ? selectedMeetingGroups : selectedGroups;
+  const numbers = new Set();
+  
+  selectedGroupSet.forEach(groupId => {
+    const group = groups.find(g => g.id === groupId);
+    if (group && group.members) {
+      try {
+        const members = JSON.parse(group.members);
+        members.forEach(number => numbers.add(number));
+      } catch (e) {
+        console.error("Error parsing group members:", e);
+      }
+    }
+  });
+  
+  return Array.from(numbers);
+}
 
 /**
  * Renders contacts in the management table
@@ -107,26 +259,24 @@ function renderContactManagementTable() {
     const row = document.createElement("tr");
     
     let groupDisplay = '';
-    // MODIFIKASI: Mengatasi 'grup' sebagai JSON array string
     try {
         let groupsArray = contact.grup ? JSON.parse(contact.grup) : [];
         if (Array.isArray(groupsArray) && groupsArray.length > 0) {
-            groupDisplay = groupsArray.join(', '); // Tampilkan daftar yang dipisahkan koma
+            groupDisplay = groupsArray.join(', ');
         } else {
             groupDisplay = '-';
         }
     } catch (e) {
-        // Fallback untuk string grup tunggal yang lama
         groupDisplay = contact.grup || '-';
     }
-
 
     row.innerHTML = `
       <td>${contact.name}</td>
       <td>${contact.number}</td>
       <td>${contact.instansi}</td>
       <td>${contact.jabatan}</td>
-      <td>${groupDisplay}</td> <td class="action-buttons">
+      <td>${groupDisplay}</td>
+      <td class="action-buttons">
         <button class="edit-contact-btn" onclick="window.contactModule.showEditContactForm(${contact.id})">
           <i class="fa-solid fa-edit"></i> Edit
         </button>
@@ -146,10 +296,8 @@ export async function showEditContactForm(id, name, number, instansi, jabatan, g
   const modalBody = document.getElementById("editContactModalBody");
   if (!modalBody) return;
 
-  // Fetch groups terlebih dahulu
   await fetchGroupsForDropdown();
 
-  // Buat form
   modalBody.innerHTML = `
     <form id="editContactForm">
       <input type="hidden" id="edit-contact-id" value="${id}">
@@ -194,11 +342,9 @@ export async function showEditContactForm(id, name, number, instansi, jabatan, g
     </form>
   `;
 
-  // Set nilai untuk select
   document.getElementById("edit-contact-instansi").value = instansi || "";
   document.getElementById("edit-contact-jabatan").value = jabatan || "";
   
-  // Populate grup dropdown dengan data dari API
   const grupDropdown = document.getElementById("edit-contact-grup");
   grupDropdown.innerHTML = '<option value="">-- Pilih Grup --</option>';
   groups.forEach((g) => {
@@ -209,10 +355,8 @@ export async function showEditContactForm(id, name, number, instansi, jabatan, g
   });
   grupDropdown.value = grup || "";
 
-  // Tampilkan modal
   showEditContactModal();
 
-  // Event listeners
   document
     .getElementById("editContactForm")
     .addEventListener("submit", handleEditContactSubmit);
@@ -294,13 +438,9 @@ export async function deleteContact(id, name) {
  */
 let isSubmittingContact = false;
 
-/**
- * Handles contact form submission (add/edit)
- */
 export async function handleContactFormSubmit(event) {
   event.preventDefault();
 
-  // PROTEKSI DOUBLE SUBMIT
   if (isSubmittingContact) {
     console.log("Request sedang diproses, mengabaikan submit duplikat");
     return;
@@ -317,7 +457,6 @@ export async function handleContactFormSubmit(event) {
   const url = isEditing ? `/api/contacts/${id}` : "/api/contacts";
   const method = isEditing ? "PUT" : "POST";
 
-  // Disable submit button
   const submitBtn = document.getElementById("contact-crud-submit");
   if (submitBtn) {
     submitBtn.disabled = true;
@@ -346,7 +485,6 @@ export async function handleContactFormSubmit(event) {
   } catch (error) {
     Swal.fire("Error", error.message, "error");
   } finally {
-    // Reset flag dan enable button kembali
     isSubmittingContact = false;
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -471,7 +609,6 @@ export function initContactListeners() {
     });
   }
 
-  // Initialize contact form listener
   const contactForm = document.getElementById("contact-crud-form");
   if (contactForm) {
     contactForm.addEventListener("submit", handleContactFormSubmit);

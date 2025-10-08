@@ -129,23 +129,23 @@ main {
 
 .tabs {
   display: flex;
-  justify-content: center; /* Menggantikan flex-start agar lebih rapi saat hanya satu tab */
+  justify-content: center;
   margin-bottom: 17.5px;
   border-bottom: 2px solid #e9ecef;
-  min-height: 42px; /* Menetapkan tinggi minimum agar tidak collaps */
+  min-height: 42px;
   box-sizing: border-box;
 }
 
 #main-tabs {
-  display: flex; /* Pastikan ini flex untuk menampilkan isinya */
+  display: flex;
 }
 
 .tab-button {
   background-color: transparent;
   border: none;
-  padding: 10px 7px; /* 10px,20px *0.7 */
+  padding: 10px 7px;
   cursor: pointer;
-  font-size: .90rem; /* tetap rem */
+  font-size: .90rem;
   font-weight: 600;
   color: #6c757d;
   transition: color 0.3s ease;
@@ -299,6 +299,143 @@ textarea {
   text-align: center;
   width: 100%;
   line-height: 14px;
+}
+
+/* 🆕 Group Selection Styles */
+#groupSelectionList,
+#meetingGroupSelectionList {
+  max-height: 160px;
+  overflow-y: auto;
+  border: 2px solid #17a2b8;
+  border-radius: 7px;
+  padding: 10px 12px;
+  margin-top: 7px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+  box-sizing: border-box;
+}
+
+#groupSelectionList label,
+#meetingGroupSelectionList label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #333;
+  transition: all 0.2s ease;
+  padding: 8px 10px;
+  border-radius: 6px;
+  user-select: none;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+}
+
+#groupSelectionList label:last-child,
+#meetingGroupSelectionList label:last-child {
+  margin-bottom: 0;
+}
+
+#groupSelectionList label:hover,
+#meetingGroupSelectionList label:hover {
+  background-color: #e3f2fd;
+  border-color: #17a2b8;
+  transform: translateX(3px);
+  box-shadow: 0 2px 5px rgba(23, 162, 184, 0.2);
+}
+
+#groupSelectionList label strong,
+#meetingGroupSelectionList label strong {
+  color: #003366;
+  font-weight: 600;
+  margin-right: 5px;
+}
+
+#groupSelectionList label small,
+#meetingGroupSelectionList label small {
+  color: #6c757d;
+  font-size: 0.85rem;
+  margin-left: auto;
+  background: #e9ecef;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.group-selection-checkbox,
+.meeting-group-selection-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #17a2b8;
+  border-radius: 4px;
+  margin-right: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  background-color: white;
+}
+
+.group-selection-checkbox:checked,
+.meeting-group-selection-checkbox:checked {
+  background-color: #17a2b8;
+  border-color: #17a2b8;
+  transform: scale(1.1);
+  box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.2);
+}
+
+.group-selection-checkbox:checked::after,
+.meeting-group-selection-checkbox:checked::after {
+  content: "✓";
+  color: white;
+  position: absolute;
+  top: -2px;
+  left: 0;
+  font-size: 11px;
+  font-weight: bold;
+  user-select: none;
+  text-align: center;
+  width: 100%;
+  line-height: 16px;
+}
+
+#groupSelectionInfo,
+#meetingGroupSelectionInfo {
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  border-radius: 6px;
+  border-left: 4px solid #17a2b8;
+  margin-top: 8px;
+  margin-bottom: 0;
+  color: #003366;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+#groupSelectionInfo small,
+#meetingGroupSelectionInfo small {
+  display: block;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+#groupSelectionInfo strong,
+#meetingGroupSelectionInfo strong {
+  color: #17a2b8;
+  font-weight: 700;
+}
+
+/* Divider between contact and group sections */
+form label[style*="margin-top: 20px"] {
+  border-top: 2px dashed #dee2e6;
+  padding-top: 15px;
+  margin-top: 20px !important;
+}
+
+/* Icon styling for group label */
+form label i.fa-users {
+  color: #17a2b8;
+  margin-right: 5px;
 }
 
 .file-upload-section {
@@ -734,9 +871,6 @@ form button:hover {
 }
 
 .action-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3.5px;
   justify-content: center;
 }
 

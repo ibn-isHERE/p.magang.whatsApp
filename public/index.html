@@ -73,6 +73,8 @@
           <div id="messageFormContainer" class="form-content active">
             <h2>Buat Jadwal Pesan</h2>
             <form id="reminderForm" enctype="multipart/form-data">
+              
+              <!-- SECTION PILIH KONTAK INDIVIDUAL -->
               <label for="contactSearch">Pilih Kontak dari Daftar:</label>
               <input
                 type="text"
@@ -85,14 +87,24 @@
                 <input type="checkbox" id="selectAllContacts" />
               </div>
               <div id="contactList" class="contact-checklist-box"></div>
-              <label for="manualNumbers"
-                >Nomor Manual (pisahkan dengan koma):</label
-              >
+
+              <!-- 🆕 SECTION PILIH GRUP -->
+              <label style="margin-top: 20px; display: block;">
+                <i class="fa-solid fa-users"></i> Atau Pilih Grup:
+              </label>
+              <div id="groupSelectionList" class="contact-checklist-box" style="max-height: 200px; overflow-y: auto; margin-bottom: 8px;"></div>
+              <div id="groupSelectionInfo" style="margin-top: 5px; margin-bottom: 15px; padding: 8px; background: #f0f0f0; border-radius: 4px; color: #666;">
+                <small>Belum ada grup dipilih</small>
+              </div>
+
+              <!-- NOMOR MANUAL -->
+              <label for="manualNumbers">Nomor Manual (pisahkan dengan koma):</label>
               <input
                 type="text"
                 id="manualNumbers"
                 placeholder="08123456789, 08234567890"
               />
+
               <div class="file-upload-section">
                 <label>Pilih File (Gambar, Video, PDF):</label>
                 <div class="file-upload-container">
@@ -141,9 +153,8 @@
               <label for="meetingTitle">Judul Rapat:</label>
               <input type="text" id="meetingTitle" required />
 
-              <label for="meetingContactSearch"
-                >Pilih Kontak dari Daftar:</label
-              >
+              <!-- SECTION PILIH KONTAK INDIVIDUAL -->
+              <label for="meetingContactSearch">Pilih Kontak dari Daftar:</label>
               <input
                 type="text"
                 id="meetingContactSearch"
@@ -156,9 +167,16 @@
               </div>
               <div id="meetingContactList" class="contact-checklist-box"></div>
 
-              <label for="meetingNumbers"
-                >Nomor Manual (pisahkan dengan koma):</label
-              >
+              <!-- 🆕 SECTION PILIH GRUP UNTUK MEETING -->
+              <label style="margin-top: 20px; display: block;">
+                <i class="fa-solid fa-users"></i> Atau Pilih Grup:
+              </label>
+              <div id="meetingGroupSelectionList" class="contact-checklist-box" style="max-height: 200px; overflow-y: auto; margin-bottom: 8px;"></div>
+              <div id="meetingGroupSelectionInfo" style="margin-top: 5px; margin-bottom: 15px; padding: 8px; background: #f0f0f0; border-radius: 4px; color: #666;">
+                <small>Belum ada grup dipilih</small>
+              </div>
+
+              <label for="meetingNumbers">Nomor Manual (pisahkan dengan koma):</label>
               <input
                 type="text"
                 id="meetingNumbers"
