@@ -10,18 +10,38 @@ class RegistrationHandler {
     }
 
     /**
+     * Normalisasi nomor telepon ke format 0xxx
+     * Input: 628xxx atau 62xxx atau 08xxx
+     * Output: 08xxx
+     */
+    normalizePhoneNumber(number) {
+        // Hapus semua karakter non-digit
+        let cleaned = number.replace(/\D/g, '');
+        
+        // Jika dimulai dengan 62, ganti dengan 0
+        if (cleaned.startsWith('62')) {
+            cleaned = '0' + cleaned.substring(2);
+        }
+        
+        // Jika tidak dimulai dengan 0, tambahkan 0
+        if (!cleaned.startsWith('0')) {
+            cleaned = '0' + cleaned;
+        }
+        
+        return cleaned;
+    }
+
+    /**
      * Cek apakah nomor sudah terdaftar di database
      */
     async checkRegistration(fromNumber) {
         return new Promise((resolve, reject) => {
-            const query = `SELECT * FROM contacts WHERE number = ? OR number = ? OR number = ?`;
-            const variations = [
-                fromNumber,
-                '0' + fromNumber.substring(2),
-                '62' + fromNumber.substring(1)
-            ];
+            // Normalisasi nomor untuk pengecekan
+            const normalizedNumber = this.normalizePhoneNumber(fromNumber);
+            
+            const query = `SELECT * FROM contacts WHERE number = ?`;
 
-            this.db.get(query, variations, (err, row) => {
+            this.db.get(query, [normalizedNumber], (err, row) => {
                 if (err) {
                     reject(err);
                 } else {
@@ -56,7 +76,7 @@ class RegistrationHandler {
             const contact = await this.checkRegistration(fromNumber);
 
             if (contact) {
-                // Hapus dari database
+                // Hapus dari database berdasarkan ID
                 await new Promise((resolve, reject) => {
                     this.db.run("DELETE FROM contacts WHERE id = ?", [contact.id], (err) => {
                         if (err) reject(err);
@@ -64,7 +84,7 @@ class RegistrationHandler {
                     });
                 });
 
-                console.log(`✅ Kontak ${fromNumber} berhasil dihapus (UNREG)`);
+                console.log(`✅ Kontak ${contact.number} (ID: ${contact.id}) berhasil dihapus (UNREG)`);
                 await this.client.sendMessage(message.from, templates.unregSuccess);
                 
                 return { handled: true, action: 'unreg_success' };
@@ -105,11 +125,24 @@ class RegistrationHandler {
         }
 
         try {
-            // Simpan ke database
+            // CEK DULU: Apakah nomor sudah terdaftar?
+            const existingContact = await this.checkRegistration(fromNumber);
+            
+            if (existingContact) {
+                // Nomor sudah terdaftar
+                console.log(`⚠️ Nomor ${fromNumber} sudah terdaftar sebagai ${existingContact.name}`);
+                await this.client.sendMessage(message.from, templates.alreadyRegistered);
+                return { success: false, reason: 'duplicate' };
+            }
+
+            // Normalisasi nomor ke format 08xxx sebelum simpan
+            const normalizedNumber = this.normalizePhoneNumber(fromNumber);
+
+            // Simpan ke database dengan nomor yang sudah dinormalisasi
             await new Promise((resolve, reject) => {
                 const insertSql = "INSERT INTO contacts (name, number, instansi, jabatan) VALUES (?, ?, ?, ?)";
                 
-                this.db.run(insertSql, [nama, fromNumber, instansi, jabatan], function(err) {
+                this.db.run(insertSql, [nama, normalizedNumber, instansi, jabatan], function(err) {
                     if (err) {
                         if (err.message.includes('UNIQUE constraint failed')) {
                             reject({ type: 'duplicate', message: err.message });
@@ -122,10 +155,10 @@ class RegistrationHandler {
                 });
             });
 
-            console.log(`✅ Kontak baru berhasil disimpan: ${nama} (${fromNumber})`);
+            console.log(`✅ Kontak baru berhasil disimpan: ${nama} (${normalizedNumber})`);
             await this.client.sendMessage(message.from, templates.registrationSuccess);
 
-            return { success: true, data: { nama, instansi, jabatan } };
+            return { success: true, data: { nama, instansi, jabatan, number: normalizedNumber } };
 
         } catch (error) {
             if (error.type === 'duplicate') {
