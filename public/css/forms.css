@@ -1,0 +1,709 @@
+.form-container {
+  background: white;
+  padding: 28px 32px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+  flex-basis: 450px; /* Lebih lebar dari 315px */
+  flex-grow: 0;
+  height: auto;
+  position: sticky;
+  top: 70px;
+  max-height: calc(100vh - 84px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  border: 1px solid #e8eef3;
+}
+
+.form-container h2 {
+  text-align: center;
+  margin-bottom: 24px;
+  font-weight: 700;
+  color: #003366;
+  font-size: 2rem;
+  padding-bottom: 16px;
+  border-bottom: 3px solid #e9ecef;
+}
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 17.5px;
+  border-bottom: 2px solid #e9ecef;
+  min-height: 42px;
+  box-sizing: border-box;
+}
+
+#main-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tab-button {
+  background-color: transparent;
+  border: none;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: .95rem;
+  font-weight: 600;
+  color: #6c757d;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+  position: relative;
+  bottom: -2px;
+}
+
+.tab-button:hover {
+  color: #495057;
+  background: #f8fafc;
+}
+
+.tab-button.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  background: #f0f8ff;
+}
+
+.form-content {
+  display: none;
+}
+
+.form-content.active {
+  display: block;
+}
+
+/* ========================================
+   RECIPIENT SELECTION TABS - Tab System
+   ======================================== */
+.recipient-tabs-container {
+  margin-top: 24px;
+  margin-bottom: 20px;
+}
+
+.recipient-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.recipient-tab {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  color: #718096;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  position: relative;
+  bottom: -2px;
+  border-radius: 6px 6px 0 0;
+}
+
+.recipient-tab:hover {
+  color: #2d3748;
+  background: #f8fafc;
+}
+
+.recipient-tab.active {
+  color: #2b6cb0;
+  background: #ebf8ff;
+  border-bottom-color: #2b6cb0;
+}
+
+.recipient-tab i {
+  margin-right: 6px;
+  font-size: 14px;
+}
+
+/* Tab Content Panels */
+.recipient-panel {
+  display: none;
+  padding: 20px 0 10px 0;
+  animation: fadeInPanel 0.3s ease;
+}
+
+.recipient-panel.active {
+  display: block;
+}
+
+@keyframes fadeInPanel {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========================================
+   SEARCH BOX - Enhanced Search
+   ======================================== */
+.search-box-wrapper {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.search-box-wrapper i {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #a0aec0;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.search-box-wrapper input[type="text"] {
+  width: 100%;
+  padding: 12px 16px 12px 42px !important;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  margin-bottom: 0 !important;
+}
+
+.search-box-wrapper input[type="text"]:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+/* ========================================
+   QUICK ACTIONS BAR
+   ======================================== */
+.quick-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: #f7fafc;
+  border-radius: 6px;
+}
+
+.quick-action-btn {
+  flex: 1;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a5568;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.quick-action-btn:hover {
+  background: #edf2f7;
+  border-color: #a0aec0;
+  transform: translateY(-1px);
+}
+
+.quick-action-btn.select-all.active {
+  background: #48bb78;
+  color: white;
+  border-color: #48bb78;
+}
+
+.quick-action-btn.deselect-all:hover {
+  background: #fed7d7;
+  border-color: #fc8181;
+  color: #c53030;
+}
+
+.quick-action-btn i {
+  font-size: 13px;
+}
+
+/* ========================================
+   FORM LABELS & INPUTS
+   ======================================== */
+form label {
+  display: block;
+  margin-top: 18px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 14px;
+  user-select: none;
+}
+
+form input[type="text"],
+form input[type="tel"],
+form input[type="datetime-local"],
+form textarea,
+form select,
+.phone-num-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 28px;
+  background-color: white;
+  margin-bottom: 4px;
+}
+
+form input[type="text"]:focus,
+form input[type="tel"]:focus,
+form input[type="datetime-local"]:focus,
+form textarea:focus,
+form select:focus {
+  border-color: #4299e1;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+textarea {
+  min-height: 90px;
+}
+
+/* ========================================
+   CONTACT/GROUP LIST - Improved
+   ======================================== */
+.contact-checklist-box {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px;
+  margin-top: 0;
+  background-color: #ffffff;
+  box-sizing: border-box;
+}
+
+/* Custom Scrollbar */
+.contact-checklist-box::-webkit-scrollbar {
+  width: 6px;
+}
+
+.contact-checklist-box::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.contact-checklist-box::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 10px;
+}
+
+.contact-checklist-box::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+.contact-checklist-box label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: #2d3748;
+  transition: all 0.15s ease;
+  padding: 10px 12px;
+  border-radius: 6px;
+  user-select: none;
+  background: white;
+  border: 1px solid transparent;
+}
+
+.contact-checklist-box label:last-child {
+  margin-bottom: 0;
+}
+
+.contact-checklist-box label:hover {
+  background-color: #f7fafc;
+  border-color: #e2e8f0;
+  transform: translateX(2px);
+}
+
+.contact-checklist-box input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #cbd5e0;
+  border-radius: 4px;
+  margin-right: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  background-color: white;
+}
+
+.contact-checklist-box input[type="checkbox"]:checked {
+  background-color: #2b6cb0;
+  border-color: #2b6cb0;
+  transform: scale(1.05);
+}
+
+.contact-checklist-box input[type="checkbox"]:checked::after {
+  content: "✓";
+  color: white;
+  position: absolute;
+  top: -1px;
+  left: 0;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+  width: 100%;
+  line-height: 18px;
+}
+
+/* ========================================
+   GROUP SELECTION - Enhanced Styling
+   ======================================== */
+#groupSelectionList,
+#meetingGroupSelectionList {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 2px solid #bee3f8;
+  border-radius: 8px;
+  padding: 8px;
+  margin-top: 0;
+  background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+  box-sizing: border-box;
+}
+
+#groupSelectionList::-webkit-scrollbar,
+#meetingGroupSelectionList::-webkit-scrollbar {
+  width: 6px;
+}
+
+#groupSelectionList::-webkit-scrollbar-track,
+#meetingGroupSelectionList::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+#groupSelectionList::-webkit-scrollbar-thumb,
+#meetingGroupSelectionList::-webkit-scrollbar-thumb {
+  background: #bee3f8;
+  border-radius: 10px;
+}
+
+#groupSelectionList::-webkit-scrollbar-thumb:hover,
+#meetingGroupSelectionList::-webkit-scrollbar-thumb:hover {
+  background: #90cdf4;
+}
+
+#groupSelectionList label,
+#meetingGroupSelectionList label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: #2d3748;
+  transition: all 0.15s ease;
+  padding: 10px 12px;
+  border-radius: 6px;
+  user-select: none;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+}
+
+#groupSelectionList label:last-child,
+#meetingGroupSelectionList label:last-child {
+  margin-bottom: 0;
+}
+
+#groupSelectionList label:hover,
+#meetingGroupSelectionList label:hover {
+  background-color: #ebf8ff;
+  border-color: #bee3f8;
+  transform: translateX(2px);
+  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.15);
+}
+
+#groupSelectionList label strong,
+#meetingGroupSelectionList label strong {
+  color: #2c5282;
+  font-weight: 600;
+  flex: 1;
+}
+
+#groupSelectionList label small,
+#meetingGroupSelectionList label small {
+  color: #718096;
+  font-size: 11px;
+  background: #edf2f7;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.group-selection-checkbox,
+.meeting-group-selection-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #90cdf4;
+  border-radius: 4px;
+  margin-right: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  background-color: white;
+}
+
+.group-selection-checkbox:checked,
+.meeting-group-selection-checkbox:checked {
+  background-color: #2b6cb0;
+  border-color: #2b6cb0;
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.2);
+}
+
+.group-selection-checkbox:checked::after,
+.meeting-group-selection-checkbox:checked::after {
+  content: "✓";
+  color: white;
+  position: absolute;
+  top: -1px;
+  left: 0;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+  width: 100%;
+  line-height: 18px;
+}
+
+/* ========================================
+   SELECTION INFO BADGE
+   ======================================== */
+#groupSelectionInfo,
+#meetingGroupSelectionInfo {
+  margin-top: 12px;
+  margin-bottom: 0;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+  border-radius: 8px;
+  border-left: 4px solid #2b6cb0;
+  color: #2c5282;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+#groupSelectionInfo small,
+#meetingGroupSelectionInfo small {
+  display: block;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+#groupSelectionInfo strong,
+#meetingGroupSelectionInfo strong {
+  color: #2b6cb0;
+  font-weight: 700;
+}
+
+/* Divider between sections */
+form label[style*="margin-top: 20px"] {
+  border-top: 2px dashed #dee2e6;
+  padding-top: 18px;
+  margin-top: 24px !important;
+}
+
+/* Icon styling */
+form label i.fa-users {
+  color: #2b6cb0;
+  margin-right: 6px;
+}
+
+/* ========================================
+   FILE UPLOAD SECTION
+   ======================================== */
+.file-upload-section {
+  margin-top: 18px;
+}
+
+.file-upload-container {
+  margin-top: 8px;
+  border: 2px dashed #cbd5e0;
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #f7fafc;
+}
+
+.file-upload-container:hover {
+  background-color: #edf2f7;
+  border-color: #4299e1;
+}
+
+.file-upload-container input[type="file"] {
+  display: none;
+}
+
+.file-upload-label {
+  display: block;
+  padding: 8px 0;
+  cursor: pointer;
+  color: #2b6cb0;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.file-name {
+  font-size: 13px;
+  color: #718096;
+  margin-top: 8px;
+  word-break: break-all;
+}
+
+/* File chip styles */
+#customFilePreview,
+#meetingFileNames,
+#edit-meetingFileNames,
+#edit-fileNames {
+  position: relative;
+  margin-top: 12px;
+}
+
+.file-chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 56px 10px 12px;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  background: #edf2f7;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  margin: 8px 0;
+}
+
+.file-chip .file-name-text,
+.file-chip span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: #2d3748;
+}
+
+.file-chip .file-size-text {
+  color: #718096;
+  font-size: 12px;
+}
+
+.file-chip button,
+.file-chip .remove-file-btn,
+.file-chip .remove-meeting-file-btn,
+.file-chip .remove-edit-meeting-file-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #fc8181;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 16px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.file-chip button:hover {
+  background: #f56565;
+  transform: translateY(-50%) scale(1.05);
+}
+
+/* ========================================
+   FORM BUTTONS
+   ======================================== */
+form button {
+  background-color: #2b6cb0;
+  color: white;
+  border: none;
+  margin-top: 24px;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  width: 100%;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(43, 108, 176, 0.2);
+}
+
+form button:hover {
+  background-color: #2c5282;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(43, 108, 176, 0.3);
+}
+
+form button:active {
+  transform: translateY(0);
+}
+
+#clearAllFilesBtn,
+#clearAllMeetingFilesBtn {
+  background-color: #fc8181;
+  margin-top: 12px;
+  padding: 10px 16px;
+  font-size: 13px;
+}
+
+#clearAllFilesBtn:hover,
+#clearAllMeetingFilesBtn:hover {
+  background-color: #f56565;
+}
+
+/* =======================================
+   CSS UNTUK MANAJEMEN KONTAK & GRUP
+   ======================================= */
+#contact-crud-form,
+#import-form,
+#group-crud-form {
+  background-color: #f7fafc;
+  border: 2px solid #e2e8f0;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+#contact-crud-form h3,
+#import-form h3,
+#group-crud-form h3 {
+  margin-top: 0;
+  font-size: 1.4rem;
+  color: #2c5282;
+  border-bottom: 3px solid #2b6cb0;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}

@@ -1,0 +1,376 @@
+.content-area {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.schedule-container,
+.contact-main-container {
+  background: white;
+  padding: 21px;
+  border-radius: 10.5px;
+  box-shadow: 0 7px 21px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  border: 1px solid #e0e0e0;
+}
+
+.contact-main-container {
+  display: none;
+}
+
+.schedule-container h2,
+.contact-main-container h3 {
+  text-align: center;
+  margin-bottom: 17.5px;
+  font-weight: 700;
+  color: #003366;
+  font-size: 1.8rem;
+}
+
+.schedule-header {
+  margin-bottom: 10px;
+}
+
+/* --- Filter Buttons --- */
+.filter-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8.4px;
+  margin-bottom: 17.5px;
+  flex-wrap: wrap;
+}
+
+.filter-button {
+  background-color: #e9ecef;
+  border: 1px solid #ced4da;
+  padding: 7px 14px;
+  border-radius: 5.6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: background-color 0.3s ease, border-color 0.3s ease,
+    color 0.3s ease, transform 0.2s ease;
+  flex-grow: 1;
+  max-width: 105px;
+  text-align: center;
+}
+
+.filter-button:hover {
+  background-color: #dee2e6;
+  transform: translateY(-1px);
+}
+
+.filter-button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+  box-shadow: 0 1.4px 5.6px rgba(0, 123, 255, 0.2);
+  transform: translateY(-1.4px);
+}
+
+.table-wrapper {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  margin-top: 0;
+  width: 100%;
+  border-radius: 7px;
+  border: 1px solid #e0e0e0;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* ---- Table Styles ---- */
+#scheduleTable,
+#contact-management-table,
+#group-management-table {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+#scheduleTable thead,
+#contact-management-table thead,
+#group-management-table thead {
+  position: sticky;
+  top: 0;
+  background-color: #f1f3f5;
+  z-index: 1;
+}
+
+#scheduleTable th,
+#scheduleTable td,
+#contact-management-table th,
+#contact-management-table td,
+#group-management-table th,
+#group-management-table td {
+  border-bottom: 1px solid #e9ecef;
+  padding: 10.5px 8.4px;
+  text-align: left;
+  font-size: 0.95rem;
+  vertical-align: middle;
+  word-wrap: break-word;
+}
+
+#scheduleTable th,
+#contact-management-table th,
+#group-management-table th {
+  background-color: #e9ecef;
+  font-weight: 700;
+  color: #495057;
+  text-transform: uppercase;
+  letter-spacing: 0.35px;
+}
+
+#scheduleTable th:first-child,
+#contact-management-table th:first-child,
+#group-management-table th:first-child {
+  border-top-left-radius: 7px;
+}
+
+#scheduleTable th:last-child,
+#contact-management-table th:last-child,
+#group-management-table th:last-child {
+  border-top-right-radius: 7px;
+}
+
+#scheduleTable tbody tr:last-child td,
+#contact-management-table tbody tr:last-child td,
+#group-management-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+#contact-management-table tbody tr:nth-child(even),
+#group-management-table tbody tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+/* Schedule Table Column Widths */
+#scheduleTable th:nth-child(1),
+#scheduleTable td:nth-child(1) {
+  width: 91px;
+  min-width: 91px;
+}
+#scheduleTable th:nth-child(2),
+#scheduleTable td:nth-child(2) {
+  width: 112px;
+  min-width: 112px;
+}
+#scheduleTable th:nth-child(3),
+#scheduleTable td:nth-child(3) {
+  width: auto;
+  min-width: 175px;
+  white-space: normal;
+}
+#scheduleTable th:nth-child(4),
+#scheduleTable td:nth-child(4) {
+  width: 63px;
+  min-width: 63px;
+  text-align: center;
+}
+#scheduleTable th:nth-child(5),
+#scheduleTable td:nth-child(5) {
+  width: 70px;
+  min-width: 70px;
+  text-align: center;
+}
+#scheduleTable th:nth-child(6),
+#scheduleTable td:nth-child(6) {
+  text-align: center;
+  vertical-align: middle !important;
+}
+
+/* Contact Table Column Widths */
+#contact-management-table th:nth-child(1),
+#contact-management-table td:nth-child(1) {
+  width: 120px;
+  min-width: 120px;
+}
+#contact-management-table th:nth-child(2),
+#contact-management-table td:nth-child(2) {
+  width: 120px;
+  min-width: 120px;
+}
+#contact-management-table th:nth-child(3),
+#contact-management-table td:nth-child(3) {
+  width: auto;
+  min-width: 150px;
+  white-space: normal;
+}
+#contact-management-table th:nth-child(4),
+#contact-management-table td:nth-child(4) {
+  width: auto;
+  min-width: 100px;
+  white-space: normal;
+}
+#contact-management-table th:nth-child(5),
+#contact-management-table td:nth-child(5) {
+  width: auto;
+  min-width: 100px;
+  white-space: normal;
+}
+#contact-management-table th:nth-child(6),
+#contact-management-table td:nth-child(6) {
+  width: 140px;
+  min-width: 140px;
+  text-align: center;
+  vertical-align: middle !important;
+}
+
+/* Group Table Column Widths */
+#group-management-table th:nth-child(1),
+#group-management-table td:nth-child(1) {
+  width: auto;
+  min-width: 200px;
+}
+#group-management-table th:nth-child(2),
+#group-management-table td:nth-child(2) {
+  width: 120px;
+  min-width: 120px;
+  text-align: center;
+}
+#group-management-table th:nth-child(3),
+#group-management-table td:nth-child(3) {
+  width: 140px;
+  min-width: 140px;
+  text-align: center;
+  vertical-align: middle !important;
+}
+
+/* ---- Table Status & Actions ---- */
+.status-terkirim {
+  color: #28a745;
+  font-weight: bold;
+}
+.status-selesai {
+  color: #17a2b8;
+  font-weight: bold;
+}
+.status-gagal {
+  color: #dc3545;
+  font-weight: bold;
+}
+.status-terjadwal {
+  color: #ffc107;
+  font-weight: bold;
+}
+.status-dibatalkan {
+  color: #6c757d;
+  font-weight: bold;
+}
+
+.material-icons {
+  vertical-align: middle;
+  margin-right: 2.1px;
+  font-size: 12.6px;
+}
+
+.action-buttons {
+  justify-content: center;
+}
+
+.action-buttons .finish-meeting-btn,
+.action-buttons .delete-meeting-btn,
+.action-buttons .delete-history-btn {
+  flex-basis: 100%;
+  margin-top: 5.6px;
+}
+
+.action-buttons button {
+  min-width: 0;
+  padding: 7px 10.5px;
+  cursor: pointer;
+  border-radius: 4.2px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  transition: background-color 0.2s ease, transform 0.2s ease,
+    box-shadow 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3.5px;
+  white-space: nowrap;
+}
+
+.edit-btn,
+.edit-contact-btn,
+.edit-group-btn {
+  background-color: #007bff;
+  color: white;
+  box-shadow: 0 1.4px 3.5px rgba(0, 123, 255, 0.2);
+}
+
+.edit-btn:hover,
+.edit-contact-btn:hover,
+.edit-group-btn:hover {
+  background-color: #0056b3;
+  transform: translateY(-0.7px);
+  box-shadow: 0 2.8px 5.6px rgba(0, 123, 255, 0.3);
+}
+
+.delete-contact-btn,
+.delete-group-btn {
+  background-color: #dc3545;
+  color: white;
+  box-shadow: 0 1.4px 3.5px rgba(220, 53, 69, 0.2);
+}
+
+.delete-contact-btn:hover,
+.delete-group-btn:hover {
+  background-color: #c82333;
+  transform: translateY(-0.7px);
+  box-shadow: 0 2.8px 5.6px rgba(220, 53, 69, 0.3);
+}
+
+.cancel-btn,
+.delete-history-btn {
+  background-color: #dc3545;
+  color: white;
+  box-shadow: 0 1.4px 3.5px rgba(220, 53, 69, 0.2);
+}
+.cancel-btn:hover,
+.delete-history-btn:hover {
+  background-color: #c82333;
+  transform: translateY(-0.7px);
+  box-shadow: 0 2.8px 5.6px rgba(220, 53, 69, 0.3);
+}
+
+.cancel-meeting-btn {
+  background-color: #ffc107;
+  color: #212529;
+  box-shadow: 0 1.4px 3.5px rgba(255, 193, 7, 0.2);
+}
+.cancel-meeting-btn:hover {
+  background-color: #e0a800;
+  transform: translateY(-0.7px);
+  box-shadow: 0 2.8px 5.6px rgba(255, 193, 7, 0.3);
+}
+
+.finish-meeting-btn {
+  background-color: #28a745;
+  color: white;
+  box-shadow: 0 1.4px 3.5px rgba(40, 167, 69, 0.2);
+}
+.finish-meeting-btn:hover {
+  background-color: #218838;
+  transform: translateY(-0.7px);
+  box-shadow: 0 2.8px 5.6px rgba(40, 167, 69, 0.3);
+}
+
+.delete-meeting-btn {
+  background-color: #6c757d;
+  color: white;
+  box-shadow: 0 1.4px 3.5px rgba(108, 117, 125, 0.2);
+}
+.delete-meeting-btn:hover {
+  background-color: #5a6268;
+  transform: translateY(-0.7px);
+  box-shadow: 0 2.8px 5.6px rgba(108, 117, 125, 0.3);
+}
