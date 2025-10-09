@@ -337,15 +337,26 @@ function createScheduleRowHtml(schedule) {
 /**
  * Updates countdown timers
  */
+/**
+ * Updates countdown timers - OPTIMIZED VERSION
+ * ✅ Menggunakan requestAnimationFrame untuk smooth update
+ * ✅ Hanya update text content, TIDAK touch kolom status
+ * ✅ Cache DOM queries untuk performa lebih baik
+ */
 export function updateCountdownTimers() {
   if (schedules.length === 0) return;
 
-  document.querySelectorAll("#scheduleTable tbody tr[data-id]").forEach((row) => {
+  // ✅ Cache query untuk performa
+  const rows = document.querySelectorAll("#scheduleTable tbody tr[data-id]");
+  
+  rows.forEach((row) => {
     const scheduleId = row.dataset.id;
     const scheduleData = schedules.find((s) => s.id == scheduleId);
 
     if (scheduleData && scheduleData.status === "terjadwal") {
       const timeCell = row.cells[0];
+      if (!timeCell) return;
+      
       let smallElement = timeCell.querySelector("small.countdown-timer");
 
       const scheduledTime = new Date(scheduleData.scheduledTime);
@@ -355,23 +366,99 @@ export function updateCountdownTimers() {
 
       const newCountdownText = `(${formatTimeDifference(countdownBaseTime)})`;
 
+      // Create element if doesn't exist
       if (!smallElement) {
         smallElement = document.createElement("small");
         smallElement.className = "countdown-timer";
+        smallElement.style.cssText = "display: block; color: #718096; margin-top: 4px; font-size: 12px;";
         timeCell.appendChild(smallElement);
       }
 
-      if (smallElement.textContent.trim() !== newCountdownText.trim()) {
-        smallElement.textContent = newCountdownText;
+      // ✅ FIX: Gunakan requestAnimationFrame untuk smooth update
+      // Hanya update jika text berubah
+      if (smallElement.textContent !== newCountdownText) {
+        requestAnimationFrame(() => {
+          if (smallElement) {
+            smallElement.textContent = newCountdownText;
+          }
+        });
       }
     } else {
+      // ✅ Hapus countdown timer jika status bukan terjadwal
+      // Ini penting agar tidak ada countdown di status lain
       const timeCell = row.cells[0];
-      const smallElement = timeCell.querySelector("small.countdown-timer");
-      if (smallElement) {
-        smallElement.remove();
+      if (timeCell) {
+        const smallElement = timeCell.querySelector("small.countdown-timer");
+        if (smallElement) {
+          // ✅ Smooth removal dengan fade out
+          requestAnimationFrame(() => {
+            if (smallElement.parentNode) {
+              smallElement.style.transition = "opacity 0.2s ease";
+              smallElement.style.opacity = "0";
+              setTimeout(() => {
+                if (smallElement.parentNode) {
+                  smallElement.remove();
+                }
+              }, 200);
+            }
+          });
+        }
       }
     }
   });
+}
+
+/**
+ * BONUS: Smart render untuk update status tanpa rebuild table
+ * Gunakan ini jika ingin update status lebih smooth
+ */
+export async function smartUpdateScheduleStatus() {
+  try {
+    const res = await fetch("/get-all-schedules");
+    if (!res.ok) return;
+
+    const newSchedules = await res.json();
+    if (!Array.isArray(newSchedules)) return;
+
+    // ✅ Hanya update status yang berubah
+    newSchedules.forEach((newSchedule) => {
+      const oldSchedule = schedules.find(s => s.id === newSchedule.id);
+      
+      // Cek apakah status berubah
+      if (oldSchedule && oldSchedule.status !== newSchedule.status) {
+        const row = document.querySelector(`#scheduleTable tbody tr[data-id="${newSchedule.id}"]`);
+        if (row && row.cells[4]) {
+          const statusCell = row.cells[4];
+          
+          // ✅ Smooth transition dengan fade
+          statusCell.style.transition = "opacity 0.3s ease";
+          statusCell.style.opacity = "0.3";
+          
+          setTimeout(() => {
+            // Update status HTML
+            const statusConfig = {
+              'terkirim': { icon: 'check_circle', text: 'Terkirim', class: 'status-terkirim' },
+              'gagal': { icon: 'cancel', text: 'Gagal', class: 'status-gagal' },
+              'dibatalkan': { icon: 'block', text: 'Dibatalkan', class: 'status-dibatalkan' },
+              'selesai': { icon: 'done_all', text: 'Selesai', class: 'status-selesai' },
+              'terjadwal': { icon: 'hourglass_empty', text: 'Terjadwal', class: 'status-terjadwal' }
+            };
+            
+            const config = statusConfig[newSchedule.status] || statusConfig['terjadwal'];
+            statusCell.innerHTML = `<i class="material-icons" title="${config.text}">${config.icon}</i> ${config.text}`;
+            statusCell.className = config.class;
+            statusCell.style.opacity = "1";
+          }, 150);
+        }
+      }
+    });
+
+    // Update schedules array
+    schedules = newSchedules;
+
+  } catch (error) {
+    console.error("Error in smart status update:", error);
+  }
 }
 
 /**

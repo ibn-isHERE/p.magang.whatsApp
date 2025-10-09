@@ -124,11 +124,21 @@ async function scheduleMessage(scheduleData) {
       `UPDATE schedules SET status = ? WHERE id = ?`,
       ["gagal", id],
       (err) => {
-        if (err)
+        if (err) {
           console.error(
             "Gagal memperbarui status untuk jadwal pesan yang telah lewat:",
             err.message
           );
+        } else {
+          // âœ… EMIT SOCKET EVENT
+          if (global.emitScheduleStatusUpdate) {
+            global.emitScheduleStatusUpdate(
+              id, 
+              'gagal', 
+              'Jadwal sudah lewat lebih dari 1 menit'
+            );
+          }
+        }
       }
     );
 
@@ -301,7 +311,6 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
 }
 
 // FUNGSI HELPER UNTUK MEMISAHKAN LOGIKA
-
 function handleFailedMessage(id, filesData, reason) {
   console.error(`Pesan ID ${id} gagal: ${reason}`);
 
@@ -312,6 +321,11 @@ function handleFailedMessage(id, filesData, reason) {
     (err) => {
       if (err) {
         console.error("Gagal memperbarui status:", err.message);
+      } else {
+        // âœ… EMIT SOCKET EVENT
+        if (global.emitScheduleStatusUpdate) {
+          global.emitScheduleStatusUpdate(id, 'gagal', reason);
+        }
       }
     }
   );
@@ -353,6 +367,14 @@ function updateMessageStatus(id, status, failedNumbers = []) {
         console.log(
           `Status pesan ID ${id} diperbarui menjadi ${status}${additionalInfo}`
         );
+        
+        // âœ… EMIT SOCKET EVENT (sudah benar)
+        if (global.emitScheduleStatusUpdate) {
+          const message = failedNumbers.length > 0 
+            ? `Pesan terkirim, ${failedNumbers.length} nomor gagal`
+            : `Pesan berhasil terkirim`;
+          global.emitScheduleStatusUpdate(id, status, message);
+        }
       }
     }
   );
@@ -497,49 +519,59 @@ router.post("/add-reminder", (req, res) => {
 
       // Simpan ke database
       db.run(
-        `INSERT INTO schedules (id, numbers, message, filesData, scheduledTime, status) VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          scheduleId,
-          JSON.stringify(parsedNumbers.validNumbers),
-          message ? message.trim() : null,
-          filesData,
-          datetime,
-          "terjadwal",
-        ],
-        function (insertErr) {
-          if (insertErr) {
-            console.error("Gagal menyimpan jadwal pesan:", insertErr.message);
-            cleanupUploadedFiles(uploadedFiles);
-            return res
-              .status(500)
-              .json({ error: "Gagal menyimpan jadwal pesan ke database." });
-          }
+  `INSERT INTO schedules (id, numbers, message, filesData, scheduledTime, status) VALUES (?, ?, ?, ?, ?, ?)`,
+  [
+    scheduleId,
+    JSON.stringify(parsedNumbers.validNumbers),
+    message ? message.trim() : null,
+    filesData,
+    datetime,
+    "terjadwal",
+  ],
+  function (insertErr) {
+    if (insertErr) {
+      console.error("Gagal menyimpan jadwal pesan:", insertErr.message);
+      cleanupUploadedFiles(uploadedFiles);
+      return res
+        .status(500)
+        .json({ error: "Gagal menyimpan jadwal pesan ke database." });
+    }
 
-          console.log(`Jadwal pesan baru disimpan dengan ID: ${scheduleId}`);
+    console.log(`Jadwal pesan baru disimpan dengan ID: ${scheduleId}`);
 
-          // Dapatkan client dari app locals
-          const client = req.app.locals.whatsappClient;
+    // Jadwalkan pesan
+    const client = req.app.locals.whatsappClient;
+    scheduleMessage(
+      {
+        id: scheduleId,
+        numbers: JSON.stringify(parsedNumbers.validNumbers),
+        message: message ? message.trim() : null,
+        filesData,
+        scheduledTime: datetime,
+        status: "terjadwal",
+      },
+      client
+    );
 
-          // Jadwalkan pesan
-          scheduleMessage(
-            {
-              id: scheduleId,
-              numbers: JSON.stringify(parsedNumbers.validNumbers),
-              message: message ? message.trim() : null,
-              filesData,
-              scheduledTime: datetime,
-              status: "terjadwal",
-            },
-            client
-          );
+    // ✅ EMIT SOCKET EVENT - Schedule Created
+    if (global.emitScheduleCreated) {
+      global.emitScheduleCreated({
+        id: scheduleId,
+        numbers: parsedNumbers.validNumbers,
+        message: message,
+        scheduledTime: datetime,
+        filesData: filesData ? JSON.parse(filesData) : [],
+        status: 'terjadwal'
+      });
+    }
 
-          res.status(200).json({
-            success: true,
-            message: "Pesan/File berhasil ditambahkan dan dijadwalkan.",
-            scheduleId: scheduleId,
-          });
-        }
-      );
+    res.status(200).json({
+      success: true,
+      message: "Pesan/File berhasil ditambahkan dan dijadwalkan.",
+      scheduleId: scheduleId,
+    });
+  }
+);
     } catch (error) {
       console.error("Error dalam /add-reminder:", error);
       cleanupUploadedFiles(uploadedFiles);
@@ -745,12 +777,19 @@ router.delete("/cancel-schedule/:id", (req, res) => {
               .status(500)
               .send("Gagal memperbarui status jadwal pesan di database.");
           }
+          
+          // ✅ EMIT SOCKET EVENT
+          if (global.emitScheduleStatusUpdate) {
+            global.emitScheduleStatusUpdate(id, 'dibatalkan', 'Jadwal dibatalkan oleh user');
+          }
+          
           res.status(200).send("Jadwal pesan berhasil dibatalkan.");
         }
       );
     }
   );
 });
+
 
 /**
  * Endpoint untuk hapus riwayat pesan
@@ -802,6 +841,12 @@ router.delete("/delete-history/:id", (req, res) => {
             .send("Gagal menghapus riwayat pesan dari database.");
         }
         console.log(`Riwayat pesan ID ${id} berhasil dihapus.`);
+        
+        // ✅ EMIT SOCKET EVENT
+        if (global.emitScheduleDeleted) {
+          global.emitScheduleDeleted(id);
+        }
+        
         res.status(200).send("Riwayat pesan berhasil dihapus.");
       });
     }

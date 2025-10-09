@@ -1,4 +1,4 @@
-// main.js - Main Application Entry Point dengan Group Support
+// main.js - Main Application Entry Point dengan Enhanced Tab System
 
 import {
   showForm as showFormOriginal,
@@ -30,10 +30,12 @@ function showForm(formId) {
   if (formId === "meeting") {
     renderMeetingContactList();
     renderMeetingGroupSelectionList();
+    initMeetingFormTabs();
   }
   if (formId === "message") {
     renderContactList();
     renderGroupSelectionList();
+    initMessageFormTabs();
   }
   if (formId === "chat") {
     const { getChatConversations } = window.chatModule || {};
@@ -61,7 +63,9 @@ import {
   updateAllGroupDropdowns,
   renderGroupSelectionList,
   renderMeetingGroupSelectionList,
-  getNumbersFromSelectedGroups
+  getNumbersFromSelectedGroups,
+  initMessageFormTabs,
+  initMeetingFormTabs
 } from './contact-manager.js';
 
 import { 
@@ -150,7 +154,7 @@ function initFileUploadListener() {
     filePreview.innerHTML = "";
     
     if (currentFiles.length === 0) {
-      filePreview.innerHTML = "<span>Tidak ada file terpilih</span>";
+      filePreview.innerHTML = "<span style='color: #718096; font-size: 13px;'>Tidak ada file terpilih</span>";
       clearAllBtn.style.display = "none";
       return;
     }
@@ -243,7 +247,7 @@ function initMeetingFileUploadListener() {
     meetingFilePreview.innerHTML = "";
     
     if (currentFiles.length === 0) {
-      meetingFilePreview.innerHTML = "<span>Belum ada file terpilih</span>";
+      meetingFilePreview.innerHTML = "<span style='color: #718096; font-size: 13px;'>Belum ada file terpilih</span>";
       if (meetingClearAllBtn) meetingClearAllBtn.style.display = "none";
       return;
     }
@@ -287,6 +291,9 @@ function initMeetingFileUploadListener() {
 /**
  * Initializes reminder form
  */
+/**
+ * Initializes reminder form
+ */
 function initReminderForm() {
   const reminderForm = document.getElementById("reminderForm");
   if (!reminderForm) return;
@@ -303,7 +310,7 @@ function initReminderForm() {
     // Ambil nomor dari kontak individual
     const selectedContactNumbers = Array.from(selectedNumbers);
     
-    // 🆕 Ambil nomor dari grup yang dipilih
+    // Ambil nomor dari grup yang dipilih
     const groupNumbers = getNumbersFromSelectedGroups(false);
     
     // Ambil nomor manual
@@ -327,12 +334,22 @@ function initReminderForm() {
     }
 
     if (!hasFilesUploaded && !hasMessage && !hasExistingFiles) {
-      Swal.fire("Error", "Mohon isi pesan atau pilih minimal satu file yang ingin dikirim.", "error");
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Mohon isi pesan atau pilih minimal satu file yang ingin dikirim.",
+        confirmButtonColor: "#2b6cb0"
+      });
       return;
     }
 
     if (finalNumbers.length === 0) {
-      Swal.fire("Error", "Mohon pilih minimal satu kontak, grup, atau masukkan nomor manual.", "error");
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Mohon pilih minimal satu kontak, grup, atau masukkan nomor manual.",
+        confirmButtonColor: "#2b6cb0"
+      });
       return;
     }
 
@@ -340,7 +357,16 @@ function initReminderForm() {
     const invalidNumbersFrontend = finalNumbers.filter((n) => !regexPattern.test(n));
 
     if (invalidNumbersFrontend.length > 0) {
-      Swal.fire("Error", `Format nomor tidak valid: ${invalidNumbersFrontend.join(", ")}. Pastikan format 08xxxxxxxxxx atau 628xxxxxxxxxx.`, "error");
+      Swal.fire({
+        icon: "error",
+        title: "Format Nomor Tidak Valid",
+        html: `
+          <p>Format nomor tidak valid:</p>
+          <strong>${invalidNumbersFrontend.join(", ")}</strong>
+          <p style="margin-top: 10px; color: #718096;">Pastikan format 08xxxxxxxxxx atau 628xxxxxxxxxx</p>
+        `,
+        confirmButtonColor: "#2b6cb0"
+      });
       return;
     }
 
@@ -366,10 +392,17 @@ function initReminderForm() {
     }
 
     try {
+      // Add loading class to button
+      if (submitButton) {
+        submitButton.classList.add('loading');
+        submitButton.disabled = true;
+      }
+
       Swal.fire({
-        title: "Memproses...",
-        text: "Mohon tunggu",
+        title: '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...',
+        html: '<p style="color: #718096;">Mohon tunggu, sedang menjadwalkan pesan...</p>',
         allowOutsideClick: false,
+        showConfirmButton: false,
         didOpen: () => {
           Swal.showLoading();
         },
@@ -384,14 +417,18 @@ function initReminderForm() {
       Swal.close();
 
       if (res.ok) {
-        Swal.fire({
-          title: isEditing ? "Jadwal Diupdate!" : "Pesan Terjadwal!",
-          html: `
-            <b>Jumlah Penerima:</b> ${finalNumbers.length} nomor<br>
-            <b>Pesan:</b> ${message ? message : "(Tanpa Pesan Teks)"}<br>
-            <b>Waktu Kirim:</b> ${new Date(datetime).toLocaleString("id-ID")}
-          `,
+        await Swal.fire({
           icon: "success",
+          title: isEditing ? "✅ Jadwal Diupdate!" : "✅ Pesan Terjadwal!",
+          html: `
+            <div style="text-align: left; padding: 10px;">
+              <p><strong>📊 Jumlah Penerima:</strong> <span class="badge badge-primary">${finalNumbers.length} nomor</span></p>
+              <p><strong>💬 Pesan:</strong> ${message ? message : '<em style="color: #a0aec0;">(Tanpa Pesan Teks)</em>'}</p>
+              <p><strong>⏰ Waktu Kirim:</strong> ${new Date(datetime).toLocaleString("id-ID")}</p>
+            </div>
+          `,
+          confirmButtonColor: "#48bb78",
+          confirmButtonText: '<i class="fa-solid fa-check"></i> OK'
         });
 
         this.reset();
@@ -406,7 +443,7 @@ function initReminderForm() {
 
         const filePreview = document.getElementById("customFilePreview");
         if (filePreview) {
-          filePreview.innerHTML = "<span>Tidak ada file terpilih</span>";
+          filePreview.innerHTML = "<span style='color: #718096; font-size: 13px;'>Tidak ada file terpilih</span>";
         }
 
         const clearAllBtn = document.getElementById("clearAllFilesBtn");
@@ -416,7 +453,7 @@ function initReminderForm() {
         
         if (submitButton) {
           delete submitButton.dataset.editId;
-          submitButton.textContent = "Kirim";
+          submitButton.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Pesan';
         }
         
         const manualNumbersInput = document.getElementById("manualNumbers");
@@ -427,16 +464,35 @@ function initReminderForm() {
         renderScheduleTable();
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        Swal.fire("Gagal", text, "error");
+        Swal.fire({
+          icon: "error",
+          title: "❌ Gagal",
+          text: text,
+          confirmButtonColor: "#fc8181"
+        });
       }
     } catch (err) {
       Swal.close();
-      Swal.fire("Gagal koneksi ke server", "", "error");
+      Swal.fire({
+        icon: "error",
+        title: "❌ Koneksi Gagal",
+        text: "Tidak dapat terhubung ke server. Silakan coba lagi.",
+        confirmButtonColor: "#fc8181"
+      });
       console.error(err);
+    } finally {
+      // Remove loading class from button
+      if (submitButton) {
+        submitButton.classList.remove('loading');
+        submitButton.disabled = false;
+      }
     }
   });
 }
 
+/**
+ * Initializes meeting form
+ */
 /**
  * Initializes meeting form
  */
@@ -458,7 +514,7 @@ function initMeetingForm() {
     // Ambil nomor dari kontak individual
     const selectedContactNumbers = Array.from(selectedMeetingNumbers);
     
-    // 🆕 Ambil nomor dari grup yang dipilih
+    // Ambil nomor dari grup yang dipilih
     const groupNumbers = getNumbersFromSelectedGroups(true);
     
     // Ambil nomor manual
@@ -468,14 +524,24 @@ function initMeetingForm() {
     const allNumbers = [...new Set([...selectedContactNumbers, ...groupNumbers, ...manualNumbers])];
 
     if (!title || allNumbers.length === 0 || !room || !startTime || !endTime) {
-      Swal.fire("Error", "Judul, Peserta, Ruangan, dan Waktu harus diisi.", "error");
+      Swal.fire({
+        icon: "error",
+        title: "Data Tidak Lengkap",
+        text: "Judul, Peserta, Ruangan, dan Waktu harus diisi.",
+        confirmButtonColor: "#2b6cb0"
+      });
       return;
     }
 
     const startDateTime = new Date(startTime);
     const endDateTime = new Date(endTime);
     if (endDateTime <= startDateTime) {
-      Swal.fire("Error", "Waktu selesai harus lebih besar dari waktu mulai.", "error");
+      Swal.fire({
+        icon: "error",
+        title: "Waktu Tidak Valid",
+        text: "Waktu selesai harus lebih besar dari waktu mulai.",
+        confirmButtonColor: "#2b6cb0"
+      });
       return;
     }
 
@@ -498,10 +564,17 @@ function initMeetingForm() {
     let method = isEditing ? "PUT" : "POST";
 
     try {
+      // Add loading state
+      if (submitButton) {
+        submitButton.classList.add('loading');
+        submitButton.disabled = true;
+      }
+
       Swal.fire({
-        title: isEditing ? "Mengupdate Rapat..." : "Menjadwalkan Rapat...",
-        text: "Mohon tunggu",
+        title: '<i class="fa-solid fa-spinner fa-spin"></i> ' + (isEditing ? "Mengupdate Rapat..." : "Menjadwalkan Rapat..."),
+        html: '<p style="color: #718096;">Mohon tunggu, sedang memproses...</p>',
         allowOutsideClick: false,
+        showConfirmButton: false,
         didOpen: () => Swal.showLoading(),
       });
 
@@ -514,16 +587,25 @@ function initMeetingForm() {
       Swal.close();
 
       if (res.ok && result.success) {
-        Swal.fire({
-          title: isEditing ? "Jadwal Rapat Diupdate!" : "Jadwal Rapat Terbuat!",
-          html: `<b>Jumlah Peserta:</b> ${allNumbers.length} nomor`,
+        await Swal.fire({
           icon: "success",
+          title: isEditing ? "✅ Jadwal Rapat Diupdate!" : "✅ Jadwal Rapat Terbuat!",
+          html: `
+            <div style="text-align: left; padding: 10px;">
+              <p><strong>👥 Jumlah Peserta:</strong> <span class="badge badge-primary">${allNumbers.length} nomor</span></p>
+              <p><strong>📋 Judul:</strong> ${title}</p>
+              <p><strong>🏢 Ruangan:</strong> ${room}</p>
+              <p><strong>🕐 Waktu:</strong> ${startDateTime.toLocaleString("id-ID")} - ${endDateTime.toLocaleString("id-ID", { timeStyle: "short" })}</p>
+            </div>
+          `,
+          confirmButtonColor: "#48bb78",
+          confirmButtonText: '<i class="fa-solid fa-check"></i> OK'
         });
 
         this.reset();
         if (submitButton) {
           delete submitButton.dataset.editId;
-          submitButton.textContent = "Jadwalkan Rapat";
+          submitButton.innerHTML = '<i class="fa-solid fa-calendar-check"></i> Jadwalkan Rapat';
         }
         selectedMeetingNumbers.clear();
         selectedMeetingGroups.clear();
@@ -536,7 +618,7 @@ function initMeetingForm() {
 
         const meetingFilePreview = document.getElementById("meetingFileNames");
         if (meetingFilePreview) {
-          meetingFilePreview.innerHTML = "<span>Belum ada file terpilih</span>";
+          meetingFilePreview.innerHTML = "<span style='color: #718096; font-size: 13px;'>Belum ada file terpilih</span>";
         }
 
         const meetingClearAllBtn = document.getElementById("clearAllMeetingFilesBtn");
@@ -547,16 +629,31 @@ function initMeetingForm() {
         renderScheduleTable();
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        Swal.fire("Gagal", result.message || "Terjadi kesalahan", "error");
+        Swal.fire({
+          icon: "error",
+          title: "❌ Gagal",
+          text: result.message || "Terjadi kesalahan",
+          confirmButtonColor: "#fc8181"
+        });
       }
     } catch (err) {
       Swal.close();
-      Swal.fire("Gagal koneksi ke server", "", "error");
+      Swal.fire({
+        icon: "error",
+        title: "❌ Koneksi Gagal",
+        text: "Tidak dapat terhubung ke server. Silakan coba lagi.",
+        confirmButtonColor: "#fc8181"
+      });
       console.error(err);
     } finally {
-      submitButton.disabled = false;
-      const isStillEditing = !!(submitButton ? submitButton.dataset.editId : null);
-      submitButton.textContent = isStillEditing ? "Update Jadwal Rapat" : "Jadwalkan Rapat";
+      if (submitButton) {
+        submitButton.classList.remove('loading');
+        submitButton.disabled = false;
+        const isStillEditing = !!(submitButton ? submitButton.dataset.editId : null);
+        submitButton.innerHTML = isStillEditing 
+          ? '<i class="fa-solid fa-calendar-check"></i> Update Jadwal Rapat' 
+          : '<i class="fa-solid fa-calendar-check"></i> Jadwalkan Rapat';
+      }
     }
   });
 }
@@ -592,6 +689,70 @@ function initMediaModalListeners() {
   }
 }
 
+function initSmoothAnimations() {
+  // Add fade-in animation to form when it becomes active
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.animation = 'fadeInContent 0.4s ease';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  // Observe all form containers
+  document.querySelectorAll('.form-content').forEach(form => {
+    observer.observe(form);
+  });
+
+  // Add ripple effect to buttons
+  document.addEventListener('click', function(e) {
+    const button = e.target.closest('button');
+    if (!button) return;
+
+    const ripple = document.createElement('span');
+    const rect = button.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top - size / 2;
+
+    ripple.style.cssText = `
+      position: absolute;
+      width: ${size}px;
+      height: ${size}px;
+      left: ${x}px;
+      top: ${y}px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      transform: scale(0);
+      animation: rippleEffect 0.6s ease-out;
+      pointer-events: none;
+    `;
+
+    button.style.position = 'relative';
+    button.style.overflow = 'hidden';
+    button.appendChild(ripple);
+
+    setTimeout(() => ripple.remove(), 600);
+  });
+
+  // Add CSS for ripple animation
+  if (!document.getElementById('ripple-animation-style')) {
+    const style = document.createElement('style');
+    style.id = 'ripple-animation-style';
+    style.textContent = `
+      @keyframes rippleEffect {
+        to {
+          transform: scale(4);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
+
+
 /**
  * Initializes afterEditMeetingModalOpen helper
  */
@@ -600,8 +761,582 @@ window.afterEditMeetingModalOpen = function() {
   // Additional initialization can be added here if needed
 };
 
+function initRealtimeScheduleUpdates() {
+  console.log("🔌 Connecting to real-time schedule updates...");
+  
+  const socket = io();
+
+  // ✅ Listen untuk schedule status update dari server
+  socket.on('schedule-status-updated', (data) => {
+    console.log('📡 Schedule status updated:', data);
+    
+    const { scheduleId, newStatus, message } = data;
+    
+    // Update status di UI secara real-time
+    updateScheduleStatusInTable(scheduleId, newStatus);
+    
+    // Optional: Show notification
+    if (newStatus === 'terkirim') {
+      showNotification('✅ Pesan Terkirim', message || `Jadwal #${scheduleId} telah terkirim`, 'success');
+    } else if (newStatus === 'gagal') {
+      showNotification('❌ Pesan Gagal', message || `Jadwal #${scheduleId} gagal terkirim`, 'error');
+    }
+  });
+
+  // ✅ Listen untuk meeting status update
+  socket.on('meeting-status-updated', (data) => {
+    console.log('📡 Meeting status updated:', data);
+    
+    const { scheduleId, newStatus, message } = data;
+    updateScheduleStatusInTable(scheduleId, newStatus);
+    
+    if (newStatus === 'selesai') {
+      showNotification('✅ Rapat Selesai', message || `Rapat #${scheduleId} telah selesai`, 'success');
+    } else if (newStatus === 'dibatalkan') {
+      showNotification('⚠️ Rapat Dibatalkan', message || `Rapat #${scheduleId} dibatalkan`, 'warning');
+    }
+  });
+
+  // ✅ Listen untuk schedule created (jadwal baru ditambahkan)
+  socket.on('schedule-created', (data) => {
+    console.log('📡 New schedule created:', data);
+    // Refresh table untuk tampilkan jadwal baru
+    renderScheduleTable();
+  });
+
+  // ✅ Listen untuk schedule deleted
+  socket.on('schedule-deleted', (data) => {
+    console.log('📡 Schedule deleted:', data);
+    const { scheduleId } = data;
+    removeScheduleFromTable(scheduleId);
+  });
+
+  // ✅ Connection status
+  socket.on('connect', () => {
+    console.log('✅ Real-time connection established');
+  });
+
+  socket.on('disconnect', () => {
+    console.log('⚠️ Real-time connection lost, reconnecting...');
+  });
+
+  socket.on('reconnect', (attemptNumber) => {
+    console.log(`✅ Reconnected after ${attemptNumber} attempts`);
+    // Refresh data setelah reconnect
+    renderScheduleTable();
+  });
+
+  // Store socket globally untuk digunakan di tempat lain
+  window.scheduleSocket = socket;
+}
+
 /**
- * Main application initialization
+ * Update status di table tanpa full refresh (SMOOTH!)
+ */
+/**
+ * Update status di table tanpa full refresh (SMOOTH!)
+ * ✅ Update status column + action buttons dynamically
+ */
+function updateScheduleStatusInTable(scheduleId, newStatus) {
+  const row = document.querySelector(`#scheduleTable tbody tr[data-id="${scheduleId}"]`);
+  if (!row) return;
+
+  const statusCell = row.cells[4]; // Kolom status
+  const actionCell = row.cells[5]; // Kolom tombol aksi
+  
+  if (!statusCell || !actionCell) return;
+
+  // Get schedule data from memory
+  const schedules = getSchedules();
+  const schedule = schedules.find(s => s.id == scheduleId);
+  
+  if (!schedule) {
+    console.warn(`Schedule ${scheduleId} not found in memory`);
+    return;
+  }
+
+  // Update schedule status in memory
+  schedule.status = newStatus;
+
+  // ============================================
+  // 1. UPDATE STATUS COLUMN
+  // ============================================
+  const statusConfig = {
+    'terkirim': { 
+      icon: 'check_circle', 
+      text: 'Terkirim', 
+      class: 'status-terkirim',
+      color: '#48bb78'
+    },
+    'gagal': { 
+      icon: 'cancel', 
+      text: 'Gagal', 
+      class: 'status-gagal',
+      color: '#f56565'
+    },
+    'dibatalkan': { 
+      icon: 'block', 
+      text: 'Dibatalkan', 
+      class: 'status-dibatalkan',
+      color: '#718096'
+    },
+    'selesai': { 
+      icon: 'done_all', 
+      text: 'Selesai', 
+      class: 'status-selesai',
+      color: '#4299e1'
+    },
+    'terjadwal': { 
+      icon: 'hourglass_empty', 
+      text: 'Terjadwal', 
+      class: 'status-terjadwal',
+      color: '#ed8936'
+    }
+  };
+
+  const config = statusConfig[newStatus] || statusConfig['terjadwal'];
+
+  // ✅ Smooth transition for status cell
+  statusCell.style.transition = "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)";
+  statusCell.style.transform = "scale(0.95)";
+  statusCell.style.opacity = "0.3";
+
+  setTimeout(() => {
+    // Update status content
+    statusCell.innerHTML = `<i class="material-icons" title="${config.text}">${config.icon}</i> ${config.text}`;
+    statusCell.className = config.class;
+    
+    // Animate back with bounce
+    statusCell.style.transform = "scale(1.05)";
+    statusCell.style.opacity = "1";
+    
+    // Add highlight effect
+    statusCell.style.boxShadow = `0 0 0 3px ${config.color}33`;
+    
+    setTimeout(() => {
+      statusCell.style.transform = "scale(1)";
+      statusCell.style.boxShadow = "none";
+    }, 300);
+  }, 200);
+
+  // ============================================
+  // 2. UPDATE ACTION BUTTONS - NEW! 🎯
+  // ============================================
+  const isMeeting = schedule.type === "meeting" || schedule.meetingRoom;
+  
+  // ✅ Smooth transition for action cell
+  actionCell.style.transition = "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)";
+  actionCell.style.opacity = "0.3";
+  actionCell.style.transform = "translateY(-5px)";
+
+  setTimeout(() => {
+    // Generate new action buttons based on status
+    actionCell.innerHTML = generateActionButtons(schedule, newStatus, isMeeting);
+    
+    // Animate back
+    actionCell.style.opacity = "1";
+    actionCell.style.transform = "translateY(0)";
+    
+    // 🔥 PENTING: Re-attach event listeners untuk tombol baru
+    reattachActionButtonListeners(actionCell);
+    
+  }, 200);
+}
+
+/**
+ * Generate HTML untuk action buttons berdasarkan status
+ */
+function generateActionButtons(schedule, status, isMeeting) {
+  let actionButtons = "";
+  
+  if (isMeeting) {
+    // Meeting action buttons
+    switch (status) {
+      case "terjadwal":
+        const fileData = schedule.filesData && schedule.filesData.length > 0
+          ? JSON.stringify(schedule.filesData)
+          : schedule.file || schedule.meetingFile || "";
+        
+        actionButtons = `
+          <button class="edit-btn" data-id="${schedule.id}" 
+                  data-type="meeting" 
+                  data-meetingroom="${schedule.meetingRoom || ''}"
+                  data-meetingtitle="${schedule.meetingTitle || schedule.message || ""}"
+                  data-starttime="${schedule.scheduledTime || ''}"
+                  data-endtime="${schedule.meetingEndTime || schedule.endTime || ''}"
+                  data-numbers="${escape(JSON.stringify(schedule.numbers || schedule.originalNumbers || []))}"
+                  data-filesdata="${escape(fileData)}">
+            <i class="material-icons">edit</i> Edit
+          </button>
+          <button class="cancel-meeting-btn" data-id="${schedule.id}">
+            <i class="material-icons">cancel</i> Batal
+          </button>
+        `;
+        break;
+        
+      case "terkirim":
+        actionButtons = `
+          <button class="cancel-meeting-btn" data-id="${schedule.id}">
+            <i class="material-icons">cancel</i> Batalkan Rapat
+          </button>
+          <button class="finish-meeting-btn" data-id="${schedule.id}">
+            <i class="material-icons">done</i> Selesaikan
+          </button>
+        `;
+        break;
+        
+      case "selesai":
+      case "dibatalkan":
+        actionButtons = `
+          <button class="delete-meeting-btn" data-id="${schedule.id}">
+            <i class="material-icons">delete_forever</i> Hapus Riwayat
+          </button>
+        `;
+        break;
+        
+      default:
+        actionButtons = "-";
+    }
+  } else {
+    // Regular message action buttons
+    switch (status) {
+      case "terjadwal":
+        actionButtons = `
+          <button class="edit-btn" data-id="${schedule.id}" 
+                  data-type="message"
+                  data-message="${escape(schedule.message || "")}"
+                  data-datetime="${schedule.scheduledTime || ''}"
+                  data-filesdata="${escape(JSON.stringify(schedule.filesData || []))}">
+            <i class="material-icons">edit</i> Edit
+          </button>
+          <button class="cancel-btn" data-id="${schedule.id}">
+            <i class="material-icons">delete</i> Batal
+          </button>
+        `;
+        break;
+        
+      case "terkirim":
+      case "gagal":
+      case "dibatalkan":
+        actionButtons = `
+          <button class="delete-history-btn" data-id="${schedule.id}">
+            <i class="material-icons">delete_forever</i> Hapus Riwayat
+          </button>
+        `;
+        break;
+        
+      default:
+        actionButtons = "-";
+    }
+  }
+  
+  return actionButtons;
+}
+
+/**
+ * Re-attach event listeners to dynamically created action buttons
+ * 🎯 INI KUNCI UTAMANYA! Tombol baru perlu event listener baru
+ */
+function reattachActionButtonListeners(actionCell) {
+  // Import functions dari schedule-manager.js
+  const { renderScheduleTable } = window;
+  
+  // Edit button
+  const editBtn = actionCell.querySelector('.edit-btn');
+  if (editBtn) {
+    editBtn.onclick = handleEditButtonClick;
+  }
+
+  // Cancel meeting button
+  const cancelMeetingBtn = actionCell.querySelector('.cancel-meeting-btn');
+  if (cancelMeetingBtn) {
+    cancelMeetingBtn.onclick = handleCancelMeetingClick;
+  }
+
+  // Finish meeting button
+  const finishMeetingBtn = actionCell.querySelector('.finish-meeting-btn');
+  if (finishMeetingBtn) {
+    finishMeetingBtn.onclick = handleFinishMeetingClick;
+  }
+
+  // Delete meeting button
+  const deleteMeetingBtn = actionCell.querySelector('.delete-meeting-btn');
+  if (deleteMeetingBtn) {
+    deleteMeetingBtn.onclick = handleDeleteMeetingClick;
+  }
+
+  // Cancel schedule button (for regular messages)
+  const cancelBtn = actionCell.querySelector('.cancel-btn');
+  if (cancelBtn) {
+    cancelBtn.onclick = handleCancelScheduleClick;
+  }
+
+  // Delete history button
+  const deleteHistoryBtn = actionCell.querySelector('.delete-history-btn');
+  if (deleteHistoryBtn) {
+    deleteHistoryBtn.onclick = handleDeleteHistoryClick;
+  }
+}
+
+/**
+ * Event Handlers untuk semua tombol aksi
+ */
+async function handleEditButtonClick() {
+  const id = this.dataset.id;
+  const type = this.dataset.type;
+  const isMeeting = type === "meeting";
+
+  const schedules = getSchedules();
+  const scheduleToEdit = schedules.find((s) => s.id == id);
+  
+  if (!scheduleToEdit) {
+    Swal.fire("Error", "Data jadwal tidak ditemukan", "error");
+    return;
+  }
+
+  const modalBody = document.getElementById("editModalBody");
+
+  if (isMeeting) {
+    window.showEditModal("Edit Jadwal Rapat");
+    // Anda bisa copy logic dari attachScheduleActionListeners di schedule-manager.js
+    console.log("Edit meeting:", id);
+    // TODO: Populate meeting edit form
+  } else {
+    window.showEditModal("Edit Jadwal Pesan");
+    console.log("Edit message:", id);
+    // TODO: Populate message edit form
+  }
+  
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function handleCancelMeetingClick() {
+  const id = this.dataset.id;
+  const result = await Swal.fire({
+    title: "Anda yakin?",
+    text: "Rapat ini akan dibatalkan!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Ya, batalkan!",
+    cancelButtonText: "Tidak",
+  });
+  
+  if (result.isConfirmed) {
+    try {
+      const res = await fetch(`/cancel-meeting/${id}`, { method: "PUT" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        Swal.fire("Dibatalkan!", data.message, "success");
+        renderScheduleTable();
+      } else {
+        Swal.fire("Gagal!", data.message || "Gagal membatalkan rapat", "error");
+      }
+    } catch (error) {
+      console.error("Error canceling meeting:", error);
+      Swal.fire("Gagal!", "Terjadi kesalahan saat membatalkan rapat.", "error");
+    }
+  }
+}
+
+async function handleFinishMeetingClick() {
+  const id = this.dataset.id;
+  const result = await Swal.fire({
+    title: "Tandai Rapat Selesai?",
+    text: "Rapat ini akan ditandai sebagai selesai",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: "#28a745",
+    cancelButtonColor: "#6c757d",
+    confirmButtonText: "Ya, selesai!",
+    cancelButtonText: "Batal",
+  });
+  
+  if (result.isConfirmed) {
+    try {
+      const res = await fetch(`/finish-meeting/${id}`, { method: "PUT" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        Swal.fire("Selesai!", data.message, "success");
+        renderScheduleTable();
+      } else {
+        Swal.fire("Gagal!", data.message || "Gagal menandai rapat selesai", "error");
+      }
+    } catch (error) {
+      console.error("Error finishing meeting:", error);
+      Swal.fire("Gagal!", "Terjadi kesalahan saat menandai rapat selesai.", "error");
+    }
+  }
+}
+
+async function handleDeleteMeetingClick() {
+  const id = this.dataset.id;
+  const result = await Swal.fire({
+    title: "Anda yakin?",
+    text: "Data rapat ini akan dihapus permanen dan tidak bisa dikembalikan!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Ya, hapus!",
+    cancelButtonText: "Tidak",
+  });
+  
+  if (result.isConfirmed) {
+    try {
+      const res = await fetch(`/delete-meeting/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        Swal.fire("Dihapus!", data.message, "success");
+        renderScheduleTable();
+      } else {
+        Swal.fire("Gagal!", data.message || "Gagal menghapus rapat", "error");
+      }
+    } catch (error) {
+      console.error("Error deleting meeting:", error);
+      Swal.fire("Gagal!", "Terjadi kesalahan saat menghapus rapat.", "error");
+    }
+  }
+}
+
+async function handleCancelScheduleClick() {
+  const id = this.dataset.id;
+  const result = await Swal.fire({
+    title: "Anda yakin?",
+    text: "Jadwal pesan ini akan dibatalkan dan dihapus permanen!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Ya, batalkan!",
+    cancelButtonText: "Tidak",
+  });
+  
+  if (result.isConfirmed) {
+    try {
+      const res = await fetch(`/cancel-schedule/${id}`, { method: "DELETE" });
+      const text = await res.text();
+      if (res.ok) {
+        Swal.fire("Dibatalkan!", text, "success");
+        renderScheduleTable();
+      } else {
+        Swal.fire("Gagal!", text, "error");
+      }
+    } catch (error) {
+      console.error("Error canceling schedule:", error);
+      Swal.fire("Gagal!", "Terjadi kesalahan saat membatalkan jadwal.", "error");
+    }
+  }
+}
+
+async function handleDeleteHistoryClick() {
+  const id = this.dataset.id;
+  const result = await Swal.fire({
+    title: "Anda yakin?",
+    text: "Riwayat ini akan dihapus permanen dan tidak bisa dikembalikan!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#3085d6",
+    confirmButtonText: "Ya, hapus!",
+    cancelButtonText: "Tidak",
+  });
+  
+  if (result.isConfirmed) {
+    try {
+      const res = await fetch(`/delete-history/${id}`, { method: "DELETE" });
+      const text = await res.text();
+      if (res.ok) {
+        Swal.fire("Dihapus!", text, "success");
+        renderScheduleTable();
+      } else {
+        Swal.fire("Gagal!", text, "error");
+      }
+    } catch (error) {
+      console.error("Error deleting history:", error);
+      Swal.fire("Gagal!", "Terjadi kesalahan saat menghapus riwayat.", "error");
+    }
+  }
+}
+
+/**
+ * Remove schedule from table with smooth animation
+ */
+function removeScheduleFromTable(scheduleId) {
+  const row = document.querySelector(`#scheduleTable tbody tr[data-id="${scheduleId}"]`);
+  if (!row) return;
+
+  // ✅ Smooth fade out before removal
+  row.style.transition = "all 0.5s ease";
+  row.style.opacity = "0";
+  row.style.transform = "translateX(-20px)";
+
+  setTimeout(() => {
+    row.remove();
+    
+    // Update schedules array
+    const schedules = getSchedules();
+    const index = schedules.findIndex(s => s.id == scheduleId);
+    if (index !== -1) {
+      schedules.splice(index, 1);
+    }
+
+    // Check if table is empty
+    const tbody = document.querySelector("#scheduleTable tbody");
+    if (tbody && tbody.children.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center">Belum ada jadwal untuk filter ini.</td></tr>';
+    }
+  }, 500);
+}
+
+/**
+ * Show notification (optional, untuk feedback ke user)
+ */
+function showNotification(title, message, type = 'info') {
+  // Gunakan Toast notification yang ringan
+  const toast = document.createElement('div');
+  toast.className = `toast-notification toast-${type}`;
+  toast.innerHTML = `
+    <div class="toast-content">
+      <strong>${title}</strong>
+      <p>${message}</p>
+    </div>
+  `;
+  
+  // Styling
+  const bgColors = {
+    success: '#48bb78',
+    error: '#f56565',
+    warning: '#ed8936',
+    info: '#4299e1'
+  };
+  
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: ${bgColors[type] || bgColors.info};
+    color: white;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 10000;
+    animation: slideInRight 0.3s ease;
+    max-width: 350px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  `;
+
+  document.body.appendChild(toast);
+
+  // Auto remove after 4 seconds
+  setTimeout(() => {
+    toast.style.animation = 'slideOutRight 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+/**
+ * Main application initialization - OPTIMIZED VERSION
  */
 async function initApp() {
   console.log("🚀 Initializing app...");
@@ -622,6 +1357,8 @@ async function initApp() {
   
   // Initialize media modal
   initMediaModalListeners();
+
+  initRealtimeScheduleUpdates();
 
   // Event delegation for contact table actions
   const contactTable = document.getElementById("contact-management-table");
@@ -693,6 +1430,10 @@ async function initApp() {
     renderMeetingGroupSelectionList();
     window.groupModule.renderGroupContactChecklist(); 
     
+    // Initialize tab systems after data is loaded
+    initMessageFormTabs();
+    initMeetingFormTabs();
+    
     console.log("✅ Initial data loaded successfully");
   } catch (error) {
     console.error("❌ Error loading initial data:", error);
@@ -706,14 +1447,21 @@ async function initApp() {
   console.log("💬 Initializing chat system...");
   initChatSystem();
 
-  // Start periodic updates
+  initSmoothAnimations();
+
+  // ✅ FIX: Start periodic updates dengan interval yang lebih optimal
+  // Update countdown setiap detik (smooth, tidak touch status column)
   setInterval(updateCountdownTimers, 1000);
-  setInterval(renderScheduleTable, 7000);
+  
 
   console.log("✅ App initialization complete");
+  console.log("🎨 Enhanced UI with tab system active");
+  console.log("⚡ Optimized refresh: countdown 1s, table 30s");
 }
 
 window.showForm = showForm;
-
+window.updateScheduleStatusInTable = updateScheduleStatusInTable;
+window.removeScheduleFromTable = removeScheduleFromTable;
+window.showNotification = showNotification;
 // Initialize app when DOM is ready
 document.addEventListener("DOMContentLoaded", initApp);

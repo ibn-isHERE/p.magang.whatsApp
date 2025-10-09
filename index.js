@@ -543,6 +543,70 @@ app.post('/api/import', upload.single('contactFile'), (req, res) => {
     }
 });
 
+function emitScheduleStatusUpdate(scheduleId, newStatus, message = null) {
+  if (io) {
+    io.emit('schedule-status-updated', {
+      scheduleId,
+      newStatus,
+      message,
+      timestamp: new Date().toISOString()
+    });
+    console.log(`📡 Emitted schedule-status-updated: ${scheduleId} -> ${newStatus}`);
+  }
+}
+
+/**
+ * Helper function untuk emit meeting status update
+ */
+function emitMeetingStatusUpdate(scheduleId, newStatus, message = null) {
+  if (io) {
+    io.emit('meeting-status-updated', {
+      scheduleId,
+      newStatus,
+      message,
+      timestamp: new Date().toISOString()
+    });
+    console.log(`📡 Emitted meeting-status-updated: ${scheduleId} -> ${newStatus}`);
+  }
+}
+
+/**
+ * Helper function untuk emit schedule created
+ */
+function emitScheduleCreated(scheduleData) {
+  if (io) {
+    io.emit('schedule-created', {
+      schedule: scheduleData,
+      timestamp: new Date().toISOString()
+    });
+    console.log(`📡 Emitted schedule-created: ${scheduleData.id}`);
+  }
+}
+
+/**
+ * Helper function untuk emit schedule deleted
+ */
+function emitScheduleDeleted(scheduleId) {
+  if (io) {
+    io.emit('schedule-deleted', {
+      scheduleId,
+      timestamp: new Date().toISOString()
+    });
+    console.log(`📡 Emitted schedule-deleted: ${scheduleId}`);
+  }
+}
+
+// Export helper functions agar bisa digunakan di module lain
+global.emitScheduleStatusUpdate = emitScheduleStatusUpdate;
+global.emitMeetingStatusUpdate = emitMeetingStatusUpdate;
+global.emitScheduleCreated = emitScheduleCreated;
+global.emitScheduleDeleted = emitScheduleDeleted;
+
+// Juga set io ke global untuk akses mudah
+global.io = io;
+
+console.log("✅ Socket.IO helper functions registered globally");
+
 // Error handling middleware
 app.use((error, req, res, next) => {
     console.error(error.stack);

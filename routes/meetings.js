@@ -310,28 +310,40 @@ async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
     }
 
     let sentSuccess = true;
-    for (const num of numbersArray) {
-        try {
-            const formattedNum = formatNumber(num);
-            if (formattedNum) {
-                // Kirim pesan teks utama terlebih dahulu
-                await client.sendMessage(formattedNum, message);
-                
-                // Setelah itu, kirim setiap file satu per satu
-                for (const media of medias) {
-                    await client.sendMessage(formattedNum, media, { 
-                        caption: `Dokumen untuk rapat: ${meeting.meetingTitle}` 
-                    });
-                }
-                console.log("WA reminder rapat terkirim ke:", num);
-            }
-        } catch (err) {
-            console.error(`Gagal kirim WA reminder rapat ke ${num}:`, err.message);
-            sentSuccess = false;
+  for (const num of numbersArray) {
+    try {
+      const formattedNum = formatNumber(num);
+      if (formattedNum) {
+        await client.sendMessage(formattedNum, message);
+        
+        for (const media of medias) {
+          await client.sendMessage(formattedNum, media, { 
+            caption: `Dokumen untuk rapat: ${meeting.meetingTitle}` 
+          });
         }
+        console.log("WA reminder rapat terkirim ke:", num);
+      }
+    } catch (err) {
+      console.error(`Gagal kirim WA reminder rapat ke ${num}:`, err.message);
+      sentSuccess = false;
     }
+  }
 
-    return sentSuccess;
+  // ✅ UPDATE STATUS DI DATABASE DAN EMIT
+  if (sentSuccess) {
+    updateMeetingStatus(meeting.id, 'terkirim');
+    
+    // Emit socket event
+    if (global.emitMeetingStatusUpdate) {
+      global.emitMeetingStatusUpdate(
+        meeting.id, 
+        'terkirim', 
+        `Pengingat rapat terkirim ke ${numbersArray.length} peserta`
+      );
+    }
+  }
+
+  return sentSuccess;
 }
 
 /**
@@ -420,13 +432,13 @@ function updateMeetingStatus(meetingId, status) {
     if (!db) return;
 
     db.run(
-        `UPDATE meetings SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
-        [status, meetingId],
-        (err) => {
-            if (err) {
-                console.error(`Gagal update status meeting ${meetingId}:`, err.message);
-            } else {
-                console.log(`Status meeting ${meetingId} diupdate ke '${status}'`);
+    `UPDATE meetings SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
+    [status, meetingId],
+    (err) => {
+      if (err) {
+        console.error(`Gagal update status meeting ${meetingId}:`, err.message);
+      } else {
+        console.log(`Status meeting ${meetingId} diupdate ke '${status}'`);
             }
         }
     );
@@ -1082,198 +1094,190 @@ router.put("/edit-meeting/:id", upload.array('files', 5), async (req, res) => {
  */
 // Ganti route /cancel-meeting/:id Anda dengan versi lengkap ini
 router.put('/cancel-meeting/:id', async (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    if (!db) {
-        return res.status(500).json({ success: false, message: "Database tidak tersedia" });
+  if (!db) {
+    return res.status(500).json({ success: false, message: "Database tidak tersedia" });
+  }
+
+  try {
+    const meeting = await new Promise((resolve, reject) => {
+      db.get("SELECT * FROM meetings WHERE id = ?", [id], (err, row) => {
+        if (err) return reject(new Error("Gagal mengakses database."));
+        resolve(row);
+      });
+    });
+
+    if (!meeting) {
+      return res.status(404).json({ success: false, message: "Meeting tidak ditemukan" });
+    }
+    
+    let notificationSent = false;
+    if (meeting.status === 'terkirim') {
+      await sendCancellationNotification(meeting);
+      notificationSent = true;
     }
 
-    try {
-        // LANGKAH 1 (BARU): Ambil data meeting SEBELUM mengubah status
-        const meeting = await new Promise((resolve, reject) => {
-            db.get("SELECT * FROM meetings WHERE id = ?", [id], (err, row) => {
-                if (err) return reject(new Error("Gagal mengakses database."));
-                resolve(row);
-            });
-        });
-
-        if (!meeting) {
-            return res.status(404).json({ success: false, message: "Meeting tidak ditemukan" });
+    await new Promise((resolve, reject) => {
+      db.run(
+        `UPDATE meetings SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
+        ["dibatalkan", id],
+        function (err) {
+          if (err) return reject(new Error("Gagal membatalkan meeting di database."));
+          if (this.changes === 0) return reject(new Error("Meeting tidak ditemukan saat update."));
+          resolve(this);
         }
-        
-        let notificationSent = false;
-        // --- PENAMBAHAN FITUR: Kirim notifikasi pembatalan HANYA JIKA status 'terkirim' ---
-        if (meeting.status === 'terkirim') {
-            await sendCancellationNotification(meeting);
-            notificationSent = true;
-        }
-        // --- AKHIR PENAMBAHAN FITUR ---
+      );
+    });
 
-        // LANGKAH 2: Update status menjadi 'dibatalkan'
-        await new Promise((resolve, reject) => {
-            db.run(
-                `UPDATE meetings SET status = ?, updatedAt = CURRENT_TIMESTAMP WHERE id = ?`,
-                ["dibatalkan", id],
-                function (err) {
-                    if (err) return reject(new Error("Gagal membatalkan meeting di database."));
-                    if (this.changes === 0) return reject(new Error("Meeting tidak ditemukan saat update."));
-                    resolve(this);
-                }
-            );
-        });
-
-        // LANGKAH 3 (BARU): Hapus file fisik yang terkait
-        if (meeting.filesData) {
-            const files = JSON.parse(meeting.filesData);
-            if (Array.isArray(files)) {
-                files.forEach(file => deleteFileIfExists(file.path)); // Menggunakan helper function Anda
-            }
-        }
-
-        // LANGKAH 4: Batalkan reminder (logika ini sudah benar)
-        const jobId = `meeting_${id}`;
-        if (meetingJobs[jobId]) {
-            meetingJobs[jobId].cancel();
-            delete meetingJobs[jobId];
-            console.log(`Reminder untuk meeting ${id} dibatalkan`);
-        }
-
-        const message = notificationSent 
-            ? "Meeting berhasil dibatalkan dan pesan pembatalan telah terkirim."
-            : "Meeting berhasil dibatalkan.";
-
-        res.json({
-            success: true,
-            message: message
-        });
-
-    } catch (error) {
-        console.error("Error pada rute /cancel-meeting:", error.message);
-        res.status(500).json({ success: false, message: "Terjadi kesalahan server." });
+    if (meeting.filesData) {
+      const files = JSON.parse(meeting.filesData);
+      if (Array.isArray(files)) {
+        files.forEach(file => deleteFileIfExists(file.path));
+      }
     }
+
+    const jobId = `meeting_${id}`;
+    if (meetingJobs[jobId]) {
+      meetingJobs[jobId].cancel();
+      delete meetingJobs[jobId];
+      console.log(`Reminder untuk meeting ${id} dibatalkan`);
+    }
+
+    // ✅ EMIT SOCKET EVENT
+    if (global.emitMeetingStatusUpdate) {
+      const message = notificationSent 
+        ? "Meeting dibatalkan dan notifikasi terkirim"
+        : "Meeting dibatalkan";
+      global.emitMeetingStatusUpdate(id, 'dibatalkan', message);
+    }
+
+    res.json({
+      success: true,
+      message: notificationSent 
+        ? "Meeting berhasil dibatalkan dan pesan pembatalan telah terkirim."
+        : "Meeting berhasil dibatalkan."
+    });
+
+  } catch (error) {
+    console.error("Error pada rute /cancel-meeting:", error.message);
+    res.status(500).json({ success: false, message: "Terjadi kesalahan server." });
+  }
 });
+
 
 /**
  * DELETE meeting
  */
 router.delete("/delete-meeting/:id", (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    if (!db) {
-        return res.status(500).json({ success: false, message: "Database tidak tersedia" });
+  if (!db) {
+    return res.status(500).json({ success: false, message: "Database tidak tersedia" });
+  }
+
+  db.get("SELECT * FROM meetings WHERE id = ?", [id], (err, meeting) => {
+    if (err) {
+      console.error("Error getting meeting for deletion:", err.message);
+      return res.status(500).json({ success: false, message: "Error mengambil data meeting" });
     }
 
-    // First get the meeting to clean up files
-    db.get("SELECT * FROM meetings WHERE id = ?", [id], (err, meeting) => {
-        if (err) {
-            console.error("Error getting meeting for deletion:", err.message);
-            return res.status(500).json({ success: false, message: "Error mengambil data meeting" });
-        }
-
-        // Delete associated files
-        // KODE BARU DENGAN LOG DETAIL
-if (meeting && meeting.filesData) {
-    try {
-        console.log("========================================");
-        console.log("Mencoba menghapus file untuk meeting:", id);
+    if (meeting && meeting.filesData) {
+      try {
         const files = JSON.parse(meeting.filesData);
-        console.log("Data file yang ditemukan di DB:", files);
-
         files.forEach(file => {
-            const filePath = file.path; 
-            console.log(`--> Mengecek path: ${filePath}`);
-
-            if (fs.existsSync(filePath)) {
-                console.log(`    Path DITEMUKAN. Mencoba menghapus...`);
-                fs.unlinkSync(filePath);
-                console.log(`    File BERHASIL dihapus: ${filePath}`);
-            } else {
-                console.log(`    Path TIDAK DITEMUKAN. File tidak dihapus.`);
-            }
+          const filePath = file.path; 
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log(`File BERHASIL dihapus: ${filePath}`);
+          }
         });
-        console.log("========================================");
-    } catch (e) {
+      } catch (e) {
         console.error("Error saat parsing JSON atau menghapus file:", e);
+      }
     }
-}
 
-        // Delete from database
-        db.run("DELETE FROM meetings WHERE id = ?", [id], function (err) {
-            if (err) {
-                console.error("Gagal hapus meeting dari DB:", err.message);
-                return res.status(500).json({ success: false, message: "Gagal hapus meeting dari database" });
-            }
+    db.run("DELETE FROM meetings WHERE id = ?", [id], function (err) {
+      if (err) {
+        console.error("Gagal hapus meeting dari DB:", err.message);
+        return res.status(500).json({ success: false, message: "Gagal hapus meeting dari database" });
+      }
 
-            if (this.changes === 0) {
-                return res.status(404).json({ success: false, message: "Meeting tidak ditemukan" });
-            }
+      if (this.changes === 0) {
+        return res.status(404).json({ success: false, message: "Meeting tidak ditemukan" });
+      }
 
-            // Cancel job
-            const jobId = `meeting_${id}`;
-            if (meetingJobs[jobId]) {
-                meetingJobs[jobId].cancel();
-                delete meetingJobs[jobId];
-                console.log(`Reminder untuk meeting ${id} dibatalkan`);
-            }
+      const jobId = `meeting_${id}`;
+      if (meetingJobs[jobId]) {
+        meetingJobs[jobId].cancel();
+        delete meetingJobs[jobId];
+        console.log(`Reminder untuk meeting ${id} dibatalkan`);
+      }
 
-            res.json({
-                success: true,
-                message: "Meeting berhasil dihapus"
-            });
-        });
+      // ✅ EMIT SOCKET EVENT
+      if (global.emitScheduleDeleted) {
+        global.emitScheduleDeleted(id);
+      }
+
+      res.json({
+        success: true,
+        message: "Meeting berhasil dihapus"
+      });
     });
+  });
 });
 
 /**
  * PUT finish meeting
  */
 router.put('/finish-meeting/:id', async (req, res) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    try {
-        // LANGKAH 1: Ambil data meeting dulu untuk mendapatkan info file
-        const meeting = await new Promise((resolve, reject) => {
-            db.get("SELECT filesData FROM meetings WHERE id = ?", [id], (err, row) => {
-                if (err) return reject(new Error("Gagal mengakses database."));
-                resolve(row);
-            });
-        });
+  try {
+    const meeting = await new Promise((resolve, reject) => {
+      db.get("SELECT filesData FROM meetings WHERE id = ?", [id], (err, row) => {
+        if (err) return reject(new Error("Gagal mengakses database."));
+        resolve(row);
+      });
+    });
 
-        if (!meeting) {
-            return res.status(404).json({ success: false, message: "Rapat tidak ditemukan." });
-        }
-
-        // LANGKAH 2: Update status di database
-        await new Promise((resolve, reject) => {
-            const sql = "UPDATE meetings SET status = ? WHERE id = ?";
-            db.run(sql, ['selesai', id], function(err) {
-                if (err) return reject(new Error("Gagal update status rapat."));
-                resolve(this);
-            });
-        });
-
-        // LANGKAH 3: Hapus file fisik terkait
-        if (meeting.filesData) {
-            const files = JSON.parse(meeting.filesData);
-            if (Array.isArray(files)) {
-                files.forEach(file => deleteFileIfExists(file.path)); // Menggunakan helper function Anda
-            }
-        }
-        
-        // Batalkan reminder jika ada
-        const jobId = `meeting_${id}`;
-        if (meetingJobs[jobId]) {
-            meetingJobs[jobId].cancel();
-            delete meetingJobs[jobId];
-            console.log(`Reminder untuk meeting ${id} dibatalkan karena meeting selesai.`);
-        }
-
-        res.json({ success: true, message: "Rapat berhasil ditandai selesai dan file terkait telah dihapus." });
-
-    } catch (error) {
-        console.error("Error pada rute /finish-meeting:", error.message);
-        res.status(500).json({ success: false, message: "Terjadi kesalahan server." });
+    if (!meeting) {
+      return res.status(404).json({ success: false, message: "Rapat tidak ditemukan." });
     }
+
+    await new Promise((resolve, reject) => {
+      const sql = "UPDATE meetings SET status = ? WHERE id = ?";
+      db.run(sql, ['selesai', id], function(err) {
+        if (err) return reject(new Error("Gagal update status rapat."));
+        resolve(this);
+      });
+    });
+
+    if (meeting.filesData) {
+      const files = JSON.parse(meeting.filesData);
+      if (Array.isArray(files)) {
+        files.forEach(file => deleteFileIfExists(file.path));
+      }
+    }
+    
+    const jobId = `meeting_${id}`;
+    if (meetingJobs[jobId]) {
+      meetingJobs[jobId].cancel();
+      delete meetingJobs[jobId];
+      console.log(`Reminder untuk meeting ${id} dibatalkan karena meeting selesai.`);
+    }
+
+    // ✅ EMIT SOCKET EVENT
+    if (global.emitMeetingStatusUpdate) {
+      global.emitMeetingStatusUpdate(id, 'selesai', 'Rapat telah selesai');
+    }
+
+    res.json({ success: true, message: "Rapat berhasil ditandai selesai dan file terkait telah dihapus." });
+
+  } catch (error) {
+    console.error("Error pada rute /finish-meeting:", error.message);
+    res.status(500).json({ success: false, message: "Terjadi kesalahan server." });
+  }
 });
 
 /**
