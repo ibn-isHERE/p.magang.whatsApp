@@ -1,6 +1,5 @@
 // dbOperations.js - Database Operations for Meetings
-// CATATAN: File ini BUKAN inisialisasi database, hanya wrapper untuk operasi database
-// Database sebenarnya ada di ../../database.js (root folder)
+// ✅ FIXED: Emit socket events untuk auto update status
 
 let db = null;
 
@@ -21,8 +20,9 @@ function getDatabase() {
 
 /**
  * Update meeting status
+ * ✅ IMPROVED: Emit socket event setelah update
  */
-function updateMeetingStatus(meetingId, status) {
+function updateMeetingStatus(meetingId, status, message = null) {
     if (!db) {
         console.error("Database not available");
         return;
@@ -36,6 +36,15 @@ function updateMeetingStatus(meetingId, status) {
                 console.error(`Gagal update status meeting ${meetingId}:`, err.message);
             } else {
                 console.log(`Status meeting ${meetingId} diupdate ke '${status}'`);
+                
+                // ✅ EMIT SOCKET EVENT
+                if (global.emitMeetingStatusUpdate) {
+                    global.emitMeetingStatusUpdate(
+                        meetingId, 
+                        status, 
+                        message || `Meeting status updated to ${status}`
+                    );
+                }
             }
         }
     );
@@ -43,6 +52,7 @@ function updateMeetingStatus(meetingId, status) {
 
 /**
  * Update expired meetings
+ * ✅ FIXED: Emit socket event untuk setiap meeting yang berubah status
  */
 function updateExpiredMeetings() {
     return new Promise((resolve) => {
@@ -53,24 +63,55 @@ function updateExpiredMeetings() {
         
         const now = new Date().getTime();
         db.all(
-            `SELECT id, end_epoch, date, endTime, filesData FROM meetings WHERE status IN ('terjadwal', 'terkirim')`, 
+            `SELECT id, end_epoch, date, endTime, filesData, meetingTitle FROM meetings WHERE status IN ('terjadwal', 'terkirim')`, 
             [], 
             (err, rows) => {
                 if (err || rows.length === 0) return resolve();
                 
                 let completed = 0;
+                let updatedCount = 0;
+                
                 rows.forEach((meeting) => {
                     const endEpoch = meeting.end_epoch || dateTimeToEpoch(meeting.date, meeting.endTime);
+                    
                     if (now > endEpoch) {
-                        db.run(`UPDATE meetings SET status = 'selesai' WHERE id = ?`, [meeting.id], () => {
-                            // Delete files when meeting is finished
-                            if (meeting.filesData) {
-                                deleteFilesFromData(meeting.filesData);
+                        // ✅ Meeting sudah expired, update status
+                        db.run(
+                            `UPDATE meetings SET status = 'selesai' WHERE id = ?`, 
+                            [meeting.id], 
+                            (updateErr) => {
+                                if (!updateErr) {
+                                    updatedCount++;
+                                    console.log(`✅ Auto-finished meeting: ${meeting.id} - ${meeting.meetingTitle}`);
+                                    
+                                    // ✅ EMIT SOCKET EVENT - INI YANG PENTING!
+                                    if (global.emitMeetingStatusUpdate) {
+                                        global.emitMeetingStatusUpdate(
+                                            meeting.id, 
+                                            'selesai', 
+                                            `Rapat "${meeting.meetingTitle}" telah selesai secara otomatis`
+                                        );
+                                    }
+                                    
+                                    // Delete files when meeting is finished
+                                    if (meeting.filesData) {
+                                        deleteFilesFromData(meeting.filesData);
+                                    }
+                                }
+                                
+                                if (++completed === rows.length) {
+                                    if (updatedCount > 0) {
+                                        console.log(`📊 Auto-updated ${updatedCount} expired meetings to 'selesai'`);
+                                    }
+                                    resolve();
+                                }
                             }
-                            if (++completed === rows.length) resolve();
-                        });
+                        );
                     } else {
-                        if (++completed === rows.length) resolve();
+                        // Meeting belum expired
+                        if (++completed === rows.length) {
+                            resolve();
+                        }
                     }
                 });
             }
