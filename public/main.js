@@ -1,5 +1,6 @@
 // main.js - Main Application Entry Point dengan Enhanced Tab System
 
+// SESUDAH (tambahkan fungsi detail grup):
 import {
   showForm as showFormOriginal,
   showEditModal,
@@ -9,7 +10,10 @@ import {
   formatTimeDifference,
   closeEditContactModal,
   showEditGroupModal,
-  closeEditGroupModal
+  closeEditGroupModal,
+  showDetailGroupModal,      
+  closeDetailGroupModal,      
+  closeAddMembersModal        
 } from './ui-helpers.js';
 
 function showForm(formId) {
@@ -69,15 +73,17 @@ import {
   initMeetingFormTabs
 } from './contact-manager.js';
 
+// SESUDAH:
 import { 
   fetchAndRenderGroups, 
-  showEditGroupForm, 
+  showGroupDetail,        
   deleteGroup, 
   handleGroupFormSubmit,
   resetGroupForm,
   initGroupFormListeners,
-  renderGroupContactChecklist 
-} from './group-manager.js'; 
+  renderGroupContactChecklist,
+  closeAddMembersModal as closeAddMembersFromManager  
+} from './group-manager.js';
 
 import { 
   renderScheduleTable,
@@ -99,9 +105,10 @@ import {
   getUnreadCount
 } from './chat-client.js';
 
+// SESUDAH:
 window.groupModule = {
   fetchAndRenderGroups,
-  showEditGroupForm,
+  showGroupDetail,       
   deleteGroup,
   resetGroupForm,
   renderGroupContactChecklist
@@ -122,7 +129,9 @@ window.deleteContact = deleteContact;
 window.closeEditContactModal = closeEditContactModal;
 window.showEditGroupModal = showEditGroupModal;
 window.closeEditGroupModal = closeEditGroupModal;
-
+window.showDetailGroupModal = showDetailGroupModal;
+window.closeDetailGroupModal = closeDetailGroupModal;
+window.closeAddMembersModal = closeAddMembersModal;
 /**
  * Initializes file upload listener for message form
  */
@@ -1442,5 +1451,21 @@ window.showForm = showForm;
 window.updateScheduleStatusInTable = updateScheduleStatusInTable;
 window.removeScheduleFromTable = removeScheduleFromTable;
 window.showNotification = showNotification;
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('click', function(e) {
+    // Detail Group Modal
+    const detailModal = document.getElementById('detailGroupModal');
+    if (detailModal && e.target === detailModal) {
+      closeDetailGroupModal();
+    }
+    
+    // Add Members Modal
+    const addMembersModal = document.getElementById('addMembersModal');
+    if (addMembersModal && e.target === addMembersModal) {
+      closeAddMembersModal();
+    }
+  });
+});
 // Initialize app when DOM is ready
 document.addEventListener("DOMContentLoaded", initApp);

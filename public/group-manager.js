@@ -1,4 +1,4 @@
-// group-manager.js - Group Management Module with Edit Modal
+// group-manager.js - Group Management Module with Detail View
 
 import { 
   contacts, 
@@ -12,7 +12,10 @@ import {
 
 let groups = [];
 export let selectedGroupMembers = new Set();
-export let selectedEditGroupMembers = new Set(); // ✅ NEW: For edit modal
+export let selectedEditGroupMembers = new Set();
+let currentGroupId = null; // Track current group being viewed
+let selectedMembersToRemove = new Set(); // Track members to remove
+let selectedMembersToAdd = new Set(); // Track members to add
 
 /**
  * Fetches groups from server and renders them
@@ -64,8 +67,8 @@ function renderGroupTable() {
       <td>${group.name}</td>
       <td style="text-align: center;">${memberCount}</td>
       <td class="action-buttons">
-        <button class="edit-group-btn" onclick="window.groupModule.showEditGroupForm(${group.id})">
-          <i class="fa-solid fa-edit"></i> Edit
+        <button class="edit-group-btn" onclick="window.groupModule.showGroupDetail(${group.id})" style="background: #4299e1;">
+          <i class="fa-solid fa-eye"></i> Detail
         </button>
         <button class="delete-group-btn" onclick="window.groupModule.deleteGroup(${group.id})">
           <i class="fa-solid fa-trash"></i> Hapus
@@ -74,6 +77,468 @@ function renderGroupTable() {
     `;
     tbody.appendChild(row);
   });
+}
+
+/**
+ * 🆕 Show group detail modal with members table
+ */
+export async function showGroupDetail(id) {
+  const group = groups.find((g) => g.id === id);
+  if (!group) {
+    Swal.fire("Error", "Grup tidak ditemukan.", "error");
+    return;
+  }
+
+  currentGroupId = id;
+  selectedMembersToRemove.clear();
+
+  let membersArray = [];
+  try {
+    membersArray = JSON.parse(group.members || '[]');
+  } catch (e) {
+    console.error("Error parsing group members:", e);
+  }
+
+  // Gunakan container yang sama dengan form (groupMainContainer)
+  const groupMainContainer = document.getElementById("groupMainContainer");
+  if (!groupMainContainer) return;
+
+  // Build members table HTML
+  let membersTableHTML = '';
+  
+  if (membersArray.length === 0) {
+    membersTableHTML = `
+      <div class="no-members">
+        <i class="fa-solid fa-users-slash"></i>
+        <p>Belum ada anggota dalam grup ini</p>
+      </div>
+    `;
+  } else {
+    const memberDetails = membersArray.map(number => {
+      const contact = contacts.find(c => c.number === number);
+      return contact || { number, name: 'Tidak dikenal', instansi: '-', jabatan: '-' };
+    });
+
+    membersTableHTML = `
+      <div class="members-table-wrapper">
+        <table class="members-table">
+          <thead>
+            <tr>
+              <th style="width: 40px;">
+                <input type="checkbox" id="selectAllMembersCheck" class="member-checkbox" />
+              </th>
+              <th>Nama</th>
+              <th>Nomor</th>
+              <th>Instansi</th>
+              <th>Jabatan</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${memberDetails.map(member => `
+              <tr>
+                <td>
+                  <input type="checkbox" class="member-remove-checkbox" value="${member.number}" />
+                </td>
+                <td><strong>${member.name}</strong></td>
+                <td>${member.number}</td>
+                <td>${member.instansi || '-'}</td>
+                <td>${member.jabatan || '-'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  // Ganti isi container dengan detail view
+  groupMainContainer.innerHTML = `
+    <div class="group-detail-view">
+      <!-- Header dengan tombol kembali -->
+      <div class="group-detail-header">
+        <button id="backToGroupListBtn" class="back-button">
+  <i class="fa-solid fa-arrow-left"></i> Kembali
+</button>
+        <h3><i class="fa-solid fa-users"></i> ${group.name}</h3>
+        <span></span> <!-- Spacer untuk flex -->
+      </div>
+
+      <!-- Info Grup -->
+      <div class="group-info-header">
+        <p><i class="fa-solid fa-user-group"></i> Jumlah Anggota: <strong>${membersArray.length}</strong></p>
+      </div>
+
+      <!-- Tombol Aksi -->
+      <div class="members-actions">
+        <button class="btn-action btn-add-member" id="addMemberBtn">
+          <i class="fa-solid fa-user-plus"></i> Tambah Anggota
+        </button>
+        <button class="btn-action btn-remove-members" id="removeMembersBtn" disabled>
+          <i class="fa-solid fa-user-minus"></i> Hapus Anggota (<span id="removeCount">0</span>)
+        </button>
+      </div>
+
+      <!-- Daftar Anggota -->
+      <div class="members-table-header">
+        <h4>Daftar Anggota</h4>
+      </div>
+
+      ${membersTableHTML}
+    </div>
+  `;
+
+  // Attach event listeners
+  attachDetailModalListeners();
+  const backBtn = document.getElementById("backToGroupListBtn");
+  if (backBtn) {
+    backBtn.removeEventListener("click", backToGroupList); // Hapus listener lama jika ada
+    backBtn.addEventListener("click", backToGroupList);
+  }
+}
+
+export function backToGroupList() {
+  const groupMainContainer = document.getElementById("groupMainContainer");
+  if (!groupMainContainer) return;
+  
+  // Reset container HTML ke state awal (table view)
+  groupMainContainer.innerHTML = `
+    <div class="schedule-header">
+      <h3>Daftar Grup Tersimpan</h3>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="group-management-table">
+        <thead>
+          <tr>
+            <th>Nama Grup</th>
+            <th>Jumlah Anggota</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="group-management-tbody"></tbody>
+      </table>
+    </div>
+  `;
+  
+  // Render ulang table
+  fetchAndRenderGroups();
+}
+
+
+
+/**
+ * Attach event listeners for detail modal
+ */
+function attachDetailModalListeners() {
+   const backBtn = document.getElementById("backToGroupListBtn");
+  if (backBtn) {
+    backBtn.addEventListener("click", backToGroupList);
+  }
+  // Add member button
+  const addBtn = document.getElementById("addMemberBtn");
+  if (addBtn) {
+    addBtn.addEventListener("click", showAddMembersModal);
+  }
+
+  // Remove members button
+  const removeBtn = document.getElementById("removeMembersBtn");
+  if (removeBtn) {
+    removeBtn.addEventListener("click", handleRemoveMembers);
+  }
+
+  // Select all checkbox
+  const selectAllCheck = document.getElementById("selectAllMembersCheck");
+  if (selectAllCheck) {
+    selectAllCheck.addEventListener("change", function() {
+      const checkboxes = document.querySelectorAll(".member-remove-checkbox");
+      checkboxes.forEach(cb => {
+        cb.checked = this.checked;
+        if (this.checked) {
+          selectedMembersToRemove.add(cb.value);
+        } else {
+          selectedMembersToRemove.delete(cb.value);
+        }
+      });
+      updateRemoveButton();
+    });
+  }
+
+  // Individual member checkboxes
+  const memberCheckboxes = document.querySelectorAll(".member-remove-checkbox");
+  memberCheckboxes.forEach(cb => {
+    cb.addEventListener("change", function() {
+      if (this.checked) {
+        selectedMembersToRemove.add(this.value);
+      } else {
+        selectedMembersToRemove.delete(this.value);
+      }
+      updateRemoveButton();
+    });
+  });
+}
+
+/**
+ * Update remove button state
+ */
+function updateRemoveButton() {
+  const removeBtn = document.getElementById("removeMembersBtn");
+  const countSpan = document.getElementById("removeCount");
+  
+  if (removeBtn && countSpan) {
+    const count = selectedMembersToRemove.size;
+    countSpan.textContent = count;
+    removeBtn.disabled = count === 0;
+  }
+}
+
+/**
+ * Show add members modal
+ */
+function showAddMembersModal() {
+  selectedMembersToAdd.clear();
+  
+  const modal = document.getElementById("addMembersModal");
+  if (!modal) return;
+
+  // Get current group members
+  const group = groups.find(g => g.id === currentGroupId);
+  let currentMembers = [];
+  try {
+    currentMembers = JSON.parse(group.members || '[]');
+  } catch (e) {
+    currentMembers = [];
+  }
+
+  // Filter contacts not in group
+  const availableContacts = contacts.filter(c => !currentMembers.includes(c.number));
+
+  renderAddMembersList(availableContacts);
+  
+  modal.style.display = "block";
+
+  // Setup search
+  const searchInput = document.getElementById("addMemberSearch");
+  if (searchInput) {
+    searchInput.value = '';
+    searchInput.addEventListener("input", function() {
+      const searchTerm = this.value.toLowerCase();
+      const filtered = availableContacts.filter(c => 
+        c.name.toLowerCase().includes(searchTerm) || 
+        c.number.includes(searchTerm)
+      );
+      renderAddMembersList(filtered);
+    });
+  }
+
+  // Setup select all
+  const selectAllCheck = document.getElementById("selectAllAddMembers");
+  if (selectAllCheck) {
+    selectAllCheck.checked = false;
+    selectAllCheck.addEventListener("change", function() {
+      const checkboxes = document.querySelectorAll(".add-member-checkbox");
+      checkboxes.forEach(cb => {
+        cb.checked = this.checked;
+        if (this.checked) {
+          selectedMembersToAdd.add(cb.value);
+        } else {
+          selectedMembersToAdd.delete(cb.value);
+        }
+      });
+    });
+  }
+
+  // Setup confirm button
+  const confirmBtn = document.getElementById("confirmAddMembersBtn");
+  if (confirmBtn) {
+    confirmBtn.onclick = handleAddMembers;
+  }
+}
+
+/**
+ * Render add members list
+ */
+function renderAddMembersList(contactsList) {
+  const list = document.getElementById("addMembersList");
+  if (!list) return;
+
+  if (contactsList.length === 0) {
+    list.innerHTML = '<p style="text-align: center; color: #a0aec0; padding: 20px;">Tidak ada kontak tersedia</p>';
+    return;
+  }
+
+  list.innerHTML = contactsList.map(contact => `
+    <label>
+      <input type="checkbox" class="add-member-checkbox" value="${contact.number}" 
+             ${selectedMembersToAdd.has(contact.number) ? 'checked' : ''}>
+      <strong>${contact.name}</strong> — ${contact.number}
+      ${contact.instansi ? `<br><small style="color: #718096; margin-left: 26px;">${contact.instansi}</small>` : ''}
+    </label>
+  `).join('');
+
+  // Attach change listeners
+  const checkboxes = list.querySelectorAll(".add-member-checkbox");
+  checkboxes.forEach(cb => {
+    cb.addEventListener("change", function() {
+      if (this.checked) {
+        selectedMembersToAdd.add(this.value);
+      } else {
+        selectedMembersToAdd.delete(this.value);
+      }
+    });
+  });
+}
+
+/**
+ * Handle add members
+ */
+async function handleAddMembers() {
+  if (selectedMembersToAdd.size === 0) {
+    Swal.fire("Peringatan", "Pilih minimal satu kontak untuk ditambahkan", "warning");
+    return;
+  }
+
+  const group = groups.find(g => g.id === currentGroupId);
+  if (!group) return;
+
+  let currentMembers = [];
+  try {
+    currentMembers = JSON.parse(group.members || '[]');
+  } catch (e) {
+    currentMembers = [];
+  }
+
+  // Merge with new members
+  const updatedMembers = [...new Set([...currentMembers, ...Array.from(selectedMembersToAdd)])];
+
+  try {
+    const res = await fetch(`/api/groups/${currentGroupId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        name: group.name, 
+        contactNumbers: JSON.stringify(updatedMembers) 
+      }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      throw new Error(result.error || 'Gagal menambah anggota.');
+    }
+
+    await fetchAndRenderContacts();
+    await fetchAndRenderGroups();
+    
+    Swal.fire({
+      icon: "success",
+      title: "Berhasil!",
+      text: `${selectedMembersToAdd.size} anggota berhasil ditambahkan`,
+      timer: 2000
+    });
+    
+    closeAddMembersModal();
+    showGroupDetail(currentGroupId); // Refresh detail view
+    
+  } catch (error) {
+    console.error("Error adding members:", error);
+    Swal.fire("Error", error.message, "error");
+  }
+}
+
+/**
+ * Handle remove members
+ */
+async function handleRemoveMembers() {
+  if (selectedMembersToRemove.size === 0) return;
+
+  const result = await Swal.fire({
+    title: "Hapus Anggota?",
+    text: `Anda akan menghapus ${selectedMembersToRemove.size} anggota dari grup ini`,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#f56565",
+    confirmButtonText: "Ya, hapus!",
+    cancelButtonText: "Batal",
+  });
+
+  if (!result.isConfirmed) return;
+
+  const group = groups.find(g => g.id === currentGroupId);
+  if (!group) return;
+
+  let currentMembers = [];
+  try {
+    currentMembers = JSON.parse(group.members || '[]');
+  } catch (e) {
+    currentMembers = [];
+  }
+
+  // Remove selected members
+  const updatedMembers = currentMembers.filter(m => !selectedMembersToRemove.has(m));
+
+  try {
+    const res = await fetch(`/api/groups/${currentGroupId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        name: group.name, 
+        contactNumbers: JSON.stringify(updatedMembers) 
+      }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      throw new Error(result.error || 'Gagal menghapus anggota.');
+    }
+
+    await fetchAndRenderContacts();
+    await fetchAndRenderGroups();
+    
+    Swal.fire({
+      icon: "success",
+      title: "Berhasil!",
+      text: `${selectedMembersToRemove.size} anggota berhasil dihapus`,
+      timer: 2000
+    });
+    
+    selectedMembersToRemove.clear();
+    showGroupDetail(currentGroupId); // Refresh detail view
+    
+  } catch (error) {
+    console.error("Error removing members:", error);
+    Swal.fire("Error", error.message, "error");
+  }
+}
+
+/**
+ * Close add members modal
+ */
+export function closeAddMembersModal() {
+  const modal = document.getElementById("addMembersModal");
+  if (modal) {
+    modal.style.display = "none";
+  }
+  selectedMembersToAdd.clear();
+}
+
+/**
+ * Show/Close detail group modal
+ */
+export function showDetailGroupModal() {
+  const modal = document.getElementById("detailGroupModal");
+  if (modal) {
+    modal.style.display = "block";
+  }
+}
+
+export function closeDetailGroupModal() {
+  const modal = document.getElementById("detailGroupModal");
+  if (modal) {
+    modal.style.display = "none";
+  }
+  currentGroupId = null;
+  selectedMembersToRemove.clear();
 }
 
 /**
@@ -115,43 +580,6 @@ export function renderGroupContactChecklist(searchTerm = "") {
 }
 
 /**
- * ✅ NEW: Renders contact checklist for edit group modal
- */
-function renderEditGroupContactChecklist(searchTerm = "") {
-  const list = document.getElementById("editGroupContactList");
-  if (!list || !contacts || contacts.length === 0) {
-    if (list) list.innerHTML = "<p>Tidak ada kontak yang tersedia.</p>";
-    return;
-  }
-
-  list.innerHTML = "";
-  const lowerSearchTerm = searchTerm.toLowerCase().trim();
-
-  const filteredContacts = contacts.filter(
-    (contact) =>
-      contact.name.toLowerCase().includes(lowerSearchTerm) ||
-      contact.number.includes(lowerSearchTerm)
-  );
-
-  if (filteredContacts.length === 0) {
-    list.innerHTML = "<p>Tidak ada kontak ditemukan.</p>";
-    return;
-  }
-
-  filteredContacts.forEach((contact) => {
-    const label = document.createElement("label");
-    const isChecked = selectedEditGroupMembers.has(contact.number) ? "checked" : "";
-    label.innerHTML = `
-      <input type="checkbox" class="edit-group-contact-checkbox" value="${contact.number}" ${isChecked}> 
-      <strong>${contact.name}</strong> — ${contact.number}
-    `;
-    list.appendChild(label);
-  });
-  
-  attachEditGroupContactListeners();
-}
-
-/**
  * Attaches event listeners to the group contact checkboxes (Add form)
  */
 function attachGroupContactListeners() {
@@ -172,22 +600,6 @@ function handleGroupCheckboxChange() {
 }
 
 /**
- * ✅ NEW: Attaches event listeners to edit group contact checkboxes
- */
-function attachEditGroupContactListeners() {
-  document.querySelectorAll(".edit-group-contact-checkbox").forEach((checkbox) => {
-    checkbox.addEventListener("change", function() {
-      if (this.checked) {
-        selectedEditGroupMembers.add(this.value);
-      } else {
-        selectedEditGroupMembers.delete(this.value);
-      }
-      updateEditSelectAllState();
-    });
-  });
-}
-
-/**
  * Updates the select all checkbox state (Add form)
  */
 function updateSelectAllState() {
@@ -195,18 +607,6 @@ function updateSelectAllState() {
   if (!selectAllCheckbox) return;
   
   const allCheckboxes = document.querySelectorAll(".group-contact-checkbox");
-  const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
-  selectAllCheckbox.checked = allChecked && allCheckboxes.length > 0;
-}
-
-/**
- * ✅ NEW: Updates the select all checkbox state (Edit modal)
- */
-function updateEditSelectAllState() {
-  const selectAllCheckbox = document.getElementById("selectAllEditGroupContacts");
-  if (!selectAllCheckbox) return;
-  
-  const allCheckboxes = document.querySelectorAll(".edit-group-contact-checkbox");
   const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
   selectAllCheckbox.checked = allChecked && allCheckboxes.length > 0;
 }
@@ -222,167 +622,7 @@ function updateGroupMembersInput() {
 }
 
 /**
- * ✅ UPDATED: Shows the edit group form in MODAL instead of inline
- */
-export async function showEditGroupForm(id) {
-  const group = groups.find((g) => g.id === id);
-  if (!group) {
-    Swal.fire("Error", "Grup tidak ditemukan.", "error");
-    return;
-  }
-
-  // Reset selection
-  selectedEditGroupMembers.clear();
-  
-  // Populate selected members set from group data
-  let membersArray = [];
-  try {
-    membersArray = JSON.parse(group.members || '[]');
-    membersArray.forEach(number => selectedEditGroupMembers.add(number));
-  } catch (e) {
-    console.error("Error parsing group members:", e);
-  }
-
-  const modalBody = document.getElementById("editGroupModalBody");
-  if (!modalBody) return;
-
-  // ✅ Create edit form in modal
-  modalBody.innerHTML = `
-    <form id="editGroupForm">
-      <input type="hidden" id="edit-group-id" value="${group.id}">
-      
-      <label for="edit-group-name">
-        <i class="fa-solid fa-users"></i> Nama Grup:
-      </label>
-      <input 
-        type="text" 
-        id="edit-group-name" 
-        class="phone-num-input" 
-        value="${group.name}" 
-        placeholder="Contoh: Tim TI, Semua Pegawai"
-        required
-      />
-
-      <label for="editGroupContactSearch" style="margin-top: 16px;">
-        <i class="fa-solid fa-search"></i> Cari Kontak:
-      </label>
-      <input
-        type="text"
-        id="editGroupContactSearch"
-        placeholder="Cari kontak..."
-        autocomplete="off"
-        style="margin-bottom: 8px;"
-      />
-      
-      <div class="select-all-container">
-        <label for="selectAllEditGroupContacts">Pilih Semua Anggota</label>
-        <input type="checkbox" id="selectAllEditGroupContacts" />
-      </div>
-      
-      <div id="editGroupContactList" class="contact-checklist-box" style="max-height: 300px; overflow-y: auto;">
-        <p style="text-align: center">Memuat daftar kontak...</p>
-      </div>
-
-      <button type="submit" id="updateGroupBtn">
-        <i class="fa-solid fa-save"></i> Update Grup
-      </button>
-      <button type="button" id="cancelEditGroupBtn" style="background-color: #6c757d; margin-top: 10px;">
-        <i class="fa-solid fa-times"></i> Batal
-      </button>
-    </form>
-  `;
-
-  // Show modal
-  showEditGroupModal();
-
-  // Render contact list with pre-selected members
-  renderEditGroupContactChecklist();
-
-  // ✅ Setup search functionality
-  const searchInput = document.getElementById("editGroupContactSearch");
-  if (searchInput) {
-    searchInput.addEventListener("input", function() {
-      renderEditGroupContactChecklist(this.value);
-    });
-  }
-
-  // ✅ Setup "Select All" checkbox
-  const selectAllCheckbox = document.getElementById("selectAllEditGroupContacts");
-  if (selectAllCheckbox) {
-    selectAllCheckbox.addEventListener("change", function() {
-      const allCheckboxes = document.querySelectorAll(".edit-group-contact-checkbox");
-      const isChecked = this.checked;
-      
-      allCheckboxes.forEach((checkbox) => {
-        checkbox.checked = isChecked;
-        if (isChecked) {
-          selectedEditGroupMembers.add(checkbox.value);
-        } else {
-          selectedEditGroupMembers.delete(checkbox.value);
-        }
-      });
-    });
-  }
-
-  // ✅ Setup form submit
-  document.getElementById("editGroupForm").addEventListener("submit", handleEditGroupSubmit);
-  document.getElementById("cancelEditGroupBtn").addEventListener("click", closeEditGroupModal);
-}
-
-/**
- * ✅ NEW: Handles edit group form submission
- */
-async function handleEditGroupSubmit(e) {
-  e.preventDefault();
-
-  const id = document.getElementById("edit-group-id").value;
-  const name = document.getElementById("edit-group-name").value.trim();
-  const contactNumbers = JSON.stringify(Array.from(selectedEditGroupMembers));
-
-  if (!name) {
-    Swal.fire("Peringatan", "Nama grup wajib diisi.", "warning");
-    return;
-  }
-
-  const submitBtn = document.getElementById("updateGroupBtn");
-  if (submitBtn) {
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Memproses...";
-  }
-
-  try {
-    const res = await fetch(`/api/groups/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, contactNumbers }),
-    });
-
-    const result = await res.json();
-
-    if (!res.ok) {
-      throw new Error(result.error || 'Gagal mengubah grup.');
-    }
-    
-    await fetchAndRenderContacts();
-    
-    Swal.fire("Sukses", result.message || "Grup berhasil diubah.", "success");
-    closeEditGroupModal();
-    selectedEditGroupMembers.clear();
-    fetchAndRenderGroups();
-    
-  } catch (error) {
-    console.error("Error updating group:", error);
-    Swal.fire("Error", error.message, "error");
-  } finally {
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.textContent = "Update Grup";
-    }
-  }
-}
-
-/**
- * Handles group form submission (ADD only - edit now uses modal)
+ * Handles group form submission (ADD only)
  */
 export async function handleGroupFormSubmit(e) {
   e.preventDefault();
@@ -516,7 +756,7 @@ export function initGroupFormListeners() {
     });
   }
 
-  // Cancel button - now just resets form since edit uses modal
+  // Cancel button - now just resets form
   const cancelBtn = document.getElementById("group-crud-cancel");
   if (cancelBtn) {
     cancelBtn.addEventListener("click", resetGroupForm);
@@ -531,4 +771,230 @@ export function initGroupFormListeners() {
  */
 export function getGroups() {
   return groups;
+}
+
+/**
+ * LEGACY: Show edit group form in modal (kept for backward compatibility)
+ * This is the old edit function that's no longer used in the main flow
+ */
+export async function showEditGroupForm(id) {
+  const group = groups.find((g) => g.id === id);
+  if (!group) {
+    Swal.fire("Error", "Grup tidak ditemukan.", "error");
+    return;
+  }
+
+  // Reset selection
+  selectedEditGroupMembers.clear();
+  
+  // Populate selected members set from group data
+  let membersArray = [];
+  try {
+    membersArray = JSON.parse(group.members || '[]');
+    membersArray.forEach(number => selectedEditGroupMembers.add(number));
+  } catch (e) {
+    console.error("Error parsing group members:", e);
+  }
+
+  const modalBody = document.getElementById("editGroupModalBody");
+  if (!modalBody) return;
+
+  // Create edit form in modal
+  modalBody.innerHTML = `
+    <form id="editGroupForm">
+      <input type="hidden" id="edit-group-id" value="${group.id}">
+      
+      <label for="edit-group-name">
+        <i class="fa-solid fa-users"></i> Nama Grup:
+      </label>
+      <input 
+        type="text" 
+        id="edit-group-name" 
+        class="phone-num-input" 
+        value="${group.name}" 
+        placeholder="Contoh: Tim TI, Semua Pegawai"
+        required
+      />
+
+      <label for="editGroupContactSearch" style="margin-top: 16px;">
+        <i class="fa-solid fa-search"></i> Cari Kontak:
+      </label>
+      <input
+        type="text"
+        id="editGroupContactSearch"
+        placeholder="Cari kontak..."
+        autocomplete="off"
+        style="margin-bottom: 8px;"
+      />
+      
+      <div class="select-all-container">
+        <label for="selectAllEditGroupContacts">Pilih Semua Anggota</label>
+        <input type="checkbox" id="selectAllEditGroupContacts" />
+      </div>
+      
+      <div id="editGroupContactList" class="contact-checklist-box" style="max-height: 300px; overflow-y: auto;">
+        <p style="text-align: center">Memuat daftar kontak...</p>
+      </div>
+
+      <button type="submit" id="updateGroupBtn">
+        <i class="fa-solid fa-save"></i> Update Grup
+      </button>
+      <button type="button" id="cancelEditGroupBtn" style="background-color: #6c757d; margin-top: 10px;">
+        <i class="fa-solid fa-times"></i> Batal
+      </button>
+    </form>
+  `;
+
+  // Show modal
+  showEditGroupModal();
+
+  // Render contact list with pre-selected members
+  renderEditGroupContactChecklist();
+
+  // Setup search functionality
+  const searchInput = document.getElementById("editGroupContactSearch");
+  if (searchInput) {
+    searchInput.addEventListener("input", function() {
+      renderEditGroupContactChecklist(this.value);
+    });
+  }
+
+  // Setup "Select All" checkbox
+  const selectAllCheckbox = document.getElementById("selectAllEditGroupContacts");
+  if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener("change", function() {
+      const allCheckboxes = document.querySelectorAll(".edit-group-contact-checkbox");
+      const isChecked = this.checked;
+      
+      allCheckboxes.forEach((checkbox) => {
+        checkbox.checked = isChecked;
+        if (isChecked) {
+          selectedEditGroupMembers.add(checkbox.value);
+        } else {
+          selectedEditGroupMembers.delete(checkbox.value);
+        }
+      });
+    });
+  }
+
+  // Setup form submit
+  document.getElementById("editGroupForm").addEventListener("submit", handleEditGroupSubmit);
+  document.getElementById("cancelEditGroupBtn").addEventListener("click", closeEditGroupModal);
+}
+
+/**
+ * Renders contact checklist for edit group modal
+ */
+function renderEditGroupContactChecklist(searchTerm = "") {
+  const list = document.getElementById("editGroupContactList");
+  if (!list || !contacts || contacts.length === 0) {
+    if (list) list.innerHTML = "<p>Tidak ada kontak yang tersedia.</p>";
+    return;
+  }
+
+  list.innerHTML = "";
+  const lowerSearchTerm = searchTerm.toLowerCase().trim();
+
+  const filteredContacts = contacts.filter(
+    (contact) =>
+      contact.name.toLowerCase().includes(lowerSearchTerm) ||
+      contact.number.includes(lowerSearchTerm)
+  );
+
+  if (filteredContacts.length === 0) {
+    list.innerHTML = "<p>Tidak ada kontak ditemukan.</p>";
+    return;
+  }
+
+  filteredContacts.forEach((contact) => {
+    const label = document.createElement("label");
+    const isChecked = selectedEditGroupMembers.has(contact.number) ? "checked" : "";
+    label.innerHTML = `
+      <input type="checkbox" class="edit-group-contact-checkbox" value="${contact.number}" ${isChecked}> 
+      <strong>${contact.name}</strong> — ${contact.number}
+    `;
+    list.appendChild(label);
+  });
+  
+  attachEditGroupContactListeners();
+}
+
+/**
+ * Attaches event listeners to edit group contact checkboxes
+ */
+function attachEditGroupContactListeners() {
+  document.querySelectorAll(".edit-group-contact-checkbox").forEach((checkbox) => {
+    checkbox.addEventListener("change", function() {
+      if (this.checked) {
+        selectedEditGroupMembers.add(this.value);
+      } else {
+        selectedEditGroupMembers.delete(this.value);
+      }
+      updateEditSelectAllState();
+    });
+  });
+}
+
+/**
+ * Updates the select all checkbox state (Edit modal)
+ */
+function updateEditSelectAllState() {
+  const selectAllCheckbox = document.getElementById("selectAllEditGroupContacts");
+  if (!selectAllCheckbox) return;
+  
+  const allCheckboxes = document.querySelectorAll(".edit-group-contact-checkbox");
+  const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
+  selectAllCheckbox.checked = allChecked && allCheckboxes.length > 0;
+}
+
+/**
+ * Handles edit group form submission
+ */
+async function handleEditGroupSubmit(e) {
+  e.preventDefault();
+
+  const id = document.getElementById("edit-group-id").value;
+  const name = document.getElementById("edit-group-name").value.trim();
+  const contactNumbers = JSON.stringify(Array.from(selectedEditGroupMembers));
+
+  if (!name) {
+    Swal.fire("Peringatan", "Nama grup wajib diisi.", "warning");
+    return;
+  }
+
+  const submitBtn = document.getElementById("updateGroupBtn");
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Memproses...";
+  }
+
+  try {
+    const res = await fetch(`/api/groups/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, contactNumbers }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      throw new Error(result.error || 'Gagal mengubah grup.');
+    }
+    
+    await fetchAndRenderContacts();
+    
+    Swal.fire("Sukses", result.message || "Grup berhasil diubah.", "success");
+    closeEditGroupModal();
+    selectedEditGroupMembers.clear();
+    fetchAndRenderGroups();
+    
+  } catch (error) {
+    console.error("Error updating group:", error);
+    Swal.fire("Error", error.message, "error");
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Update Grup";
+    }
+  }
 }

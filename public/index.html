@@ -851,6 +851,62 @@
       </div>
     </div>
 
+    <div id="detailGroupModal" class="edit-modal">
+  <div class="edit-modal-content" style="max-width: 900px;">
+    <div class="edit-modal-header">
+      <h2 id="detailGroupModalTitle">Detail Grup</h2>
+      <button class="edit-modal-close" onclick="closeDetailGroupModal()">
+        &times;
+      </button>
+    </div>
+    <div id="detailGroupModalBody" style="padding: 20px;">
+      <!-- Content akan diisi oleh JavaScript -->
+    </div>
+  </div>
+</div>
+
+<!-- Modal Tambah Anggota -->
+<div id="addMembersModal" class="edit-modal">
+  <div class="edit-modal-content" style="max-width: 600px;">
+    <div class="edit-modal-header">
+      <h2>Tambah Anggota ke Grup</h2>
+      <button class="edit-modal-close" onclick="closeAddMembersModal()">
+        &times;
+      </button>
+    </div>
+    <div id="addMembersModalBody" style="padding: 20px;">
+      <div class="search-box-wrapper" style="margin-bottom: 16px;">
+        <i class="fa-solid fa-search"></i>
+        <input
+          type="text"
+          id="addMemberSearch"
+          placeholder="Cari kontak..."
+          autocomplete="off"
+        />
+      </div>
+      
+      <div class="select-all-container" style="margin-bottom: 12px;">
+        <label for="selectAllAddMembers">Pilih Semua</label>
+        <input type="checkbox" id="selectAllAddMembers" />
+      </div>
+      
+      <div id="addMembersList" class="contact-checklist-box" style="max-height: 400px; overflow-y: auto;">
+        <p style="text-align: center; color: #a0aec0;">Memuat kontak...</p>
+      </div>
+      
+      <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <button id="confirmAddMembersBtn" class="btn-primary" style="flex: 1;">
+          <i class="fa-solid fa-user-plus"></i> Tambahkan
+        </button>
+        <button onclick="closeAddMembersModal()" class="btn-secondary" style="flex: 1;">
+          <i class="fa-solid fa-times"></i> Batal
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
     <script type="module" src="main.js"></script>
   </body>
 </html>

@@ -1,33 +1,28 @@
-// ui-helpers.js - UI Helper Functions Module
+// ui-helpers.js - UI Helper Functions Module (Updated)
 
 /**
  * Shows a specific form/tab and hides others
  */
 export function showForm(formId) {
-  // Hide all forms with class form-content
   document.querySelectorAll(".form-content").forEach((form) => {
     form.style.display = "none";
     form.classList.remove("active");
   });
 
-  // Remove active from all tab buttons
   document.querySelectorAll(".tab-button").forEach((button) => {
     button.classList.remove("active");
   });
 
-  // Get all main containers
   const scheduleContainer = document.getElementById("scheduleContainer");
   const chatMainContainer = document.getElementById("chatMainContainer");
   const contactMainContainer = document.getElementById("contactMainContainer");
   const groupMainContainer = document.getElementById("groupMainContainer");
 
-  // Hide all main containers first
   if (scheduleContainer) scheduleContainer.style.display = "none";
   if (chatMainContainer) chatMainContainer.style.display = "none";
   if (contactMainContainer) contactMainContainer.style.display = "none";
   if (groupMainContainer) groupMainContainer.style.display = "none";
 
-  // Show the appropriate form and container based on formId
   if (formId === "message") {
     const messageForm = document.getElementById("messageFormContainer");
     if (messageForm) {
@@ -69,7 +64,6 @@ export function showForm(formId) {
     if (chatMainContainer) chatMainContainer.style.display = "flex";
   }
 
-  // Set active tab button
   const selectedTab = document.querySelector(`[onclick="showForm('${formId}')"]`);
   if (selectedTab) {
     selectedTab.classList.add("active");
@@ -91,8 +85,6 @@ export function showEditModal(title) {
 export function closeEditModal() {
   const modal = document.getElementById("editModal");
   modal.style.display = "none";
-  
-  // Reset form content
   document.getElementById("editModalBody").innerHTML = "";
 }
 
@@ -248,6 +240,9 @@ export function showBrowserNotification(messageData) {
   }
 }
 
+/**
+ * Show edit contact modal
+ */
 export function showEditContactModal() {
   const modal = document.getElementById("editContactModal");
   if (modal) {
@@ -255,6 +250,9 @@ export function showEditContactModal() {
   }
 }
 
+/**
+ * Close edit contact modal
+ */
 export function closeEditContactModal() {
   const modal = document.getElementById("editContactModal");
   if (modal) {
@@ -263,12 +261,45 @@ export function closeEditContactModal() {
   }
 }
 
+/**
+ * 🆕 Show detail group modal
+ */
+export function showDetailGroupModal() {
+  const modal = document.getElementById('detailGroupModal');
+  if (!modal) return;
+  modal.style.display = 'block';
+}
+
+/**
+ * 🆕 Close detail group modal
+ */
+export function closeDetailGroupModal() {
+  const modal = document.getElementById('detailGroupModal');
+  if (!modal) return;
+  modal.style.display = 'none';
+}
+
+/**
+ * 🆕 Close add members modal
+ */
+export function closeAddMembersModal() {
+  const modal = document.getElementById('addMembersModal');
+  if (!modal) return;
+  modal.style.display = 'none';
+}
+
+/**
+ * Close edit group modal (legacy - still needed for add form)
+ */
 export function closeEditGroupModal() {
   const modal = document.getElementById('editGroupModal');
   if (!modal) return;
   modal.style.display = 'none';
 }
 
+/**
+ * Show edit group modal (legacy - still needed for add form)
+ */
 export function showEditGroupModal() {
   const modal = document.getElementById('editGroupModal');
   if (!modal) return;

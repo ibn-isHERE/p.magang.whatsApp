@@ -707,3 +707,480 @@ form button:active {
   padding-bottom: 10px;
   margin-bottom: 20px;
 }
+
+/* =======================================
+   GROUP DETAIL VIEW - NEW STYLES
+   ======================================= */
+
+.group-detail-view {
+  width: 100%;
+  animation: fadeInContent 0.4s ease;
+}
+
+/* Header dengan tombol kembali */
+.group-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 3px solid #e9ecef;
+}
+
+.group-detail-header h3 {
+  flex: 1;
+  text-align: center;
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #003366;
+}
+
+.group-detail-header h3 i {
+  color: #2b6cb0;
+  margin-right: 8px;
+}
+
+.back-button {
+  background: #f7fafc;
+  border: 2px solid #cbd5e0;
+  color: #2d3748;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.back-button:hover {
+  background: #edf2f7;
+  border-color: #a0aec0;
+  transform: translateX(-2px);
+}
+
+.back-button i {
+  font-size: 16px;
+}
+
+/* Info Grup */
+.group-info-header {
+  background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+  padding: 16px 20px;
+  border-radius: 8px;
+  border-left: 4px solid #2b6cb0;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.group-info-header p {
+  margin: 0;
+  font-size: 15px;
+  color: #2c5282;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.group-info-header i {
+  color: #2b6cb0;
+  font-size: 18px;
+}
+
+.group-info-header strong {
+  color: #2b6cb0;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+/* Tombol Aksi */
+.members-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 2px dashed #cbd5e0;
+}
+
+.btn-action {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-add-member {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  color: white;
+}
+
+.btn-add-member:hover {
+  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(72, 187, 120, 0.3);
+}
+
+.btn-remove-members {
+  background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+  color: white;
+}
+
+.btn-remove-members:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(252, 129, 129, 0.3);
+}
+
+.btn-remove-members:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-action i {
+  font-size: 16px;
+}
+
+/* Header Tabel */
+.members-table-header {
+  margin-bottom: 12px;
+}
+
+.members-table-header h4 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #2d3748;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* No Members State */
+.no-members {
+  text-align: center;
+  padding: 60px 20px;
+  color: #a0aec0;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 2px dashed #cbd5e0;
+}
+
+.no-members i {
+  font-size: 64px;
+  color: #cbd5e0;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.no-members p {
+  font-size: 16px;
+  color: #718096;
+  margin: 0;
+}
+
+/* Members Table Wrapper */
+.members-table-wrapper {
+  background: white;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Members Table */
+.members-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.members-table thead {
+  background: linear-gradient(135deg, #e9ecef 0%, #f1f3f5 100%);
+}
+
+.members-table thead th {
+  padding: 14px 12px;
+  text-align: left;
+  font-weight: 700;
+  color: #495057;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 12px;
+  border-bottom: 2px solid #cbd5e0;
+}
+
+.members-table tbody tr {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.members-table tbody tr:hover {
+  background: #f7fafc;
+  transform: translateX(2px);
+}
+
+.members-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.members-table tbody td {
+  padding: 12px;
+  color: #2d3748;
+  vertical-align: middle;
+}
+
+.members-table tbody td:first-child {
+  width: 40px;
+  text-align: center;
+}
+
+.members-table tbody td strong {
+  color: #2c5282;
+  font-weight: 600;
+}
+
+/* Checkbox Styling */
+.member-checkbox,
+.member-remove-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #cbd5e0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  background: white;
+}
+
+.member-checkbox:hover,
+.member-remove-checkbox:hover {
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.member-checkbox:checked,
+.member-remove-checkbox:checked {
+  background: #2b6cb0;
+  border-color: #2b6cb0;
+}
+
+.member-checkbox:checked::after,
+.member-remove-checkbox:checked::after {
+  content: "✓";
+  color: white;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* Modal Styles untuk Add Members */
+#addMembersModal .contact-checklist-box {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px;
+  background: #ffffff;
+}
+
+#addMembersModal .contact-checklist-box label {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+#addMembersModal .contact-checklist-box label:hover {
+  background: #f7fafc;
+  border-color: #e2e8f0;
+  transform: translateX(2px);
+}
+
+#addMembersModal .add-member-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #cbd5e0;
+  border-radius: 4px;
+  margin-right: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  position: relative;
+}
+
+#addMembersModal .add-member-checkbox:checked {
+  background: #2b6cb0;
+  border-color: #2b6cb0;
+}
+
+#addMembersModal .add-member-checkbox:checked::after {
+  content: "✓";
+  color: white;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #2b6cb0 0%, #2c5282 100%);
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(43, 108, 176, 0.3);
+}
+
+.btn-secondary {
+  background: #f7fafc;
+  color: #2d3748;
+  padding: 12px 20px;
+  border: 2px solid #cbd5e0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-secondary:hover {
+  background: #edf2f7;
+  border-color: #a0aec0;
+}
+
+/* Select All Container */
+.select-all-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f7fafc;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.select-all-container label {
+  margin: 0;
+  font-weight: 600;
+  color: #2d3748;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .group-detail-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .group-detail-header h3 {
+    order: 2;
+    text-align: left;
+    font-size: 1.5rem;
+  }
+
+  .back-button {
+    order: 1;
+    align-self: flex-start;
+  }
+
+  .members-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .members-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .members-table {
+    min-width: 600px;
+  }
+
+  .members-table thead th,
+  .members-table tbody td {
+    padding: 10px 8px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .group-detail-header h3 {
+    font-size: 1.3rem;
+  }
+
+  .back-button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .btn-action {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .group-info-header {
+    padding: 12px 14px;
+  }
+
+  .group-info-header p {
+    font-size: 14px;
+  }
+}
