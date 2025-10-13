@@ -1,13 +1,17 @@
-// contact-manager.js - Contact Management Module dengan Smart Search & Select
+// contact-manager.js - Contact Management Module dengan Multi-Group Checkbox Support
 import { showEditContactModal, closeEditContactModal } from "./ui-helpers.js";
 
-export let contacts = []; 
+export let contacts = [];
 let filteredContacts = [];
-let groups = []; 
+let groups = [];
 export let selectedNumbers = new Set();
 export let selectedMeetingNumbers = new Set();
 export let selectedGroups = new Set();
 export let selectedMeetingGroups = new Set();
+
+// ✅ NEW: Selected groups for contact CRUD form
+export let selectedContactGroups = new Set();
+export let selectedEditContactGroups = new Set();
 
 /**
  * Fetches contacts from server and renders them
@@ -43,9 +47,9 @@ export async function fetchGroupsForDropdown() {
 
     if (res.ok && result.data) {
       groups = result.data.sort((a, b) => a.name.localeCompare(b.name));
-      updateAllGroupDropdowns();
       renderGroupSelectionList();
       renderMeetingGroupSelectionList();
+      renderContactCrudGroupList();
     }
   } catch (error) {
     console.error("Error fetching groups:", error);
@@ -53,44 +57,198 @@ export async function fetchGroupsForDropdown() {
 }
 
 /**
- * Updates all group dropdowns in the application
+ * ✅ NEW: Render group checkbox list for Contact CRUD form (Add)
  */
-export function updateAllGroupDropdowns() {
-  const addContactDropdown = document.getElementById("contact-crud-grup");
-  if (addContactDropdown) {
-    updateSingleDropdown(addContactDropdown);
+export function renderContactCrudGroupList(searchQuery = "") {
+  const list = document.getElementById("contactCrudGroupList");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  if (groups.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state" style="padding: 20px;">
+        <i class="fa-solid fa-users" style="font-size: 32px; color: #cbd5e0; margin-bottom: 8px;"></i>
+        <p style="color: #a0aec0; margin: 0; font-size: 13px;">Belum ada grup tersedia</p>
+      </div>
+    `;
+    return;
   }
+
+  const filteredGroups = searchQuery
+    ? groups.filter((g) =>
+        g.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : groups;
+
+  if (filteredGroups.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state" style="padding: 20px;">
+        <i class="fa-solid fa-search" style="font-size: 32px; color: #cbd5e0; margin-bottom: 8px;"></i>
+        <p style="color: #a0aec0; margin: 0; font-size: 13px;">Tidak ada grup ditemukan</p>
+      </div>
+    `;
+    return;
+  }
+
+  filteredGroups.forEach((group) => {
+    const label = document.createElement("label");
+    const isChecked = selectedContactGroups.has(group.name) ? "checked" : "";
+
+    let memberCount = 0;
+    try {
+      const members = JSON.parse(group.members || "[]");
+      memberCount = members.length;
+    } catch (e) {
+      console.error("Error parsing group members:", e);
+    }
+
+    label.innerHTML = `
+      <input type="checkbox" class="contact-crud-group-checkbox" value="${group.name}" ${isChecked} />
+      <strong>${group.name}</strong> <small>(${memberCount} anggota)</small>
+    `;
+    list.appendChild(label);
+  });
+
+  document
+    .querySelectorAll(".contact-crud-group-checkbox")
+    .forEach((checkbox) => {
+      checkbox.addEventListener("change", function () {
+        if (this.checked) {
+          selectedContactGroups.add(this.value);
+        } else {
+          selectedContactGroups.delete(this.value);
+        }
+        updateContactCrudGroupInfo();
+      });
+    });
+
+  updateContactCrudGroupInfo();
 }
 
 /**
- * Updates a single dropdown with current groups
+ * ✅ NEW: Update selected group info for contact CRUD
  */
-function updateSingleDropdown(dropdown) {
-  const currentValue = dropdown.value;
-  dropdown.innerHTML = '<option value="">-- Pilih Grup --</option>';
-  
-  groups.forEach((group) => {
-    const option = document.createElement("option");
-    option.value = group.name;
-    option.textContent = group.name;
-    dropdown.appendChild(option);
+function updateContactCrudGroupInfo() {
+  const infoDiv = document.getElementById("contactCrudGroupInfo");
+  if (!infoDiv) return;
+
+  if (selectedContactGroups.size === 0) {
+    infoDiv.innerHTML =
+      "<small style='color: #a0aec0;'>Belum ada grup dipilih</small>";
+    return;
+  }
+
+  const groupNames = Array.from(selectedContactGroups).join(", ");
+  infoDiv.innerHTML = `
+    <small style='color: #2d3748;'>
+      <strong>${selectedContactGroups.size} grup dipilih:</strong> ${groupNames}
+    </small>
+  `;
+}
+
+/**
+ * ✅ NEW: Render group checkbox list for Edit Contact Modal
+ */
+export function renderEditContactGroupList(searchQuery = "") {
+  const list = document.getElementById("editContactGroupList");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  if (groups.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state" style="padding: 20px;">
+        <i class="fa-solid fa-users" style="font-size: 32px; color: #cbd5e0; margin-bottom: 8px;"></i>
+        <p style="color: #a0aec0; margin: 0; font-size: 13px;">Belum ada grup tersedia</p>
+      </div>
+    `;
+    return;
+  }
+
+  const filteredGroups = searchQuery
+    ? groups.filter((g) =>
+        g.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : groups;
+
+  if (filteredGroups.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state" style="padding: 20px;">
+        <i class="fa-solid fa-search" style="font-size: 32px; color: #cbd5e0; margin-bottom: 8px;"></i>
+        <p style="color: #a0aec0; margin: 0; font-size: 13px;">Tidak ada grup ditemukan</p>
+      </div>
+    `;
+    return;
+  }
+
+  filteredGroups.forEach((group) => {
+    const label = document.createElement("label");
+    const isChecked = selectedEditContactGroups.has(group.name)
+      ? "checked"
+      : "";
+
+    let memberCount = 0;
+    try {
+      const members = JSON.parse(group.members || "[]");
+      memberCount = members.length;
+    } catch (e) {
+      console.error("Error parsing group members:", e);
+    }
+
+    label.innerHTML = `
+      <input type="checkbox" class="edit-contact-group-checkbox" value="${group.name}" ${isChecked} />
+      <strong>${group.name}</strong> <small>(${memberCount} anggota)</small>
+    `;
+    list.appendChild(label);
   });
 
-  if (currentValue && groups.some(g => g.name === currentValue)) {
-    dropdown.value = currentValue;
+  document
+    .querySelectorAll(".edit-contact-group-checkbox")
+    .forEach((checkbox) => {
+      checkbox.addEventListener("change", function () {
+        if (this.checked) {
+          selectedEditContactGroups.add(this.value);
+        } else {
+          selectedEditContactGroups.delete(this.value);
+        }
+        updateEditContactGroupInfo();
+      });
+    });
+
+  updateEditContactGroupInfo();
+}
+
+/**
+ * ✅ NEW: Update selected group info for edit contact
+ */
+function updateEditContactGroupInfo() {
+  const infoDiv = document.getElementById("editContactGroupInfo");
+  if (!infoDiv) return;
+
+  if (selectedEditContactGroups.size === 0) {
+    infoDiv.innerHTML =
+      "<small style='color: #a0aec0;'>Belum ada grup dipilih</small>";
+    return;
   }
+
+  const groupNames = Array.from(selectedEditContactGroups).join(", ");
+  infoDiv.innerHTML = `
+    <small style='color: #2d3748;'>
+      <strong>${selectedEditContactGroups.size} grup dipilih:</strong> ${groupNames}
+    </small>
+  `;
 }
 
 /**
  * Renders group selection list untuk message form dengan search
- * ✅ ENHANCED: Smart select yang mempertahankan seleksi sebelumnya
  */
-export function renderGroupSelectionList(searchQuery = '') {
+export function renderGroupSelectionList(searchQuery = "") {
   const list = document.getElementById("groupSelectionList");
   if (!list) return;
 
   list.innerHTML = "";
-  
+
   if (groups.length === 0) {
     list.innerHTML = `
       <div class="empty-state" style="padding: 40px 20px;">
@@ -101,9 +259,10 @@ export function renderGroupSelectionList(searchQuery = '') {
     return;
   }
 
-  // Filter groups based on search query
-  const filteredGroups = searchQuery 
-    ? groups.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredGroups = searchQuery
+    ? groups.filter((g) =>
+        g.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
     : groups;
 
   if (filteredGroups.length === 0) {
@@ -118,17 +277,16 @@ export function renderGroupSelectionList(searchQuery = '') {
 
   filteredGroups.forEach((group) => {
     const label = document.createElement("label");
-    // ✅ Check against selectedGroups - mempertahankan seleksi
     const isChecked = selectedGroups.has(group.id) ? "checked" : "";
-    
+
     let memberCount = 0;
     try {
-      const members = JSON.parse(group.members || '[]');
+      const members = JSON.parse(group.members || "[]");
       memberCount = members.length;
     } catch (e) {
       console.error("Error parsing group members:", e);
     }
-    
+
     label.innerHTML = `
       <input type="checkbox" class="group-selection-checkbox" value="${group.id}" data-group-name="${group.name}" ${isChecked} />
       <strong>${group.name}</strong> <small>${memberCount} anggota</small>
@@ -136,7 +294,6 @@ export function renderGroupSelectionList(searchQuery = '') {
     list.appendChild(label);
   });
 
-  // Attach event listeners
   document.querySelectorAll(".group-selection-checkbox").forEach((checkbox) => {
     checkbox.addEventListener("change", function () {
       if (this.checked) {
@@ -147,20 +304,19 @@ export function renderGroupSelectionList(searchQuery = '') {
       updateGroupSelectionInfo();
     });
   });
-  
+
   updateGroupSelectionInfo();
 }
 
 /**
  * Renders group selection list untuk meeting form dengan search
- * ✅ ENHANCED: Smart select yang mempertahankan seleksi sebelumnya
  */
-export function renderMeetingGroupSelectionList(searchQuery = '') {
+export function renderMeetingGroupSelectionList(searchQuery = "") {
   const list = document.getElementById("meetingGroupSelectionList");
   if (!list) return;
 
   list.innerHTML = "";
-  
+
   if (groups.length === 0) {
     list.innerHTML = `
       <div class="empty-state" style="padding: 40px 20px;">
@@ -171,9 +327,10 @@ export function renderMeetingGroupSelectionList(searchQuery = '') {
     return;
   }
 
-  // Filter groups based on search query
-  const filteredGroups = searchQuery 
-    ? groups.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredGroups = searchQuery
+    ? groups.filter((g) =>
+        g.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
     : groups;
 
   if (filteredGroups.length === 0) {
@@ -188,17 +345,16 @@ export function renderMeetingGroupSelectionList(searchQuery = '') {
 
   filteredGroups.forEach((group) => {
     const label = document.createElement("label");
-    // ✅ Check against selectedMeetingGroups - mempertahankan seleksi
     const isChecked = selectedMeetingGroups.has(group.id) ? "checked" : "";
-    
+
     let memberCount = 0;
     try {
-      const members = JSON.parse(group.members || '[]');
+      const members = JSON.parse(group.members || "[]");
       memberCount = members.length;
     } catch (e) {
       console.error("Error parsing group members:", e);
     }
-    
+
     label.innerHTML = `
       <input type="checkbox" class="meeting-group-selection-checkbox" value="${group.id}" data-group-name="${group.name}" ${isChecked} />
       <strong>${group.name}</strong> <small>${memberCount} anggota</small>
@@ -206,17 +362,19 @@ export function renderMeetingGroupSelectionList(searchQuery = '') {
     list.appendChild(label);
   });
 
-  document.querySelectorAll(".meeting-group-selection-checkbox").forEach((checkbox) => {
-    checkbox.addEventListener("change", function () {
-      if (this.checked) {
-        selectedMeetingGroups.add(parseInt(this.value));
-      } else {
-        selectedMeetingGroups.delete(parseInt(this.value));
-      }
-      updateMeetingGroupSelectionInfo();
+  document
+    .querySelectorAll(".meeting-group-selection-checkbox")
+    .forEach((checkbox) => {
+      checkbox.addEventListener("change", function () {
+        if (this.checked) {
+          selectedMeetingGroups.add(parseInt(this.value));
+        } else {
+          selectedMeetingGroups.delete(parseInt(this.value));
+        }
+        updateMeetingGroupSelectionInfo();
+      });
     });
-  });
-  
+
   updateMeetingGroupSelectionInfo();
 }
 
@@ -226,21 +384,22 @@ export function renderMeetingGroupSelectionList(searchQuery = '') {
 function updateGroupSelectionInfo() {
   const infoDiv = document.getElementById("groupSelectionInfo");
   if (!infoDiv) return;
-  
+
   if (selectedGroups.size === 0) {
     infoDiv.innerHTML = "<small>Belum ada grup dipilih</small>";
     return;
   }
-  
-  const selectedGroupNames = Array.from(selectedGroups).map(id => {
-    const group = groups.find(g => g.id === id);
-    return group ? group.name : '';
-  }).filter(name => name);
-  
-  // Hitung total anggota
+
+  const selectedGroupNames = Array.from(selectedGroups)
+    .map((id) => {
+      const group = groups.find((g) => g.id === id);
+      return group ? group.name : "";
+    })
+    .filter((name) => name);
+
   let totalMembers = 0;
-  selectedGroups.forEach(id => {
-    const group = groups.find(g => g.id === id);
+  selectedGroups.forEach((id) => {
+    const group = groups.find((g) => g.id === id);
     if (group && group.members) {
       try {
         const members = JSON.parse(group.members);
@@ -248,11 +407,13 @@ function updateGroupSelectionInfo() {
       } catch (e) {}
     }
   });
-  
+
   infoDiv.innerHTML = `
     <small>
-      <strong>${selectedGroups.size} grup dipilih</strong> (${totalMembers} anggota)<br>
-      ${selectedGroupNames.join(', ')}
+      <strong>${
+        selectedGroups.size
+      } grup dipilih</strong> (${totalMembers} anggota)<br>
+      ${selectedGroupNames.join(", ")}
     </small>
   `;
 }
@@ -263,21 +424,22 @@ function updateGroupSelectionInfo() {
 function updateMeetingGroupSelectionInfo() {
   const infoDiv = document.getElementById("meetingGroupSelectionInfo");
   if (!infoDiv) return;
-  
+
   if (selectedMeetingGroups.size === 0) {
     infoDiv.innerHTML = "<small>Belum ada grup dipilih</small>";
     return;
   }
-  
-  const selectedGroupNames = Array.from(selectedMeetingGroups).map(id => {
-    const group = groups.find(g => g.id === id);
-    return group ? group.name : '';
-  }).filter(name => name);
-  
-  // Hitung total anggota
+
+  const selectedGroupNames = Array.from(selectedMeetingGroups)
+    .map((id) => {
+      const group = groups.find((g) => g.id === id);
+      return group ? group.name : "";
+    })
+    .filter((name) => name);
+
   let totalMembers = 0;
-  selectedMeetingGroups.forEach(id => {
-    const group = groups.find(g => g.id === id);
+  selectedMeetingGroups.forEach((id) => {
+    const group = groups.find((g) => g.id === id);
     if (group && group.members) {
       try {
         const members = JSON.parse(group.members);
@@ -285,11 +447,13 @@ function updateMeetingGroupSelectionInfo() {
       } catch (e) {}
     }
   });
-  
+
   infoDiv.innerHTML = `
     <small>
-      <strong>${selectedMeetingGroups.size} grup dipilih</strong> (${totalMembers} anggota)<br>
-      ${selectedGroupNames.join(', ')}
+      <strong>${
+        selectedMeetingGroups.size
+      } grup dipilih</strong> (${totalMembers} anggota)<br>
+      ${selectedGroupNames.join(", ")}
     </small>
   `;
 }
@@ -298,21 +462,23 @@ function updateMeetingGroupSelectionInfo() {
  * Mendapatkan semua nomor dari grup yang dipilih
  */
 export function getNumbersFromSelectedGroups(isForMeeting = false) {
-  const selectedGroupSet = isForMeeting ? selectedMeetingGroups : selectedGroups;
+  const selectedGroupSet = isForMeeting
+    ? selectedMeetingGroups
+    : selectedGroups;
   const numbers = new Set();
-  
-  selectedGroupSet.forEach(groupId => {
-    const group = groups.find(g => g.id === groupId);
+
+  selectedGroupSet.forEach((groupId) => {
+    const group = groups.find((g) => g.id === groupId);
     if (group && group.members) {
       try {
         const members = JSON.parse(group.members);
-        members.forEach(number => numbers.add(number));
+        members.forEach((number) => numbers.add(number));
       } catch (e) {
         console.error("Error parsing group members:", e);
       }
     }
   });
-  
+
   return Array.from(numbers);
 }
 
@@ -324,25 +490,26 @@ function renderContactManagementTable() {
   if (!tbody) return;
 
   tbody.innerHTML = "";
-  
+
   if (contacts.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Belum ada kontak</td></tr>';
+    tbody.innerHTML =
+      '<tr><td colspan="6" style="text-align: center;">Belum ada kontak</td></tr>';
     return;
   }
 
   contacts.forEach((contact) => {
     const row = document.createElement("tr");
-    
-    let groupDisplay = '';
+
+    let groupDisplay = "";
     try {
-        let groupsArray = contact.grup ? JSON.parse(contact.grup) : [];
-        if (Array.isArray(groupsArray) && groupsArray.length > 0) {
-            groupDisplay = groupsArray.join(', ');
-        } else {
-            groupDisplay = '-';
-        }
+      let groupsArray = contact.grup ? JSON.parse(contact.grup) : [];
+      if (Array.isArray(groupsArray) && groupsArray.length > 0) {
+        groupDisplay = groupsArray.join(", ");
+      } else {
+        groupDisplay = "-";
+      }
     } catch (e) {
-        groupDisplay = contact.grup || '-';
+      groupDisplay = contact.grup || "-";
     }
 
     row.innerHTML = `
@@ -352,10 +519,10 @@ function renderContactManagementTable() {
       <td>${contact.jabatan}</td>
       <td>${groupDisplay}</td>
       <td class="action-buttons">
-        <button class="edit-contact-btn" onclick="window.contactModule.showEditContactForm(${contact.id})">
+        <button class="edit-contact-btn" onclick="window.contactModule.showEditContactForm('${contact.id}')">
           <i class="fa-solid fa-edit"></i> Edit
         </button>
-        <button class="delete-contact-btn" onclick="window.contactModule.deleteContact(${contact.id}, '${contact.name}')">
+        <button class="delete-contact-btn" onclick="window.contactModule.deleteContact('${contact.id}', '${contact.name}')">
           <i class="fa-solid fa-trash"></i> Hapus
         </button>
       </td>
@@ -367,21 +534,47 @@ function renderContactManagementTable() {
 /**
  * Shows edit contact form with data
  */
-export async function showEditContactForm(id, name, number, instansi, jabatan, grup) {
-  const modalBody = document.getElementById("editContactModalBody");
-  if (!modalBody) return;
+export async function showEditContactForm(id) {
+  const convertContactId = parseInt(id);
+  const contact = contacts.find((c) => c.id === convertContactId);
+
+  const contactId = contact.id;
+  const contactName = contact.name || "";
+  const contactNumber = contact.number || "";
+  const contactInstansi = contact.instansi || "";
+  const contactJabatan = contact.jabatan || "";
+
+  if (!contact) {
+    Swal.fire("Error", "Kontak tidak ditemukan.", "error");
+    return;
+  }
+
+  selectedEditContactGroups.clear();
+  if (contact.grup) {
+    try {
+      const groupsArray = JSON.parse(contact.grup);
+      if (Array.isArray(groupsArray)) {
+        groupsArray.forEach((g) => selectedEditContactGroups.add(g));
+      }
+    } catch (e) {
+      console.error("Error parsing contact groups:", e);
+    }
+  }
 
   await fetchGroupsForDropdown();
 
+  const modalBody = document.getElementById("editContactModalBody");
+  if (!modalBody) return;
+
   modalBody.innerHTML = `
     <form id="editContactForm">
-      <input type="hidden" id="edit-contact-id" value="${id}">
+      <input type="hidden" id="edit-contact-id" value="${contactId}">
       
       <label for="edit-contact-name">Nama Kontak:</label>
-      <input type="text" id="edit-contact-name" class="phone-num-input" value="${name}" required>
+      <input type="text" id="edit-contact-name" class="phone-num-input" value="${contactName}" required>
       
       <label for="edit-contact-number">Nomor (contoh: 0812...):</label>
-      <input type="tel" id="edit-contact-number" class="phone-num-input" value="${number}" required>
+      <input type="tel" id="edit-contact-number" class="phone-num-input" value="${contactNumber}" required>
 
       <label for="edit-contact-instansi">Instansi:</label>
       <select id="edit-contact-instansi" class="phone-num-input" required>
@@ -407,28 +600,33 @@ export async function showEditContactForm(id, name, number, instansi, jabatan, g
         <option value="Pegawai">Pegawai</option>
       </select>
 
-      <label for="edit-contact-grup">Grup:</label>
-      <select id="edit-contact-grup" class="phone-num-input">
-        <option value="">-- Pilih Grup --</option>
-      </select>
+      <label for="editContactGroupSearch">Grup (pilih satu atau lebih):</label>
+      <div class="search-box-wrapper" style="margin-bottom: 8px;">
+        <i class="fa-solid fa-search"></i>
+        <input type="text" id="editContactGroupSearch" placeholder="Cari grup..." autocomplete="off" />
+      </div>
+      <div id="editContactGroupList" class="contact-checklist-box" style="max-height: 200px; overflow-y: auto; margin-bottom: 8px;"></div>
+      <div id="editContactGroupInfo" style="margin-bottom: 16px; padding: 8px; background: #f7fafc; border-radius: 4px;">
+        <small style='color: #a0aec0;'>Belum ada grup dipilih</small>
+      </div>
 
       <button type="submit" id="updateContactBtn">Update Kontak</button>
       <button type="button" id="cancelEditContactBtn" style="background-color: #6c757d; margin-top: 10px;">Batal</button>
     </form>
   `;
 
-  document.getElementById("edit-contact-instansi").value = instansi || "";
-  document.getElementById("edit-contact-jabatan").value = jabatan || "";
-  
-  const grupDropdown = document.getElementById("edit-contact-grup");
-  grupDropdown.innerHTML = '<option value="">-- Pilih Grup --</option>';
-  groups.forEach((g) => {
-    const option = document.createElement("option");
-    option.value = g.name;
-    option.textContent = g.name;
-    grupDropdown.appendChild(option);
-  });
-  grupDropdown.value = grup || "";
+  document.getElementById("edit-contact-instansi").value = contactInstansi;
+  document.getElementById("edit-contact-jabatan").value = contactJabatan;
+
+  renderEditContactGroupList();
+
+  // ✅ Search functionality
+  const searchInput = document.getElementById("editContactGroupSearch");
+  if (searchInput) {
+    searchInput.addEventListener("input", function () {
+      renderEditContactGroupList(this.value);
+    });
+  }
 
   showEditContactModal();
 
@@ -451,7 +649,10 @@ async function handleEditContactSubmit(event) {
   const number = document.getElementById("edit-contact-number").value;
   const instansi = document.getElementById("edit-contact-instansi").value;
   const jabatan = document.getElementById("edit-contact-jabatan").value;
-  const grup = document.getElementById("edit-contact-grup").value;
+
+  // ✅ Send multiple groups as JSON array
+  const grupArray = Array.from(selectedEditContactGroups);
+  const grup = grupArray.length > 0 ? JSON.stringify(grupArray) : null;
 
   try {
     const res = await fetch(`/api/contacts/${id}`, {
@@ -465,6 +666,7 @@ async function handleEditContactSubmit(event) {
 
     Swal.fire("Sukses!", `Kontak berhasil diupdate.`, "success");
     closeEditContactModal();
+    selectedEditContactGroups.clear();
     fetchAndRenderContacts();
   } catch (error) {
     Swal.fire("Error", error.message, "error");
@@ -479,6 +681,8 @@ export function resetContactCrudForm() {
   document.getElementById("contact-crud-id").value = "";
   document.getElementById("contact-crud-submit").textContent = "Tambah Kontak";
   document.getElementById("contact-crud-cancel").style.display = "none";
+  selectedContactGroups.clear();
+  renderContactCrudGroupList();
 }
 
 /**
@@ -526,7 +730,10 @@ export async function handleContactFormSubmit(event) {
   const number = document.getElementById("contact-crud-number").value;
   const instansi = document.getElementById("contact-crud-instansi").value;
   const jabatan = document.getElementById("contact-crud-jabatan").value;
-  const grup = document.getElementById("contact-crud-grup").value;
+
+  // ✅ Get multiple selected groups
+  const grupArray = Array.from(selectedContactGroups);
+  const grup = grupArray.length > 0 ? JSON.stringify(grupArray) : null;
 
   const isEditing = !!id;
   const url = isEditing ? `/api/contacts/${id}` : "/api/contacts";
@@ -570,16 +777,17 @@ export async function handleContactFormSubmit(event) {
 
 /**
  * Renders contact list with checkboxes for message form
- * ✅ ENHANCED: Smart select yang mempertahankan seleksi sebelumnya
  */
 export function renderContactList() {
   const list = document.getElementById("contactList");
   if (!list) return;
 
   list.innerHTML = "";
-  
+
   if (filteredContacts.length === 0) {
-    const hasSearchQuery = document.getElementById("contactSearch")?.value.trim();
+    const hasSearchQuery = document
+      .getElementById("contactSearch")
+      ?.value.trim();
     if (hasSearchQuery) {
       list.innerHTML = `
         <div class="empty-state" style="padding: 40px 20px;">
@@ -600,7 +808,6 @@ export function renderContactList() {
 
   filteredContacts.forEach((contact) => {
     const label = document.createElement("label");
-    // ✅ Check against selectedNumbers - mempertahankan seleksi
     const isChecked = selectedNumbers.has(contact.number) ? "checked" : "";
     label.innerHTML = `
       <input type="checkbox" class="contact-checkbox" name="selectedContacts" value="${contact.number}" ${isChecked} />
@@ -619,7 +826,7 @@ export function renderContactList() {
       updateContactSelectionInfo();
     });
   });
-  
+
   updateContactSelectionInfo();
 }
 
@@ -629,40 +836,45 @@ export function renderContactList() {
 function updateContactSelectionInfo() {
   const infoDiv = document.getElementById("contactSelectionInfo");
   if (!infoDiv) return;
-  
+
   if (selectedNumbers.size === 0) {
-    infoDiv.innerHTML = '<small>Belum ada kontak dipilih</small>';
-    infoDiv.classList.add('empty');
+    infoDiv.innerHTML = "<small>Belum ada kontak dipilih</small>";
+    infoDiv.classList.add("empty");
     return;
   }
-  
-  const selectedNames = Array.from(selectedNumbers).map(number => {
-    const contact = contacts.find(c => c.number === number);
-    return contact ? contact.name : number;
-  }).slice(0, 3);
-  
+
+  const selectedNames = Array.from(selectedNumbers)
+    .map((number) => {
+      const contact = contacts.find((c) => c.number === number);
+      return contact ? contact.name : number;
+    })
+    .slice(0, 3);
+
   let infoText = `<strong>${selectedNumbers.size} kontak dipilih</strong>`;
   if (selectedNames.length > 0) {
-    infoText += `<br><small>${selectedNames.join(', ')}${selectedNumbers.size > 3 ? ', ...' : ''}</small>`;
+    infoText += `<br><small>${selectedNames.join(", ")}${
+      selectedNumbers.size > 3 ? ", ..." : ""
+    }</small>`;
   }
-  
+
   infoDiv.innerHTML = infoText;
-  infoDiv.classList.remove('empty');
+  infoDiv.classList.remove("empty");
 }
 
 /**
  * Renders meeting contact list with checkboxes
- * ✅ ENHANCED: Smart select yang mempertahankan seleksi sebelumnya
  */
 export function renderMeetingContactList() {
   const list = document.getElementById("meetingContactList");
   if (!list) return;
 
   list.innerHTML = "";
-  const currentSearch = document
-    .getElementById("meetingContactSearch")
-    ?.value.toLowerCase().trim() || '';
-    
+  const currentSearch =
+    document
+      .getElementById("meetingContactSearch")
+      ?.value.toLowerCase()
+      .trim() || "";
+
   const filtered = contacts.filter(
     (c) =>
       c.name.toLowerCase().includes(currentSearch) ||
@@ -690,15 +902,16 @@ export function renderMeetingContactList() {
 
   filtered.forEach((contact) => {
     const label = document.createElement("label");
-    // ✅ Check against selectedMeetingNumbers - mempertahankan seleksi
     const isChecked = selectedMeetingNumbers.has(contact.number);
     label.innerHTML = `
-      <input type="checkbox" class="meeting-contact-checkbox" value="${contact.number}" ${isChecked ? "checked" : ""} />
+      <input type="checkbox" class="meeting-contact-checkbox" value="${
+        contact.number
+      }" ${isChecked ? "checked" : ""} />
       <strong>${contact.name}</strong> — ${contact.number}
     `;
     list.appendChild(label);
   });
-  
+
   document.querySelectorAll(".meeting-contact-checkbox").forEach((checkbox) => {
     checkbox.addEventListener("change", function () {
       if (this.checked) {
@@ -709,7 +922,7 @@ export function renderMeetingContactList() {
       updateMeetingContactSelectionInfo();
     });
   });
-  
+
   updateMeetingContactSelectionInfo();
 }
 
@@ -719,30 +932,33 @@ export function renderMeetingContactList() {
 function updateMeetingContactSelectionInfo() {
   const infoDiv = document.getElementById("meetingContactSelectionInfo");
   if (!infoDiv) return;
-  
+
   if (selectedMeetingNumbers.size === 0) {
-    infoDiv.innerHTML = '<small>Belum ada kontak dipilih</small>';
-    infoDiv.classList.add('empty');
+    infoDiv.innerHTML = "<small>Belum ada kontak dipilih</small>";
+    infoDiv.classList.add("empty");
     return;
   }
-  
-  const selectedNames = Array.from(selectedMeetingNumbers).map(number => {
-    const contact = contacts.find(c => c.number === number);
-    return contact ? contact.name : number;
-  }).slice(0, 3);
-  
+
+  const selectedNames = Array.from(selectedMeetingNumbers)
+    .map((number) => {
+      const contact = contacts.find((c) => c.number === number);
+      return contact ? contact.name : number;
+    })
+    .slice(0, 3);
+
   let infoText = `<strong>${selectedMeetingNumbers.size} kontak dipilih</strong>`;
   if (selectedNames.length > 0) {
-    infoText += `<br><small>${selectedNames.join(', ')}${selectedMeetingNumbers.size > 3 ? ', ...' : ''}</small>`;
+    infoText += `<br><small>${selectedNames.join(", ")}${
+      selectedMeetingNumbers.size > 3 ? ", ..." : ""
+    }</small>`;
   }
-  
+
   infoDiv.innerHTML = infoText;
-  infoDiv.classList.remove('empty');
+  infoDiv.classList.remove("empty");
 }
 
 /**
  * Initializes contact event listeners
- * ✅ ENHANCED: Smart "Pilih Semua" hanya untuk hasil pencarian
  */
 export function initContactListeners() {
   const contactSearch = document.getElementById("contactSearch");
@@ -765,69 +981,81 @@ export function initContactListeners() {
   if (cancelBtn) {
     cancelBtn.addEventListener("click", resetContactCrudForm);
   }
-  
-  // Initialize group search
+
+  // ✅ Initialize contact CRUD group search
+  const contactCrudGroupSearch = document.getElementById(
+    "contactCrudGroupSearch"
+  );
+  if (contactCrudGroupSearch) {
+    contactCrudGroupSearch.addEventListener("input", function () {
+      renderContactCrudGroupList(this.value);
+    });
+  }
+
+  // Initialize group search for message form
   const groupSearch = document.getElementById("groupSearch");
   if (groupSearch) {
-    groupSearch.addEventListener("input", function() {
+    groupSearch.addEventListener("input", function () {
       renderGroupSelectionList(this.value);
     });
   }
-  
-  // ✅ ENHANCED: Smart Select All - hanya pilih hasil filter
+
   const selectAllContactsBtn = document.getElementById("selectAllContactsBtn");
   if (selectAllContactsBtn) {
-    selectAllContactsBtn.addEventListener("click", function() {
-      // Pilih HANYA kontak yang terfilter (hasil pencarian)
-      filteredContacts.forEach(contact => selectedNumbers.add(contact.number));
+    selectAllContactsBtn.addEventListener("click", function () {
+      filteredContacts.forEach((contact) =>
+        selectedNumbers.add(contact.number)
+      );
       renderContactList();
-      this.classList.add('active');
-      setTimeout(() => this.classList.remove('active'), 300);
+      this.classList.add("active");
+      setTimeout(() => this.classList.remove("active"), 300);
     });
   }
-  
-  const deselectAllContactsBtn = document.getElementById("deselectAllContactsBtn");
+
+  const deselectAllContactsBtn = document.getElementById(
+    "deselectAllContactsBtn"
+  );
   if (deselectAllContactsBtn) {
-    deselectAllContactsBtn.addEventListener("click", function() {
-      // Hapus HANYA kontak yang terfilter dari seleksi
-      filteredContacts.forEach(contact => selectedNumbers.delete(contact.number));
+    deselectAllContactsBtn.addEventListener("click", function () {
+      filteredContacts.forEach((contact) =>
+        selectedNumbers.delete(contact.number)
+      );
       renderContactList();
     });
   }
-  
-  // ✅ ENHANCED: Smart Select All Groups - hanya pilih hasil filter
+
   const selectAllGroupsBtn = document.getElementById("selectAllGroupsBtn");
   if (selectAllGroupsBtn) {
-    selectAllGroupsBtn.addEventListener("click", function() {
+    selectAllGroupsBtn.addEventListener("click", function () {
       const groupSearch = document.getElementById("groupSearch");
-      const searchQuery = groupSearch ? groupSearch.value.toLowerCase().trim() : '';
-      
-      // Filter groups berdasarkan pencarian
-      const filteredGroups = searchQuery 
-        ? groups.filter(g => g.name.toLowerCase().includes(searchQuery))
+      const searchQuery = groupSearch
+        ? groupSearch.value.toLowerCase().trim()
+        : "";
+
+      const filteredGroups = searchQuery
+        ? groups.filter((g) => g.name.toLowerCase().includes(searchQuery))
         : groups;
-      
-      // Pilih HANYA grup yang terfilter
-      filteredGroups.forEach(group => selectedGroups.add(group.id));
+
+      filteredGroups.forEach((group) => selectedGroups.add(group.id));
       renderGroupSelectionList(searchQuery);
-      this.classList.add('active');
-      setTimeout(() => this.classList.remove('active'), 300);
+      this.classList.add("active");
+      setTimeout(() => this.classList.remove("active"), 300);
     });
   }
-  
+
   const deselectAllGroupsBtn = document.getElementById("deselectAllGroupsBtn");
   if (deselectAllGroupsBtn) {
-    deselectAllGroupsBtn.addEventListener("click", function() {
+    deselectAllGroupsBtn.addEventListener("click", function () {
       const groupSearch = document.getElementById("groupSearch");
-      const searchQuery = groupSearch ? groupSearch.value.toLowerCase().trim() : '';
-      
-      // Filter groups berdasarkan pencarian
-      const filteredGroups = searchQuery 
-        ? groups.filter(g => g.name.toLowerCase().includes(searchQuery))
+      const searchQuery = groupSearch
+        ? groupSearch.value.toLowerCase().trim()
+        : "";
+
+      const filteredGroups = searchQuery
+        ? groups.filter((g) => g.name.toLowerCase().includes(searchQuery))
         : groups;
-      
-      // Hapus HANYA grup yang terfilter dari seleksi
-      filteredGroups.forEach(group => selectedGroups.delete(group.id));
+
+      filteredGroups.forEach((group) => selectedGroups.delete(group.id));
       renderGroupSelectionList(searchQuery);
     });
   }
@@ -835,7 +1063,6 @@ export function initContactListeners() {
 
 /**
  * Initializes meeting contact listeners
- * ✅ ENHANCED: Smart "Pilih Semua" hanya untuk hasil pencarian
  */
 export function initMeetingContactListeners() {
   const searchInput = document.getElementById("meetingContactSearch");
@@ -856,85 +1083,96 @@ export function initMeetingContactListeners() {
       }
     });
   }
-  
-  // Initialize meeting group search
+
   const meetingGroupSearch = document.getElementById("meetingGroupSearch");
   if (meetingGroupSearch) {
-    meetingGroupSearch.addEventListener("input", function() {
+    meetingGroupSearch.addEventListener("input", function () {
       renderMeetingGroupSelectionList(this.value);
     });
   }
-  
-  // ✅ ENHANCED: Smart Select All Meeting Contacts - hanya pilih hasil filter
-  const selectAllMeetingContactsBtn = document.getElementById("selectAllMeetingContactsBtn");
+
+  const selectAllMeetingContactsBtn = document.getElementById(
+    "selectAllMeetingContactsBtn"
+  );
   if (selectAllMeetingContactsBtn) {
-    selectAllMeetingContactsBtn.addEventListener("click", function() {
+    selectAllMeetingContactsBtn.addEventListener("click", function () {
       const searchInput = document.getElementById("meetingContactSearch");
-      const currentSearch = searchInput ? searchInput.value.toLowerCase().trim() : '';
-      
-      // Filter contacts berdasarkan pencarian
+      const currentSearch = searchInput
+        ? searchInput.value.toLowerCase().trim()
+        : "";
+
       const filtered = contacts.filter(
-        (c) => c.name.toLowerCase().includes(currentSearch) || c.number.includes(currentSearch)
+        (c) =>
+          c.name.toLowerCase().includes(currentSearch) ||
+          c.number.includes(currentSearch)
       );
-      
-      // Pilih HANYA kontak yang terfilter
-      filtered.forEach(contact => selectedMeetingNumbers.add(contact.number));
+
+      filtered.forEach((contact) => selectedMeetingNumbers.add(contact.number));
       renderMeetingContactList();
-      this.classList.add('active');
-      setTimeout(() => this.classList.remove('active'), 300);
+      this.classList.add("active");
+      setTimeout(() => this.classList.remove("active"), 300);
     });
   }
-  
-  const deselectAllMeetingContactsBtn = document.getElementById("deselectAllMeetingContactsBtn");
+
+  const deselectAllMeetingContactsBtn = document.getElementById(
+    "deselectAllMeetingContactsBtn"
+  );
   if (deselectAllMeetingContactsBtn) {
-    deselectAllMeetingContactsBtn.addEventListener("click", function() {
+    deselectAllMeetingContactsBtn.addEventListener("click", function () {
       const searchInput = document.getElementById("meetingContactSearch");
-      const currentSearch = searchInput ? searchInput.value.toLowerCase().trim() : '';
-      
-      // Filter contacts berdasarkan pencarian
+      const currentSearch = searchInput
+        ? searchInput.value.toLowerCase().trim()
+        : "";
+
       const filtered = contacts.filter(
-        (c) => c.name.toLowerCase().includes(currentSearch) || c.number.includes(currentSearch)
+        (c) =>
+          c.name.toLowerCase().includes(currentSearch) ||
+          c.number.includes(currentSearch)
       );
-      
-      // Hapus HANYA kontak yang terfilter dari seleksi
-      filtered.forEach(contact => selectedMeetingNumbers.delete(contact.number));
+
+      filtered.forEach((contact) =>
+        selectedMeetingNumbers.delete(contact.number)
+      );
       renderMeetingContactList();
     });
   }
-  
-  // ✅ ENHANCED: Smart Select All Meeting Groups - hanya pilih hasil filter
-  const selectAllMeetingGroupsBtn = document.getElementById("selectAllMeetingGroupsBtn");
+
+  const selectAllMeetingGroupsBtn = document.getElementById(
+    "selectAllMeetingGroupsBtn"
+  );
   if (selectAllMeetingGroupsBtn) {
-    selectAllMeetingGroupsBtn.addEventListener("click", function() {
+    selectAllMeetingGroupsBtn.addEventListener("click", function () {
       const groupSearch = document.getElementById("meetingGroupSearch");
-      const searchQuery = groupSearch ? groupSearch.value.toLowerCase().trim() : '';
-      
-      // Filter groups berdasarkan pencarian
-      const filteredGroups = searchQuery 
-        ? groups.filter(g => g.name.toLowerCase().includes(searchQuery))
+      const searchQuery = groupSearch
+        ? groupSearch.value.toLowerCase().trim()
+        : "";
+
+      const filteredGroups = searchQuery
+        ? groups.filter((g) => g.name.toLowerCase().includes(searchQuery))
         : groups;
-      
-      // Pilih HANYA grup yang terfilter
-      filteredGroups.forEach(group => selectedMeetingGroups.add(group.id));
+
+      filteredGroups.forEach((group) => selectedMeetingGroups.add(group.id));
       renderMeetingGroupSelectionList(searchQuery);
-      this.classList.add('active');
-      setTimeout(() => this.classList.remove('active'), 300);
+      this.classList.add("active");
+      setTimeout(() => this.classList.remove("active"), 300);
     });
   }
-  
-  const deselectAllMeetingGroupsBtn = document.getElementById("deselectAllMeetingGroupsBtn");
+
+  const deselectAllMeetingGroupsBtn = document.getElementById(
+    "deselectAllMeetingGroupsBtn"
+  );
   if (deselectAllMeetingGroupsBtn) {
-    deselectAllMeetingGroupsBtn.addEventListener("click", function() {
+    deselectAllMeetingGroupsBtn.addEventListener("click", function () {
       const groupSearch = document.getElementById("meetingGroupSearch");
-      const searchQuery = groupSearch ? groupSearch.value.toLowerCase().trim() : '';
-      
-      // Filter groups berdasarkan pencarian
-      const filteredGroups = searchQuery 
-        ? groups.filter(g => g.name.toLowerCase().includes(searchQuery))
+      const searchQuery = groupSearch
+        ? groupSearch.value.toLowerCase().trim()
+        : "";
+
+      const filteredGroups = searchQuery
+        ? groups.filter((g) => g.name.toLowerCase().includes(searchQuery))
         : groups;
-      
-      // Hapus HANYA grup yang terfilter dari seleksi
-      filteredGroups.forEach(group => selectedMeetingGroups.delete(group.id));
+
+      filteredGroups.forEach((group) => selectedMeetingGroups.delete(group.id));
       renderMeetingGroupSelectionList(searchQuery);
     });
   }
@@ -944,22 +1182,26 @@ export function initMeetingContactListeners() {
  * Initialize tab system for message form
  */
 export function initMessageFormTabs() {
-  const tabs = document.querySelectorAll('#messageFormContainer .recipient-tab');
-  const panels = document.querySelectorAll('#messageFormContainer .recipient-panel');
-  
-  tabs.forEach(tab => {
-    tab.addEventListener('click', function() {
+  const tabs = document.querySelectorAll(
+    "#messageFormContainer .recipient-tab"
+  );
+  const panels = document.querySelectorAll(
+    "#messageFormContainer .recipient-panel"
+  );
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", function () {
       const targetTab = this.dataset.tab;
-      
-      tabs.forEach(t => t.classList.remove('active'));
-      this.classList.add('active');
-      
-      panels.forEach(p => p.classList.remove('active'));
-      
-      if (targetTab === 'contacts') {
-        document.getElementById('contactsPanel').classList.add('active');
-      } else if (targetTab === 'groups') {
-        document.getElementById('groupsPanel').classList.add('active');
+
+      tabs.forEach((t) => t.classList.remove("active"));
+      this.classList.add("active");
+
+      panels.forEach((p) => p.classList.remove("active"));
+
+      if (targetTab === "contacts") {
+        document.getElementById("contactsPanel").classList.add("active");
+      } else if (targetTab === "groups") {
+        document.getElementById("groupsPanel").classList.add("active");
       }
     });
   });
@@ -969,22 +1211,26 @@ export function initMessageFormTabs() {
  * Initialize tab system for meeting form
  */
 export function initMeetingFormTabs() {
-  const tabs = document.querySelectorAll('#meetingFormContainer .recipient-tab');
-  const panels = document.querySelectorAll('#meetingFormContainer .recipient-panel');
-  
-  tabs.forEach(tab => {
-    tab.addEventListener('click', function() {
+  const tabs = document.querySelectorAll(
+    "#meetingFormContainer .recipient-tab"
+  );
+  const panels = document.querySelectorAll(
+    "#meetingFormContainer .recipient-panel"
+  );
+
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", function () {
       const targetTab = this.dataset.tab;
-      
-      tabs.forEach(t => t.classList.remove('active'));
-      this.classList.add('active');
-      
-      panels.forEach(p => p.classList.remove('active'));
-      
-      if (targetTab === 'meeting-contacts') {
-        document.getElementById('meetingContactsPanel').classList.add('active');
-      } else if (targetTab === 'meeting-groups') {
-        document.getElementById('meetingGroupsPanel').classList.add('active');
+
+      tabs.forEach((t) => t.classList.remove("active"));
+      this.classList.add("active");
+
+      panels.forEach((p) => p.classList.remove("active"));
+
+      if (targetTab === "meeting-contacts") {
+        document.getElementById("meetingContactsPanel").classList.add("active");
+      } else if (targetTab === "meeting-groups") {
+        document.getElementById("meetingGroupsPanel").classList.add("active");
       }
     });
   });
