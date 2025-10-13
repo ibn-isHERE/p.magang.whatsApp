@@ -182,7 +182,7 @@ db.run(
     `CREATE TABLE IF NOT EXISTS groups (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL UNIQUE,
-        members TEXT NOT NULL,
+        members TEXT,
         createdAt TEXT DEFAULT CURRENT_TIMESTAMP
     )`,
     (err) => {
