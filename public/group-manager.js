@@ -3,6 +3,7 @@
 import { 
   contacts, 
   fetchAndRenderContacts,
+  fetchGroupsForDropdown
 } from './contact-manager.js';
 
 import {
@@ -663,6 +664,7 @@ export async function handleGroupFormSubmit(e) {
     
     Swal.fire("Sukses", result.message || "Grup berhasil ditambah.", "success");
     resetGroupForm();
+    await fetchGroupsForDropdown(); 
     fetchAndRenderGroups();
     
   } catch (error) {
@@ -704,6 +706,7 @@ export async function deleteGroup(id) {
       await fetchAndRenderContacts();
 
       Swal.fire("Terhapus!", "Grup berhasil dihapus dan kontak disinkronkan.", "success");
+      await fetchGroupsForDropdown(); 
       fetchAndRenderGroups();
     } catch (error) {
       Swal.fire("Error", error.message, "error");
@@ -986,6 +989,7 @@ async function handleEditGroupSubmit(e) {
     Swal.fire("Sukses", result.message || "Grup berhasil diubah.", "success");
     closeEditGroupModal();
     selectedEditGroupMembers.clear();
+    await fetchGroupsForDropdown(); 
     fetchAndRenderGroups();
     
   } catch (error) {
