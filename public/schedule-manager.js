@@ -1,7 +1,7 @@
 // schedule-manager.js - Schedule Management Module
 
 import { formatTimeDifference } from './ui-helpers.js';
-import { selectedNumbers, selectedMeetingNumbers, renderContactListForEdit, renderMeetingContactListForEdit } from './contact-manager.js';
+import { selectedNumbers, selectedMeetingNumbers, renderContactListForEdit, renderMeetingContactListForEdit, getContacts } from './contact-manager.js';
 
 let schedules = [];
 let currentFilter = "all";
@@ -98,6 +98,12 @@ export async function renderScheduleTable() {
   }
 }
 
+function getContactNameOrNumber(number) {
+  const contacts = getContacts();
+  const contact = contacts.find(c => c.number === number);
+  return contact ? `${contact.name} (${number})` : number;
+}
+
 /**
  * Creates HTML for schedule row
  */
@@ -139,6 +145,7 @@ function createScheduleRowHtml(schedule) {
     return num;
   });
 
+  const displayNumbers = numbersArray.map(num => getContactNameOrNumber(num));
   const numberOfRecipients = numbersArray.length;
   const isMeeting = schedule.type === "meeting" || schedule.meetingRoom;
 
@@ -326,7 +333,7 @@ function createScheduleRowHtml(schedule) {
 
   return `
     <td data-scheduled-time="${schedule.scheduledTime}">${timeCellContent}</td>
-    <td>${numbersArray.join(", ") || "-"} <br> <small>(${numberOfRecipients} nomor)</small></td>
+    <td>${displayNumbers.join(", ") || "-"} <br> <small>(${numberOfRecipients} nomor)</small></td>
     <td>${messageDisplay}</td>
     <td>${fileDisplay}</td>
     <td class="${statusClass}">${statusIcon} ${statusText}</td>
@@ -336,12 +343,6 @@ function createScheduleRowHtml(schedule) {
 
 /**
  * Updates countdown timers
- */
-/**
- * Updates countdown timers - OPTIMIZED VERSION
- * ✅ Menggunakan requestAnimationFrame untuk smooth update
- * ✅ Hanya update text content, TIDAK touch kolom status
- * ✅ Cache DOM queries untuk performa lebih baik
  */
 export function updateCountdownTimers() {
   if (schedules.length === 0) return;
