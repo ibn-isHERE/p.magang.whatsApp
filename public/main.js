@@ -7,7 +7,9 @@ import {
   showMediaModal,
   closeMediaModal,
   formatTimeDifference,
-  closeEditContactModal
+  closeEditContactModal,
+  showEditGroupModal,
+  closeEditGroupModal
 } from './ui-helpers.js';
 
 function showForm(formId) {
@@ -60,7 +62,6 @@ import {
   selectedGroups,
   selectedMeetingGroups,
   fetchGroupsForDropdown,
-  updateAllGroupDropdowns,
   renderGroupSelectionList,
   renderMeetingGroupSelectionList,
   getNumbersFromSelectedGroups,
@@ -119,6 +120,8 @@ window.closeMediaModal = closeMediaModal;
 window.showEditContactForm = showEditContactForm;
 window.deleteContact = deleteContact;
 window.closeEditContactModal = closeEditContactModal;
+window.showEditGroupModal = showEditGroupModal;
+window.closeEditGroupModal = closeEditGroupModal;
 
 /**
  * Initializes file upload listener for message form
@@ -1359,30 +1362,6 @@ async function initApp() {
   initMediaModalListeners();
 
   initRealtimeScheduleUpdates();
-
-  // Event delegation for contact table actions
-  const contactTable = document.getElementById("contact-management-table");
-  if (contactTable) {
-    contactTable.addEventListener('click', function(e) {
-      const target = e.target.closest('button');
-      if (!target) return;
-
-      const id = target.dataset.id;
-      const name = target.dataset.name;
-
-      if (target.classList.contains('edit-contact-btn')) {
-        const number = target.dataset.number;
-        const instansi = target.dataset.instansi;
-        const jabatan = target.dataset.jabatan;
-        const grup = target.dataset.grup;
-        showEditContactForm(id, name, number, instansi, jabatan, grup);
-      }
-
-      if (target.classList.contains('delete-contact-btn')) {
-        deleteContact(id, name);
-      }
-    });
-  }
 
   // Contact CRUD form
   const contactForm = document.getElementById("contact-crud-form");
