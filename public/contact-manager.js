@@ -1,4 +1,4 @@
-// contact-manager.js - Contact Management Module dengan Enhanced Group Selection
+// contact-manager.js - Contact Management Module dengan Smart Search & Select
 import { showEditContactModal, closeEditContactModal } from "./ui-helpers.js";
 
 export let contacts = []; 
@@ -83,9 +83,7 @@ function updateSingleDropdown(dropdown) {
 
 /**
  * Renders group selection list untuk message form dengan search
- */
-/**
- * Renders group selection list untuk message form dengan search
+ * ✅ ENHANCED: Smart select yang mempertahankan seleksi sebelumnya
  */
 export function renderGroupSelectionList(searchQuery = '') {
   const list = document.getElementById("groupSelectionList");
@@ -120,6 +118,7 @@ export function renderGroupSelectionList(searchQuery = '') {
 
   filteredGroups.forEach((group) => {
     const label = document.createElement("label");
+    // ✅ Check against selectedGroups - mempertahankan seleksi
     const isChecked = selectedGroups.has(group.id) ? "checked" : "";
     
     let memberCount = 0;
@@ -154,9 +153,7 @@ export function renderGroupSelectionList(searchQuery = '') {
 
 /**
  * Renders group selection list untuk meeting form dengan search
- */
-/**
- * Renders group selection list untuk meeting form dengan search
+ * ✅ ENHANCED: Smart select yang mempertahankan seleksi sebelumnya
  */
 export function renderMeetingGroupSelectionList(searchQuery = '') {
   const list = document.getElementById("meetingGroupSelectionList");
@@ -191,6 +188,7 @@ export function renderMeetingGroupSelectionList(searchQuery = '') {
 
   filteredGroups.forEach((group) => {
     const label = document.createElement("label");
+    // ✅ Check against selectedMeetingGroups - mempertahankan seleksi
     const isChecked = selectedMeetingGroups.has(group.id) ? "checked" : "";
     
     let memberCount = 0;
@@ -572,9 +570,7 @@ export async function handleContactFormSubmit(event) {
 
 /**
  * Renders contact list with checkboxes for message form
- */
-/**
- * Renders contact list with checkboxes for message form
+ * ✅ ENHANCED: Smart select yang mempertahankan seleksi sebelumnya
  */
 export function renderContactList() {
   const list = document.getElementById("contactList");
@@ -604,6 +600,7 @@ export function renderContactList() {
 
   filteredContacts.forEach((contact) => {
     const label = document.createElement("label");
+    // ✅ Check against selectedNumbers - mempertahankan seleksi
     const isChecked = selectedNumbers.has(contact.number) ? "checked" : "";
     label.innerHTML = `
       <input type="checkbox" class="contact-checkbox" name="selectedContacts" value="${contact.number}" ${isChecked} />
@@ -655,9 +652,7 @@ function updateContactSelectionInfo() {
 
 /**
  * Renders meeting contact list with checkboxes
- */
-/**
- * Renders meeting contact list with checkboxes
+ * ✅ ENHANCED: Smart select yang mempertahankan seleksi sebelumnya
  */
 export function renderMeetingContactList() {
   const list = document.getElementById("meetingContactList");
@@ -695,6 +690,7 @@ export function renderMeetingContactList() {
 
   filtered.forEach((contact) => {
     const label = document.createElement("label");
+    // ✅ Check against selectedMeetingNumbers - mempertahankan seleksi
     const isChecked = selectedMeetingNumbers.has(contact.number);
     label.innerHTML = `
       <input type="checkbox" class="meeting-contact-checkbox" value="${contact.number}" ${isChecked ? "checked" : ""} />
@@ -746,6 +742,7 @@ function updateMeetingContactSelectionInfo() {
 
 /**
  * Initializes contact event listeners
+ * ✅ ENHANCED: Smart "Pilih Semua" hanya untuk hasil pencarian
  */
 export function initContactListeners() {
   const contactSearch = document.getElementById("contactSearch");
@@ -777,11 +774,12 @@ export function initContactListeners() {
     });
   }
   
-  // Initialize quick actions for contacts
+  // ✅ ENHANCED: Smart Select All - hanya pilih hasil filter
   const selectAllContactsBtn = document.getElementById("selectAllContactsBtn");
   if (selectAllContactsBtn) {
     selectAllContactsBtn.addEventListener("click", function() {
-      contacts.forEach(contact => selectedNumbers.add(contact.number));
+      // Pilih HANYA kontak yang terfilter (hasil pencarian)
+      filteredContacts.forEach(contact => selectedNumbers.add(contact.number));
       renderContactList();
       this.classList.add('active');
       setTimeout(() => this.classList.remove('active'), 300);
@@ -791,17 +789,27 @@ export function initContactListeners() {
   const deselectAllContactsBtn = document.getElementById("deselectAllContactsBtn");
   if (deselectAllContactsBtn) {
     deselectAllContactsBtn.addEventListener("click", function() {
-      selectedNumbers.clear();
+      // Hapus HANYA kontak yang terfilter dari seleksi
+      filteredContacts.forEach(contact => selectedNumbers.delete(contact.number));
       renderContactList();
     });
   }
   
-  // Initialize quick actions for groups
+  // ✅ ENHANCED: Smart Select All Groups - hanya pilih hasil filter
   const selectAllGroupsBtn = document.getElementById("selectAllGroupsBtn");
   if (selectAllGroupsBtn) {
     selectAllGroupsBtn.addEventListener("click", function() {
-      groups.forEach(group => selectedGroups.add(group.id));
-      renderGroupSelectionList();
+      const groupSearch = document.getElementById("groupSearch");
+      const searchQuery = groupSearch ? groupSearch.value.toLowerCase().trim() : '';
+      
+      // Filter groups berdasarkan pencarian
+      const filteredGroups = searchQuery 
+        ? groups.filter(g => g.name.toLowerCase().includes(searchQuery))
+        : groups;
+      
+      // Pilih HANYA grup yang terfilter
+      filteredGroups.forEach(group => selectedGroups.add(group.id));
+      renderGroupSelectionList(searchQuery);
       this.classList.add('active');
       setTimeout(() => this.classList.remove('active'), 300);
     });
@@ -810,14 +818,24 @@ export function initContactListeners() {
   const deselectAllGroupsBtn = document.getElementById("deselectAllGroupsBtn");
   if (deselectAllGroupsBtn) {
     deselectAllGroupsBtn.addEventListener("click", function() {
-      selectedGroups.clear();
-      renderGroupSelectionList();
+      const groupSearch = document.getElementById("groupSearch");
+      const searchQuery = groupSearch ? groupSearch.value.toLowerCase().trim() : '';
+      
+      // Filter groups berdasarkan pencarian
+      const filteredGroups = searchQuery 
+        ? groups.filter(g => g.name.toLowerCase().includes(searchQuery))
+        : groups;
+      
+      // Hapus HANYA grup yang terfilter dari seleksi
+      filteredGroups.forEach(group => selectedGroups.delete(group.id));
+      renderGroupSelectionList(searchQuery);
     });
   }
 }
 
 /**
  * Initializes meeting contact listeners
+ * ✅ ENHANCED: Smart "Pilih Semua" hanya untuk hasil pencarian
  */
 export function initMeetingContactListeners() {
   const searchInput = document.getElementById("meetingContactSearch");
@@ -847,11 +865,20 @@ export function initMeetingContactListeners() {
     });
   }
   
-  // Initialize quick actions for meeting contacts
+  // ✅ ENHANCED: Smart Select All Meeting Contacts - hanya pilih hasil filter
   const selectAllMeetingContactsBtn = document.getElementById("selectAllMeetingContactsBtn");
   if (selectAllMeetingContactsBtn) {
     selectAllMeetingContactsBtn.addEventListener("click", function() {
-      contacts.forEach(contact => selectedMeetingNumbers.add(contact.number));
+      const searchInput = document.getElementById("meetingContactSearch");
+      const currentSearch = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      
+      // Filter contacts berdasarkan pencarian
+      const filtered = contacts.filter(
+        (c) => c.name.toLowerCase().includes(currentSearch) || c.number.includes(currentSearch)
+      );
+      
+      // Pilih HANYA kontak yang terfilter
+      filtered.forEach(contact => selectedMeetingNumbers.add(contact.number));
       renderMeetingContactList();
       this.classList.add('active');
       setTimeout(() => this.classList.remove('active'), 300);
@@ -861,17 +888,35 @@ export function initMeetingContactListeners() {
   const deselectAllMeetingContactsBtn = document.getElementById("deselectAllMeetingContactsBtn");
   if (deselectAllMeetingContactsBtn) {
     deselectAllMeetingContactsBtn.addEventListener("click", function() {
-      selectedMeetingNumbers.clear();
+      const searchInput = document.getElementById("meetingContactSearch");
+      const currentSearch = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      
+      // Filter contacts berdasarkan pencarian
+      const filtered = contacts.filter(
+        (c) => c.name.toLowerCase().includes(currentSearch) || c.number.includes(currentSearch)
+      );
+      
+      // Hapus HANYA kontak yang terfilter dari seleksi
+      filtered.forEach(contact => selectedMeetingNumbers.delete(contact.number));
       renderMeetingContactList();
     });
   }
   
-  // Initialize quick actions for meeting groups
+  // ✅ ENHANCED: Smart Select All Meeting Groups - hanya pilih hasil filter
   const selectAllMeetingGroupsBtn = document.getElementById("selectAllMeetingGroupsBtn");
   if (selectAllMeetingGroupsBtn) {
     selectAllMeetingGroupsBtn.addEventListener("click", function() {
-      groups.forEach(group => selectedMeetingGroups.add(group.id));
-      renderMeetingGroupSelectionList();
+      const groupSearch = document.getElementById("meetingGroupSearch");
+      const searchQuery = groupSearch ? groupSearch.value.toLowerCase().trim() : '';
+      
+      // Filter groups berdasarkan pencarian
+      const filteredGroups = searchQuery 
+        ? groups.filter(g => g.name.toLowerCase().includes(searchQuery))
+        : groups;
+      
+      // Pilih HANYA grup yang terfilter
+      filteredGroups.forEach(group => selectedMeetingGroups.add(group.id));
+      renderMeetingGroupSelectionList(searchQuery);
       this.classList.add('active');
       setTimeout(() => this.classList.remove('active'), 300);
     });
@@ -880,8 +925,17 @@ export function initMeetingContactListeners() {
   const deselectAllMeetingGroupsBtn = document.getElementById("deselectAllMeetingGroupsBtn");
   if (deselectAllMeetingGroupsBtn) {
     deselectAllMeetingGroupsBtn.addEventListener("click", function() {
-      selectedMeetingGroups.clear();
-      renderMeetingGroupSelectionList();
+      const groupSearch = document.getElementById("meetingGroupSearch");
+      const searchQuery = groupSearch ? groupSearch.value.toLowerCase().trim() : '';
+      
+      // Filter groups berdasarkan pencarian
+      const filteredGroups = searchQuery 
+        ? groups.filter(g => g.name.toLowerCase().includes(searchQuery))
+        : groups;
+      
+      // Hapus HANYA grup yang terfilter dari seleksi
+      filteredGroups.forEach(group => selectedMeetingGroups.delete(group.id));
+      renderMeetingGroupSelectionList(searchQuery);
     });
   }
 }
