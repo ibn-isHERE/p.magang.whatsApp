@@ -8,8 +8,6 @@ export let selectedNumbers = new Set();
 export let selectedMeetingNumbers = new Set();
 export let selectedGroups = new Set();
 export let selectedMeetingGroups = new Set();
-
-// ✅ NEW: Selected groups for contact CRUD form
 export let selectedContactGroups = new Set();
 export let selectedEditContactGroups = new Set();
 
@@ -51,6 +49,7 @@ export async function fetchGroupsForDropdown() {
       renderMeetingGroupSelectionList();
       renderContactCrudGroupList();
     }
+    
   } catch (error) {
     console.error("Error fetching groups:", error);
   }
@@ -667,7 +666,8 @@ async function handleEditContactSubmit(event) {
     Swal.fire("Sukses!", `Kontak berhasil diupdate.`, "success");
     closeEditContactModal();
     selectedEditContactGroups.clear();
-    fetchAndRenderContacts();
+    await fetchGroupsForDropdown();
+    await fetchAndRenderContacts();
   } catch (error) {
     Swal.fire("Error", error.message, "error");
   }
@@ -705,7 +705,8 @@ export async function deleteContact(id, name) {
       if (!res.ok) throw new Error("Gagal menghapus kontak.");
 
       Swal.fire("Terhapus!", "Kontak berhasil dihapus.", "success");
-      fetchAndRenderContacts();
+      await fetchAndRenderContacts();
+      await fetchGroupsForDropdown(); 
     } catch (error) {
       Swal.fire("Error", error.message, "error");
     }
