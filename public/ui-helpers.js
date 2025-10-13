@@ -263,6 +263,18 @@ export function closeEditContactModal() {
   }
 }
 
+export function closeEditGroupModal() {
+  const modal = document.getElementById('editGroupModal');
+  if (!modal) return;
+  modal.style.display = 'none';
+}
+
+export function showEditGroupModal() {
+  const modal = document.getElementById('editGroupModal');
+  if (!modal) return;
+  modal.style.display = 'block';
+}
+
 /**
  * Internal function to show notification
  */
