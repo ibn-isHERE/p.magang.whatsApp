@@ -10,7 +10,7 @@
       href="/wa_pengingat/public/asset/result_bps.png"
     />
     <link rel="stylesheet" href="chat_style.css" />
-    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/main.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link
       rel="stylesheet"
@@ -71,311 +71,388 @@
           </div>
 
           <!-- IMPROVED MESSAGE FORM dengan Tab System -->
-<div id="messageFormContainer" class="form-content active">
-  <h2>Buat Jadwal Pesan</h2>
-  <form id="reminderForm" enctype="multipart/form-data">
-    
-    <!-- ====== RECIPIENT SELECTION WITH TABS ====== -->
-    <div class="recipient-tabs-container">
-      <div class="recipient-tabs">
-        <button type="button" class="recipient-tab active" data-tab="contacts">
-          <i class="fa-solid fa-user"></i> Kontak Individual
-        </button>
-        <button type="button" class="recipient-tab" data-tab="groups">
-          <i class="fa-solid fa-users"></i> Grup
-        </button>
-      </div>
-      
-      <!-- TAB PANEL: KONTAK INDIVIDUAL -->
-      <div class="recipient-panel active" id="contactsPanel">
-        <div class="search-box-wrapper">
-          <i class="fa-solid fa-search"></i>
-          <input
-            type="text"
-            id="contactSearch"
-            placeholder="Cari kontak berdasarkan nama atau nomor..."
-            autocomplete="off"
-          />
-        </div>
-        
-        <div class="quick-actions">
-          <button type="button" class="quick-action-btn select-all" id="selectAllContactsBtn">
-            <i class="fa-solid fa-check-double"></i> Pilih Semua
-          </button>
-          <button type="button" class="quick-action-btn deselect-all" id="deselectAllContactsBtn">
-            <i class="fa-solid fa-times"></i> Batal Semua
-          </button>
-        </div>
-        
-        <div id="contactList" class="contact-checklist-box"></div>
-        
-        <div class="selection-info" id="contactSelectionInfo">
-          <small>Belum ada kontak dipilih</small>
-        </div>
-      </div>
-      
-      <!-- TAB PANEL: GRUP -->
-      <div class="recipient-panel" id="groupsPanel">
-        <div class="search-box-wrapper">
-          <i class="fa-solid fa-search"></i>
-          <input
-            type="text"
-            id="groupSearch"
-            placeholder="Cari grup..."
-            autocomplete="off"
-          />
-        </div>
-        
-        <div class="quick-actions">
-          <button type="button" class="quick-action-btn select-all" id="selectAllGroupsBtn">
-            <i class="fa-solid fa-check-double"></i> Pilih Semua
-          </button>
-          <button type="button" class="quick-action-btn deselect-all" id="deselectAllGroupsBtn">
-            <i class="fa-solid fa-times"></i> Batal Semua
-          </button>
-        </div>
-        
-        <div id="groupSelectionList" class="contact-checklist-box"></div>
-        
-        <div id="groupSelectionInfo">
-          <small>Belum ada grup dipilih</small>
-        </div>
-      </div>
-    </div>
+          <div id="messageFormContainer" class="form-content active">
+            <h2>Buat Jadwal Pesan</h2>
+            <form id="reminderForm" enctype="multipart/form-data">
+              <!-- ====== RECIPIENT SELECTION WITH TABS ====== -->
+              <div class="recipient-tabs-container">
+                <div class="recipient-tabs">
+                  <button
+                    type="button"
+                    class="recipient-tab active"
+                    data-tab="contacts"
+                  >
+                    <i class="fa-solid fa-user"></i> Kontak Individual
+                  </button>
+                  <button type="button" class="recipient-tab" data-tab="groups">
+                    <i class="fa-solid fa-users"></i> Grup
+                  </button>
+                </div>
 
-    <!-- NOMOR MANUAL -->
-    <label for="manualNumbers">
-      <i class="fa-solid fa-keyboard"></i> Nomor Manual (opsional):
-    </label>
-    <input
-      type="text"
-      id="manualNumbers"
-      placeholder="Contoh: 08123456789, 08234567890"
-    />
-    <small style="display: block; color: #718096; margin-top: 4px; font-size: 12px;">
-      Pisahkan dengan koma jika lebih dari satu
-    </small>
+                <!-- TAB PANEL: KONTAK INDIVIDUAL -->
+                <div class="recipient-panel active" id="contactsPanel">
+                  <div class="search-box-wrapper">
+                    <i class="fa-solid fa-search"></i>
+                    <input
+                      type="text"
+                      id="contactSearch"
+                      placeholder="Cari kontak berdasarkan nama atau nomor..."
+                      autocomplete="off"
+                    />
+                  </div>
 
-    <!-- FILE UPLOAD -->
-    <div class="file-upload-section">
-      <label>
-        <i class="fa-solid fa-paperclip"></i> Lampiran File (Gambar, Video, PDF):
-      </label>
-      <div class="file-upload-container">
-        <input
-          type="file"
-          id="fileUpload"
-          name="fileUpload"
-          accept="image/*,video/*,application/pdf"
-          multiple
-        />
-        <span class="file-upload-label" data-input="fileUpload">
-          <i class="fa-solid fa-cloud-upload"></i> Klik untuk memilih file
-        </span>
-        <div id="customFilePreview"></div>
-      </div>
-      <button
-        type="button"
-        id="clearAllFilesBtn"
-        style="display: none"
-      >
-        <i class="fa-solid fa-trash"></i> Hapus Semua File
-      </button>
-    </div>
+                  <div class="quick-actions">
+                    <button
+                      type="button"
+                      class="quick-action-btn select-all"
+                      id="selectAllContactsBtn"
+                    >
+                      <i class="fa-solid fa-check-double"></i> Pilih Semua
+                    </button>
+                    <button
+                      type="button"
+                      class="quick-action-btn deselect-all"
+                      id="deselectAllContactsBtn"
+                    >
+                      <i class="fa-solid fa-times"></i> Batal Semua
+                    </button>
+                  </div>
 
-    <!-- MESSAGE -->
-<label for="message">
-  <i class="fa-solid fa-comment-dots"></i> Pesan:
-</label>
-<textarea
-  id="message"
-  name="message"
-  placeholder="Tulis pesan Anda di sini..."
-  rows="4"
-></textarea>
+                  <div id="contactList" class="contact-checklist-box"></div>
 
-<!-- SCHEDULE TIME -->
-<label for="datetime">
-  <i class="fa-solid fa-clock"></i> Waktu Kirim:
-</label>
-<input
-  type="datetime-local"
-  id="datetime"
-  name="datetime"
-  required
-/>
+                  <div class="selection-info" id="contactSelectionInfo">
+                    <small>Belum ada kontak dipilih</small>
+                  </div>
+                </div>
 
-    <button type="submit">
-      <i class="fa-solid fa-paper-plane"></i> Kirim Pesan
-    </button>
-  </form>
-</div>
+                <!-- TAB PANEL: GRUP -->
+                <div class="recipient-panel" id="groupsPanel">
+                  <div class="search-box-wrapper">
+                    <i class="fa-solid fa-search"></i>
+                    <input
+                      type="text"
+                      id="groupSearch"
+                      placeholder="Cari grup..."
+                      autocomplete="off"
+                    />
+                  </div>
+
+                  <div class="quick-actions">
+                    <button
+                      type="button"
+                      class="quick-action-btn select-all"
+                      id="selectAllGroupsBtn"
+                    >
+                      <i class="fa-solid fa-check-double"></i> Pilih Semua
+                    </button>
+                    <button
+                      type="button"
+                      class="quick-action-btn deselect-all"
+                      id="deselectAllGroupsBtn"
+                    >
+                      <i class="fa-solid fa-times"></i> Batal Semua
+                    </button>
+                  </div>
+
+                  <div
+                    id="groupSelectionList"
+                    class="contact-checklist-box"
+                  ></div>
+
+                  <div id="groupSelectionInfo">
+                    <small>Belum ada grup dipilih</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- NOMOR MANUAL -->
+              <label for="manualNumbers">
+                <i class="fa-solid fa-keyboard"></i> Nomor Manual (opsional):
+              </label>
+              <input
+                type="text"
+                id="manualNumbers"
+                placeholder="Contoh: 08123456789, 08234567890"
+              />
+              <small
+                style="
+                  display: block;
+                  color: #718096;
+                  margin-top: 4px;
+                  font-size: 12px;
+                "
+              >
+                Pisahkan dengan koma jika lebih dari satu
+              </small>
+
+              <!-- FILE UPLOAD -->
+              <div class="file-upload-section">
+                <label>
+                  <i class="fa-solid fa-paperclip"></i> Lampiran File (Gambar,
+                  Video, PDF):
+                </label>
+                <div class="file-upload-container">
+                  <input
+                    type="file"
+                    id="fileUpload"
+                    name="fileUpload"
+                    accept="image/*,video/*,application/pdf"
+                    multiple
+                  />
+                  <span class="file-upload-label" data-input="fileUpload">
+                    <i class="fa-solid fa-cloud-upload"></i> Klik untuk memilih
+                    file
+                  </span>
+                  <div id="customFilePreview"></div>
+                </div>
+                <button
+                  type="button"
+                  id="clearAllFilesBtn"
+                  style="display: none"
+                >
+                  <i class="fa-solid fa-trash"></i> Hapus Semua File
+                </button>
+              </div>
+
+              <!-- MESSAGE -->
+              <label for="message">
+                <i class="fa-solid fa-comment-dots"></i> Pesan:
+              </label>
+              <textarea
+                id="message"
+                name="message"
+                placeholder="Tulis pesan Anda di sini..."
+                rows="4"
+              ></textarea>
+
+              <!-- SCHEDULE TIME -->
+              <label for="datetime">
+                <i class="fa-solid fa-clock"></i> Waktu Kirim:
+              </label>
+              <input
+                type="datetime-local"
+                id="datetime"
+                name="datetime"
+                required
+              />
+
+              <button type="submit">
+                <i class="fa-solid fa-paper-plane"></i> Kirim Pesan
+              </button>
+            </form>
+          </div>
 
           <!-- IMPROVED MEETING FORM dengan Tab System -->
-<div id="meetingFormContainer" class="form-content hidden">
-  <h2>Buat Jadwal Rapat</h2>
-  <form id="addMeetingForm">
-    
-    <!-- MEETING TITLE -->
-    <label for="meetingTitle">
-      <i class="fa-solid fa-heading"></i> Judul Rapat:
-    </label>
-    <input type="text" id="meetingTitle" placeholder="Contoh: Rapat Koordinasi Tim" required />
+          <div id="meetingFormContainer" class="form-content hidden">
+            <h2>Buat Jadwal Rapat</h2>
+            <form id="addMeetingForm">
+              <!-- MEETING TITLE -->
+              <label for="meetingTitle">
+                <i class="fa-solid fa-heading"></i> Judul Rapat:
+              </label>
+              <input
+                type="text"
+                id="meetingTitle"
+                placeholder="Contoh: Rapat Koordinasi Tim"
+                required
+              />
 
-    <!-- ====== RECIPIENT SELECTION WITH TABS ====== -->
-    <div class="recipient-tabs-container">
-      <div class="recipient-tabs">
-        <button type="button" class="recipient-tab active" data-tab="meeting-contacts">
-          <i class="fa-solid fa-user"></i> Kontak Individual
-        </button>
-        <button type="button" class="recipient-tab" data-tab="meeting-groups">
-          <i class="fa-solid fa-users"></i> Grup
-        </button>
-      </div>
-      
-      <!-- TAB PANEL: KONTAK INDIVIDUAL -->
-      <div class="recipient-panel active" id="meetingContactsPanel">
-        <div class="search-box-wrapper">
-          <i class="fa-solid fa-search"></i>
-          <input
-            type="text"
-            id="meetingContactSearch"
-            placeholder="Cari kontak berdasarkan nama atau nomor..."
-            autocomplete="off"
-          />
-        </div>
-        
-        <div class="quick-actions">
-          <button type="button" class="quick-action-btn select-all" id="selectAllMeetingContactsBtn">
-            <i class="fa-solid fa-check-double"></i> Pilih Semua
-          </button>
-          <button type="button" class="quick-action-btn deselect-all" id="deselectAllMeetingContactsBtn">
-            <i class="fa-solid fa-times"></i> Batal Semua
-          </button>
-        </div>
-        
-        <div id="meetingContactList" class="contact-checklist-box"></div>
-        
-        <div class="selection-info" id="meetingContactSelectionInfo">
-          <small>Belum ada kontak dipilih</small>
-        </div>
-      </div>
-      
-      <!-- TAB PANEL: GRUP -->
-      <div class="recipient-panel" id="meetingGroupsPanel">
-        <div class="search-box-wrapper">
-          <i class="fa-solid fa-search"></i>
-          <input
-            type="text"
-            id="meetingGroupSearch"
-            placeholder="Cari grup..."
-            autocomplete="off"
-          />
-        </div>
-        
-        <div class="quick-actions">
-          <button type="button" class="quick-action-btn select-all" id="selectAllMeetingGroupsBtn">
-            <i class="fa-solid fa-check-double"></i> Pilih Semua
-          </button>
-          <button type="button" class="quick-action-btn deselect-all" id="deselectAllMeetingGroupsBtn">
-            <i class="fa-solid fa-times"></i> Batal Semua
-          </button>
-        </div>
-        
-        <div id="meetingGroupSelectionList" class="contact-checklist-box"></div>
-        
-        <div id="meetingGroupSelectionInfo">
-          <small>Belum ada grup dipilih</small>
-        </div>
-      </div>
-    </div>
+              <!-- ====== RECIPIENT SELECTION WITH TABS ====== -->
+              <div class="recipient-tabs-container">
+                <div class="recipient-tabs">
+                  <button
+                    type="button"
+                    class="recipient-tab active"
+                    data-tab="meeting-contacts"
+                  >
+                    <i class="fa-solid fa-user"></i> Kontak Individual
+                  </button>
+                  <button
+                    type="button"
+                    class="recipient-tab"
+                    data-tab="meeting-groups"
+                  >
+                    <i class="fa-solid fa-users"></i> Grup
+                  </button>
+                </div>
 
-    <!-- NOMOR MANUAL -->
-    <label for="meetingNumbers">
-      <i class="fa-solid fa-keyboard"></i> Nomor Manual (opsional):
-    </label>
-    <input
-      type="text"
-      id="meetingNumbers"
-      placeholder="Contoh: 081234567890, 089876543210"
-    />
-    <small style="display: block; color: #718096; margin-top: 4px; font-size: 12px;">
-      Pisahkan dengan koma jika lebih dari satu
-    </small>
+                <!-- TAB PANEL: KONTAK INDIVIDUAL -->
+                <div class="recipient-panel active" id="meetingContactsPanel">
+                  <div class="search-box-wrapper">
+                    <i class="fa-solid fa-search"></i>
+                    <input
+                      type="text"
+                      id="meetingContactSearch"
+                      placeholder="Cari kontak berdasarkan nama atau nomor..."
+                      autocomplete="off"
+                    />
+                  </div>
 
-    <!-- FILE UPLOAD -->
-    <div class="file-upload-section">
-      <label>
-        <i class="fa-solid fa-paperclip"></i> Lampiran File untuk Rapat:
-      </label>
-      <div class="file-upload-container">
-        <input
-          type="file"
-          id="meetingFileUpload"
-          name="files"
-          accept="image/*,video/*,application/pdf"
-          multiple
-        />
-        <span class="file-upload-label" data-input="meetingFileUpload">
-          <i class="fa-solid fa-cloud-upload"></i> Klik untuk memilih file
-        </span>
-        <div id="meetingFileNames" class="customFilePreview">
-          Belum ada file terpilih
-        </div>
-      </div>
-      <button
-        type="button"
-        id="clearAllMeetingFilesBtn"
-        style="display: none"
-      >
-        <i class="fa-solid fa-trash"></i> Hapus Semua File
-      </button>
-    </div>
+                  <div class="quick-actions">
+                    <button
+                      type="button"
+                      class="quick-action-btn select-all"
+                      id="selectAllMeetingContactsBtn"
+                    >
+                      <i class="fa-solid fa-check-double"></i> Pilih Semua
+                    </button>
+                    <button
+                      type="button"
+                      class="quick-action-btn deselect-all"
+                      id="deselectAllMeetingContactsBtn"
+                    >
+                      <i class="fa-solid fa-times"></i> Batal Semua
+                    </button>
+                  </div>
 
-    <!-- MEETING ROOM -->
-    <label for="meetingRoom">
-      <i class="fa-solid fa-door-open"></i> Ruangan Rapat:
-    </label>
-    <select id="meetingRoom" required>
-      <option value="">-- Pilih Ruangan --</option>
-      <option value="Aula Lantai 3">Aula Lantai 3</option>
-      <option value="Ruang Sungkai">Ruang Sungkai</option>
-      <option value="Ruang distribusi">Ruang Distribusi</option>
-      <option value="Ruang Garda SE">Ruang Garda SE</option>
-      <option value="Ruang PST">Ruang PST</option>
-    </select>
+                  <div
+                    id="meetingContactList"
+                    class="contact-checklist-box"
+                  ></div>
 
-    <!-- START TIME -->
-    <div class="form-group">
-      <label for="meetingStartTime">
-        <i class="fa-solid fa-hourglass-start"></i> Waktu Mulai Rapat:
-      </label>
-      <input
-        type="datetime-local"
-        id="meetingStartTime"
-        class="form-control"
-        required
-      />
-    </div>
+                  <div class="selection-info" id="meetingContactSelectionInfo">
+                    <small>Belum ada kontak dipilih</small>
+                  </div>
+                </div>
 
-    <!-- END TIME -->
-    <div class="form-group">
-      <label for="meetingEndTime">
-        <i class="fa-solid fa-hourglass-end"></i> Waktu Selesai Rapat:
-      </label>
-      <input
-        type="datetime-local"
-        id="meetingEndTime"
-        class="form-control"
-        required
-      />
-    </div>
+                <!-- TAB PANEL: GRUP -->
+                <div class="recipient-panel" id="meetingGroupsPanel">
+                  <div class="search-box-wrapper">
+                    <i class="fa-solid fa-search"></i>
+                    <input
+                      type="text"
+                      id="meetingGroupSearch"
+                      placeholder="Cari grup..."
+                      autocomplete="off"
+                    />
+                  </div>
 
-    <button type="submit">
-      <i class="fa-solid fa-calendar-check"></i> Jadwalkan Rapat
-    </button>
-  </form>
-</div>
+                  <div class="quick-actions">
+                    <button
+                      type="button"
+                      class="quick-action-btn select-all"
+                      id="selectAllMeetingGroupsBtn"
+                    >
+                      <i class="fa-solid fa-check-double"></i> Pilih Semua
+                    </button>
+                    <button
+                      type="button"
+                      class="quick-action-btn deselect-all"
+                      id="deselectAllMeetingGroupsBtn"
+                    >
+                      <i class="fa-solid fa-times"></i> Batal Semua
+                    </button>
+                  </div>
+
+                  <div
+                    id="meetingGroupSelectionList"
+                    class="contact-checklist-box"
+                  ></div>
+
+                  <div id="meetingGroupSelectionInfo">
+                    <small>Belum ada grup dipilih</small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- NOMOR MANUAL -->
+              <label for="meetingNumbers">
+                <i class="fa-solid fa-keyboard"></i> Nomor Manual (opsional):
+              </label>
+              <input
+                type="text"
+                id="meetingNumbers"
+                placeholder="Contoh: 081234567890, 089876543210"
+              />
+              <small
+                style="
+                  display: block;
+                  color: #718096;
+                  margin-top: 4px;
+                  font-size: 12px;
+                "
+              >
+                Pisahkan dengan koma jika lebih dari satu
+              </small>
+
+              <!-- FILE UPLOAD -->
+              <div class="file-upload-section">
+                <label>
+                  <i class="fa-solid fa-paperclip"></i> Lampiran File untuk
+                  Rapat:
+                </label>
+                <div class="file-upload-container">
+                  <input
+                    type="file"
+                    id="meetingFileUpload"
+                    name="files"
+                    accept="image/*,video/*,application/pdf"
+                    multiple
+                  />
+                  <span
+                    class="file-upload-label"
+                    data-input="meetingFileUpload"
+                  >
+                    <i class="fa-solid fa-cloud-upload"></i> Klik untuk memilih
+                    file
+                  </span>
+                  <div id="meetingFileNames" class="customFilePreview">
+                    Belum ada file terpilih
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  id="clearAllMeetingFilesBtn"
+                  style="display: none"
+                >
+                  <i class="fa-solid fa-trash"></i> Hapus Semua File
+                </button>
+              </div>
+
+              <!-- MEETING ROOM -->
+              <label for="meetingRoom">
+                <i class="fa-solid fa-door-open"></i> Ruangan Rapat:
+              </label>
+              <select id="meetingRoom" required>
+                <option value="">-- Pilih Ruangan --</option>
+                <option value="Aula Lantai 3">Aula Lantai 3</option>
+                <option value="Ruang Sungkai">Ruang Sungkai</option>
+                <option value="Ruang distribusi">Ruang Distribusi</option>
+                <option value="Ruang Garda SE">Ruang Garda SE</option>
+                <option value="Ruang PST">Ruang PST</option>
+              </select>
+
+              <!-- START TIME -->
+              <div class="form-group">
+                <label for="meetingStartTime">
+                  <i class="fa-solid fa-hourglass-start"></i> Waktu Mulai Rapat:
+                </label>
+                <input
+                  type="datetime-local"
+                  id="meetingStartTime"
+                  class="form-control"
+                  required
+                />
+              </div>
+
+              <!-- END TIME -->
+              <div class="form-group">
+                <label for="meetingEndTime">
+                  <i class="fa-solid fa-hourglass-end"></i> Waktu Selesai Rapat:
+                </label>
+                <input
+                  type="datetime-local"
+                  id="meetingEndTime"
+                  class="form-control"
+                  required
+                />
+              </div>
+
+              <button type="submit">
+                <i class="fa-solid fa-calendar-check"></i> Jadwalkan Rapat
+              </button>
+            </form>
+          </div>
 
           <div id="editFormContainer" class="form-content hidden"></div>
 
@@ -384,6 +461,10 @@
             <form id="contact-crud-form">
               <h3>Tambah / Edit Kontak</h3>
               <input type="hidden" id="contact-crud-id" />
+
+              <label for="contact-crud-name">
+                <i class="fa-solid fa-user"></i> Nama Kontak:
+              </label>
               <input
                 type="text"
                 id="contact-crud-name"
@@ -391,19 +472,22 @@
                 placeholder="Nama Kontak"
                 required
               />
+
+              <label for="contact-crud-number" style="margin-top: 12px">
+                <i class="fa-solid fa-phone"></i> Nomor:
+              </label>
               <input
                 type="tel"
                 id="contact-crud-number"
                 class="phone-num-input"
                 placeholder="Nomor (contoh: 0812...)"
-                style="margin-top: 8px"
                 required
               />
-              <select
-                id="contact-crud-instansi"
-                style="margin-top: 8px"
-                required
-              >
+
+              <label for="contact-crud-instansi" style="margin-top: 12px">
+                <i class="fa-solid fa-building"></i> Instansi:
+              </label>
+              <select id="contact-crud-instansi" required>
                 <option value="">-- Pilih Instansi --</option>
                 <option value="Tim ZI">Tim ZI</option>
                 <option value="Tim Umum">Tim Umum</option>
@@ -430,27 +514,63 @@
                   Tim Manajemen dan Tata Kelola
                 </option>
               </select>
-              <select
-                id="contact-crud-jabatan"
-                style="margin-top: 8px"
-                required
-              >
+
+              <label for="contact-crud-jabatan" style="margin-top: 12px">
+                <i class="fa-solid fa-briefcase"></i> Jabatan:
+              </label>
+              <select id="contact-crud-jabatan" required>
                 <option value="">-- Pilih Jabatan --</option>
                 <option value="Kepala Bagian Umum">Kepala Bagian Umum</option>
                 <option value="Pegawai">Pegawai</option>
               </select>
-              <select id="contact-crud-grup" style="margin-top: 8px">
-                <option value="">-- Pilih Grup --</option>
-              </select>
+
+              <!-- ✅ NEW: Group Checkbox Selection -->
+              <label for="contactCrudGroupSearch" style="margin-top: 16px">
+                <i class="fa-solid fa-users"></i> Grup (pilih satu atau lebih):
+              </label>
+              <div class="search-box-wrapper" style="margin-bottom: 8px">
+                <i class="fa-solid fa-search"></i>
+                <input
+                  type="text"
+                  id="contactCrudGroupSearch"
+                  placeholder="Cari grup..."
+                  autocomplete="off"
+                />
+              </div>
+              <div
+                id="contactCrudGroupList"
+                class="contact-checklist-box"
+                style="max-height: 200px; overflow-y: auto; margin-bottom: 8px"
+              >
+                <p style="text-align: center; color: #a0aec0">
+                  Memuat daftar grup...
+                </p>
+              </div>
+              <div
+                id="contactCrudGroupInfo"
+                style="
+                  margin-bottom: 16px;
+                  padding: 8px;
+                  background: #f7fafc;
+                  border-radius: 4px;
+                "
+              >
+                <small style="color: #a0aec0">Belum ada grup dipilih</small>
+              </div>
+
               <button type="submit" id="contact-crud-submit">
-                Tambah Kontak
+                <i class="fa-solid fa-plus"></i> Tambah Kontak
               </button>
               <button
                 type="button"
                 id="contact-crud-cancel"
-                style="display: none; background-color: #6c757d"
+                style="
+                  display: none;
+                  background-color: #6c757d;
+                  margin-top: 10px;
+                "
               >
-                Batal
+                <i class="fa-solid fa-times"></i> Batal
               </button>
             </form>
 
@@ -459,6 +579,7 @@
               action="/api/import"
               method="post"
               enctype="multipart/form-data"
+              style="margin-top: 30px"
             >
               <h3>Import Kontak dari File</h3>
               <input
@@ -467,7 +588,9 @@
                 accept=".csv, .json, .xlsx, .xls"
                 required
               />
-              <button type="submit">Import</button>
+              <button type="submit">
+                <i class="fa-solid fa-file-import"></i> Import
+              </button>
             </form>
           </div>
 
@@ -713,6 +836,18 @@
           </button>
         </div>
         <div id="editContactModalBody"></div>
+      </div>
+    </div>
+
+    <div id="editGroupModal" class="edit-modal">
+      <div class="edit-modal-content">
+        <div class="edit-modal-header">
+          <h2 id="editGroupModalTitle">Edit Grup</h2>
+          <button class="edit-modal-close" onclick="closeEditGroupModal()">
+            &times;
+          </button>
+        </div>
+        <div id="editGroupModalBody"></div>
       </div>
     </div>
 
