@@ -1,5 +1,5 @@
 .content-area {
-  flex: 1;
+  flex: 5;
   min-width: 0;
   overflow-x: auto;
 }

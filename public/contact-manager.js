@@ -791,6 +791,9 @@ export function initBulkDeleteListeners() {
       
       console.log(`❌ Deselected ${deselectedCount} visible contacts`);
       updateBulkDeleteButton();
+
+      this.classList.add("active");
+      setTimeout(() => this.classList.remove("active"), 300);
     });
     console.log("✅ Deselect All button listener attached");
   }
@@ -1298,6 +1301,8 @@ const selectAllContactsBtn = document.getElementById("selectAllContactsBtn");
         selectedNumbers.delete(contact.number)
       );
       renderContactList();
+      this.classList.add("active");
+      setTimeout(() => this.classList.remove("active"), 300);
     });
   }
 
@@ -1334,6 +1339,8 @@ const selectAllContactsBtn = document.getElementById("selectAllContactsBtn");
 
       filteredGroups.forEach((group) => selectedGroups.delete(group.id));
       renderGroupSelectionList(searchQuery);
+      this.classList.add("active");
+      setTimeout(() => this.classList.remove("active"), 300)
     });
   }
   
@@ -1415,6 +1422,8 @@ export function initMeetingContactListeners() {
         selectedMeetingNumbers.delete(contact.number)
       );
       renderMeetingContactList();
+      this.classList.add("active");
+      setTimeout(() => this.classList.remove("active"), 300);
     });
   }
 

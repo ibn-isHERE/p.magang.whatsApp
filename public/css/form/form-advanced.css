@@ -12,17 +12,17 @@
   top: 50%;
   transform: translateY(-50%);
   color: #a0aec0;
-  font-size: 14px;
+  font-size: 13px; /* Dikecilkan dari 14px */
   pointer-events: none;
   z-index: 1;
 }
 
 .search-box-wrapper input[type="text"] {
   width: 100%;
-  padding: 12px 16px 12px 42px !important;
+  padding: 10px 14px 10px 40px !important; /* Dikecilkan padding */
   border: 2px solid #e2e8f0;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 13px; /* Dikecilkan dari 14px */
   transition: all 0.2s ease;
   background: #ffffff;
   margin-bottom: 0 !important;
@@ -48,19 +48,19 @@
 
 .quick-action-btn {
   flex: 1;
-  padding: 8px 12px;
+  padding: 7px 10px; /* Dikecilkan dari 8px 12px */
   background: white;
   border: 1px solid #cbd5e0;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11px; /* Dikecilkan dari 12px */
   font-weight: 600;
   color: #4a5568;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px; /* Dikecilkan dari 6px */
 }
 
 .quick-action-btn:hover {
@@ -69,6 +69,14 @@
   transform: translateY(-1px);
 }
 
+.quick-action-btn.select-all:hover {
+  background: #c5ffdd;
+  color: #48bb78;
+  border-color: #48bb78;
+  
+}
+
+
 .quick-action-btn.select-all.active {
   background: #48bb78;
   color: white;
@@ -76,13 +84,20 @@
 }
 
 .quick-action-btn.deselect-all:hover {
-  background: #fed7d7;
-  border-color: #fc8181;
-  color: #c53030;
+  background: #ffdada;
+  color: #f56565;
+  border-color: #f56565;
+  
+}
+
+.quick-action-btn.deselect-all.active {
+  background: #f56565;
+  color: white;
+  border-color: #f56565;
 }
 
 .quick-action-btn i {
-  font-size: 13px;
+  font-size: 12px; /* Dikecilkan dari 13px */
 }
 
 /* ========================================
@@ -95,7 +110,7 @@
 .file-upload-container {
   margin-top: 8px;
   border: 2px dashed #cbd5e0;
-  padding: 16px;
+  padding: 14px; /* Dikecilkan dari 16px */
   border-radius: 8px;
   text-align: center;
   cursor: pointer;
@@ -114,15 +129,15 @@
 
 .file-upload-label {
   display: block;
-  padding: 8px 0;
+  padding: 7px 0; /* Dikecilkan dari 8px 0 */
   cursor: pointer;
   color: #2b6cb0;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px; /* Dikecilkan dari 14px */
 }
 
 .file-name {
-  font-size: 13px;
+  font-size: 12px; /* Dikecilkan dari 13px */
   color: #718096;
   margin-top: 8px;
   word-break: break-all;
@@ -140,8 +155,8 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 56px 10px 12px;
+  gap: 9px; /* Dikecilkan dari 10px */
+  padding: 9px 54px 9px 11px; /* Dikecilkan */
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
@@ -158,13 +173,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: 12px; /* Dikecilkan dari 13px */
   color: #2d3748;
 }
 
 .file-chip .file-size-text {
   color: #718096;
-  font-size: 12px;
+  font-size: 11px; /* Dikecilkan dari 12px */
 }
 
 .file-chip button,
@@ -175,15 +190,15 @@
   right: 8px;
   transform: translateY(-50%);
   z-index: 3;
-  width: 24px;
-  height: 24px;
+  width: 22px; /* Dikecilkan dari 24px */
+  height: 22px; /* Dikecilkan dari 24px */
   border-radius: 6px;
   background: #fc8181;
   color: #fff;
   border: none;
   cursor: pointer;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 14px; /* Dikecilkan dari 16px */
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -226,18 +241,18 @@
 
 .member-search-wrapper > i {
   color: #a0aec0;
-  font-size: 16px;
+  font-size: 14px; /* Dikecilkan dari 16px */
   margin-left: 12px;
   flex-shrink: 0;
 }
 
 .search-category-dropdown {
   flex-shrink: 0;
-  padding: 8px 12px;
+  padding: 7px 11px; /* Dikecilkan dari 8px 12px */
   border: none;
   background: #edf2f7;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 12px; /* Dikecilkan dari 13px */
   font-weight: 600;
   color: #2d3748;
   cursor: pointer;
@@ -256,8 +271,8 @@
 .member-search-wrapper input[type="text"] {
   flex: 1;
   border: none;
-  padding: 10px 12px;
-  font-size: 14px;
+  padding: 9px 11px; /* Dikecilkan dari 10px 12px */
+  font-size: 13px; /* Dikecilkan dari 14px */
   outline: none;
   background: transparent;
   color: #2d3748;
@@ -270,8 +285,8 @@
 
 .clear-search-btn {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: 30px; /* Dikecilkan dari 32px */
+  height: 30px; /* Dikecilkan dari 32px */
   border: none;
   background: #fc8181;
   color: white;
@@ -290,13 +305,13 @@
 }
 
 .clear-search-btn i {
-  font-size: 14px;
+  font-size: 13px; /* Dikecilkan dari 14px */
 }
 
 .search-info-text {
   margin-top: 10px;
-  padding: 8px 12px;
-  font-size: 13px;
+  padding: 7px 11px; /* Dikecilkan dari 8px 12px */
+  font-size: 12px; /* Dikecilkan dari 13px */
   font-weight: 600;
   border-radius: 6px;
   display: flex;
@@ -312,12 +327,12 @@
 }
 
 .search-info-text i {
-  font-size: 14px;
+  font-size: 13px; /* Dikecilkan dari 14px */
 }
 
 .no-search-results {
   text-align: center;
-  padding: 40px 20px;
+  padding: 35px 18px; /* Dikecilkan dari 40px 20px */
   color: #a0aec0;
   background: #f7fafc;
   border-radius: 8px;
@@ -326,14 +341,14 @@
 }
 
 .no-search-results i {
-  font-size: 48px;
+  font-size: 42px; /* Dikecilkan dari 48px */
   color: #cbd5e0;
-  margin-bottom: 12px;
+  margin-bottom: 11px; /* Dikecilkan dari 12px */
   display: block;
 }
 
 .no-search-results p {
-  font-size: 15px;
+  font-size: 14px; /* Dikecilkan dari 15px */
   color: #718096;
   margin: 0;
   font-weight: 500;
@@ -346,7 +361,7 @@
   background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
   border: 2px solid #e2e8f0;
   border-radius: 10px;
-  padding: 20px;
+  padding: 18px; /* Dikecilkan dari 20px */
   margin-bottom: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
@@ -355,38 +370,38 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
+  margin-bottom: 18px; /* Dikecilkan dari 20px */
+  padding-bottom: 14px; /* Dikecilkan dari 16px */
   border-bottom: 2px solid #cbd5e0;
 }
 
 .filter-header h4 {
   margin: 0;
-  font-size: 17px;
+  font-size: 15px; /* Dikecilkan dari 17px */
   font-weight: 700;
   color: #2d3748;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px; /* Dikecilkan dari 10px */
 }
 
 .filter-header h4 i {
   color: #2b6cb0;
-  font-size: 18px;
+  font-size: 16px; /* Dikecilkan dari 18px */
 }
 
 .clear-all-filters-btn {
   background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
   color: white;
   border: none;
-  padding: 10px 18px;
+  padding: 9px 16px; /* Dikecilkan dari 10px 18px */
   border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px; /* Dikecilkan dari 13px */
   font-weight: 600;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px; /* Dikecilkan dari 8px */
   transition: all 0.3s ease;
   box-shadow: 0 2px 6px rgba(252, 129, 129, 0.3);
 }
@@ -404,37 +419,37 @@
 .filter-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 14px; /* Dikecilkan dari 16px */
+  margin-bottom: 14px; /* Dikecilkan dari 16px */
 }
 
 .filter-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px; /* Dikecilkan dari 8px */
 }
 
 .filter-item label {
-  font-size: 13px;
+  font-size: 12px; /* Dikecilkan dari 13px */
   font-weight: 700;
   color: #2d3748;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px; /* Dikecilkan dari 8px */
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .filter-item label i {
   color: #4299e1;
-  font-size: 14px;
+  font-size: 13px; /* Dikecilkan dari 14px */
 }
 
 .filter-input {
-  padding: 12px 14px;
+  padding: 10px 12px; /* Dikecilkan dari 12px 14px */
   border: 2px solid #cbd5e0;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 13px; /* Dikecilkan dari 14px */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: white;
   color: #2d3748;
@@ -469,19 +484,19 @@
 }
 
 .filter-result-info {
-  padding: 14px 18px;
+  padding: 12px 16px; /* Dikecilkan dari 14px 18px */
   background: white;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 13px; /* Dikecilkan dari 14px */
   font-weight: 600;
   text-align: center;
-  min-height: 24px;
+  min-height: 22px; /* Dikecilkan dari 24px */
   transition: all 0.3s ease;
   border: 2px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 7px; /* Dikecilkan dari 8px */
 }
 
 .filter-result-info:empty {
@@ -489,7 +504,7 @@
 }
 
 .filter-result-info i {
-  font-size: 16px;
+  font-size: 14px; /* Dikecilkan dari 16px */
 }
 
 /* ========================================
@@ -513,8 +528,8 @@
 .bulk-actions-bar .quick-action-btn {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: all 0.2s ease;
-  padding: 8px 12px;
-  font-size: 13px;
+  padding: 7px 11px; /* Dikecilkan dari 8px 12px */
+  font-size: 12px; /* Dikecilkan dari 13px */
 }
 
 .bulk-actions-bar .quick-action-btn.select-all {
@@ -551,11 +566,17 @@
   box-shadow: 0 2px 6px rgba(252, 129, 129, 0.25);
 }
 
+.bulk-actions-bar .quick-action-btn.deselect-all.active {
+  background: #fc8181;
+  color: white;
+  border-color: #fc8181;
+}
+
 .contact-delete-checkbox {
   appearance: none;
   -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 17px; /* Dikecilkan dari 18px */
+  height: 17px; /* Dikecilkan dari 18px */
   border: 2px solid #cbd5e0;
   border-radius: 3px;
   cursor: pointer;
@@ -575,7 +596,7 @@
 }
 
 .contact-delete-checkbox:checked::after {
-  content: "✔";
+  content: "✓";
   color: white;
   position: absolute;
   top: -1px;
@@ -585,7 +606,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px; /* Dikecilkan dari 12px */
   font-weight: bold;
 }
 
@@ -605,8 +626,8 @@
 #bulkDeleteContactBtn {
   animation: slideInRight 0.3s ease;
   transition: all 0.2s ease;
-  padding: 8px 14px;
-  font-size: 13px;
+  padding: 7px 13px; /* Dikecilkan dari 8px 14px */
+  font-size: 12px; /* Dikecilkan dari 13px */
 }
 
 @keyframes slideInRight {
@@ -626,7 +647,7 @@
 }
 
 #bulkDeleteContactBtn i {
-  font-size: 12px;
+  font-size: 11px; /* Dikecilkan dari 12px */
 }
 
 @media (max-width: 768px) {
@@ -642,7 +663,7 @@
   }
   
   .filter-header h4 {
-    font-size: 16px;
+    font-size: 14px; /* Dikecilkan dari 16px */
   }
   
   .clear-all-filters-btn {
@@ -651,7 +672,7 @@
   }
   
   .member-filter-container {
-    padding: 16px;
+    padding: 14px; /* Dikecilkan dari 16px */
   }
 
   .bulk-actions-bar {
@@ -667,35 +688,35 @@
   
   .bulk-actions-bar .quick-action-btn {
     flex: 1;
-    font-size: 12px;
-    padding: 7px 10px;
+    font-size: 11px; /* Dikecilkan dari 12px */
+    padding: 6px 9px; /* Dikecilkan dari 7px 10px */
   }
   
   #bulkDeleteContactBtn {
     margin-left: 0 !important;
     width: 100%;
-    font-size: 12px;
-    padding: 7px 12px;
+    font-size: 11px; /* Dikecilkan dari 12px */
+    padding: 6px 11px; /* Dikecilkan dari 7px 12px */
   }
 }
 
 @media (max-width: 480px) {
   .filter-item label {
-    font-size: 12px;
+    font-size: 11px; /* Dikecilkan dari 12px */
   }
   
   .filter-input {
-    padding: 10px 12px;
-    font-size: 13px;
+    padding: 9px 11px; /* Dikecilkan dari 10px 12px */
+    font-size: 12px; /* Dikecilkan dari 13px */
   }
   
   .filter-result-info {
-    padding: 12px 14px;
-    font-size: 13px;
+    padding: 11px 13px; /* Dikecilkan dari 12px 14px */
+    font-size: 12px; /* Dikecilkan dari 13px */
   }
 
   .member-search-container {
-    padding: 12px;
+    padding: 11px; /* Dikecilkan dari 12px */
   }
 
   .member-search-wrapper {
@@ -703,30 +724,30 @@
   }
 
   .search-category-dropdown {
-    font-size: 12px;
-    padding: 6px 10px;
+    font-size: 11px; /* Dikecilkan dari 12px */
+    padding: 5px 9px; /* Dikecilkan dari 6px 10px */
   }
 
   .member-search-wrapper input[type="text"] {
-    font-size: 13px;
-    padding: 8px 10px;
+    font-size: 12px; /* Dikecilkan dari 13px */
+    padding: 7px 9px; /* Dikecilkan dari 8px 10px */
   }
 
   .bulk-actions-bar .quick-action-btn {
-    font-size: 11px;
-    padding: 6px 8px;
+    font-size: 10px; /* Dikecilkan dari 11px */
+    padding: 5px 7px; /* Dikecilkan dari 6px 8px */
   }
   
   .bulk-actions-bar .quick-action-btn i {
-    font-size: 11px;
+    font-size: 10px; /* Dikecilkan dari 11px */
   }
   
   #bulkDeleteContactBtn {
-    font-size: 11px;
-    padding: 6px 10px;
+    font-size: 10px; /* Dikecilkan dari 11px */
+    padding: 5px 9px; /* Dikecilkan dari 6px 10px */
   }
   
   #bulkDeleteContactBtn i {
-    font-size: 11px;
+    font-size: 10px; /* Dikecilkan dari 11px */
   }
 }

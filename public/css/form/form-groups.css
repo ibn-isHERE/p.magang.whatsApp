@@ -276,6 +276,8 @@
   background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
   color: white;
   gap: 5px;
+  border: none;
+  border-radius: 5px;
 }
 
 .btn-remove-members:hover:not(:disabled) {

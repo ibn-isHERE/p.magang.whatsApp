@@ -6,6 +6,7 @@
   flex-shrink: 0;
   flex-basis: 450px;
   flex-grow: 0;
+  flex: 2;
   height: auto;
   position: sticky;
   top: 70px;
@@ -20,7 +21,7 @@
   margin-bottom: 24px;
   font-weight: 700;
   color: #003366;
-  font-size: 2rem;
+  font-size: 1.5rem; /* Dikecilkan dari 2rem */
   padding-bottom: 16px;
   border-bottom: 3px solid #e9ecef;
 }
@@ -34,7 +35,7 @@ form label {
   margin-bottom: 8px;
   font-weight: 600;
   color: #2d3748;
-  font-size: 14px;
+  font-size: 13px; /* Dikecilkan dari 14px */
   user-select: none;
 }
 
@@ -45,10 +46,10 @@ form textarea,
 form select,
 .phone-num-input {
   width: 100%;
-  padding: 12px 14px;
+  padding: 10px 12px; /* Dikecilkan dari 12px 14px */
   border: 2px solid #e2e8f0;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 13px; /* Dikecilkan dari 14px */
   transition: all 0.2s ease;
   box-sizing: border-box;
   resize: vertical;
@@ -71,6 +72,11 @@ textarea {
   min-height: 90px;
 }
 
+/* Small text under inputs */
+form small {
+  font-size: 11px; /* Dikecilkan dari 12px */
+}
+
 /* ========================================
    FORM BUTTONS
    ======================================== */
@@ -80,8 +86,8 @@ form button {
   border: none;
   margin-top: 24px;
   cursor: pointer;
-  font-size: 15px;
-  padding: 14px 20px;
+  font-size: 13px; /* Dikecilkan dari 15px */
+  padding: 12px 18px; /* Dikecilkan dari 14px 20px */
   border-radius: 8px;
   font-weight: 600;
   width: 100%;
@@ -103,8 +109,8 @@ form button:active {
 #clearAllMeetingFilesBtn {
   background-color: #fc8181;
   margin-top: 12px;
-  padding: 10px 16px;
-  font-size: 13px;
+  padding: 9px 14px; /* Dikecilkan dari 10px 16px */
+  font-size: 12px; /* Dikecilkan dari 13px */
 }
 
 #clearAllFilesBtn:hover,
@@ -115,11 +121,11 @@ form button:active {
 .btn-primary {
   background: linear-gradient(135deg, #2b6cb0 0%, #2c5282 100%);
   color: white;
-  padding: 12px 20px;
+  padding: 10px 18px; /* Dikecilkan dari 12px 20px */
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px; /* Dikecilkan dari 14px */
   font-weight: 600;
   transition: all 0.2s ease;
   display: flex;
@@ -137,11 +143,11 @@ form button:active {
 .btn-secondary {
   background: #f7fafc;
   color: #2d3748;
-  padding: 12px 20px;
+  padding: 10px 18px; /* Dikecilkan dari 12px 20px */
   border: 2px solid #cbd5e0;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px; /* Dikecilkan dari 14px */
   font-weight: 600;
   transition: all 0.2s ease;
   display: flex;
@@ -192,10 +198,10 @@ form button:active {
   align-items: center;
   margin-bottom: 4px;
   cursor: pointer;
-  font-size: 13.5px;
+  font-size: 12.5px; /* Dikecilkan dari 13.5px */
   color: #2d3748;
   transition: all 0.15s ease;
-  padding: 10px 12px;
+  padding: 9px 11px; /* Dikecilkan dari 10px 12px */
   border-radius: 6px;
   user-select: none;
   background: white;
@@ -215,11 +221,11 @@ form button:active {
 .contact-checklist-box input[type="checkbox"] {
   appearance: none;
   -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 17px; /* Dikecilkan dari 18px */
+  height: 17px; /* Dikecilkan dari 18px */
   border: 2px solid #cbd5e0;
   border-radius: 4px;
-  margin-right: 12px;
+  margin-right: 11px; /* Dikecilkan dari 12px */
   position: relative;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -234,16 +240,16 @@ form button:active {
 }
 
 .contact-checklist-box input[type="checkbox"]:checked::after {
-  content: "✔";
+  content: "✓";
   color: white;
   position: absolute;
   top: -1px;
   left: 0;
-  font-size: 12px;
+  font-size: 11px; /* Dikecilkan dari 12px */
   font-weight: bold;
   text-align: center;
   width: 100%;
-  line-height: 18px;
+  line-height: 17px; /* Disesuaikan dengan height baru */
 }
 
 /* ========================================
@@ -263,7 +269,7 @@ form button:active {
 #import-form h3,
 #group-crud-form h3 {
   margin-top: 0;
-  font-size: 1.4rem;
+  font-size: 1.2rem; /* Dikecilkan dari 1.4rem */
   color: #2c5282;
   border-bottom: 3px solid #2b6cb0;
   padding-bottom: 10px;
