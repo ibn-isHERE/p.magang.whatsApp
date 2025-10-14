@@ -1,0 +1,282 @@
+.form-container {
+  background: white;
+  padding: 28px 32px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+  flex-basis: 450px;
+  flex-grow: 0;
+  height: auto;
+  position: sticky;
+  top: 70px;
+  max-height: calc(100vh - 84px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  border: 1px solid #e8eef3;
+}
+
+.form-container h2 {
+  text-align: center;
+  margin-bottom: 24px;
+  font-weight: 700;
+  color: #003366;
+  font-size: 2rem;
+  padding-bottom: 16px;
+  border-bottom: 3px solid #e9ecef;
+}
+
+/* ========================================
+   FORM LABELS & INPUTS
+   ======================================== */
+form label {
+  display: block;
+  margin-top: 18px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 14px;
+  user-select: none;
+}
+
+form input[type="text"],
+form input[type="tel"],
+form input[type="datetime-local"],
+form textarea,
+form select,
+.phone-num-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 28px;
+  background-color: white;
+  margin-bottom: 4px;
+}
+
+form input[type="text"]:focus,
+form input[type="tel"]:focus,
+form input[type="datetime-local"]:focus,
+form textarea:focus,
+form select:focus {
+  border-color: #4299e1;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+textarea {
+  min-height: 90px;
+}
+
+/* ========================================
+   FORM BUTTONS
+   ======================================== */
+form button {
+  background-color: #2b6cb0;
+  color: white;
+  border: none;
+  margin-top: 24px;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  width: 100%;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(43, 108, 176, 0.2);
+}
+
+form button:hover {
+  background-color: #2c5282;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(43, 108, 176, 0.3);
+}
+
+form button:active {
+  transform: translateY(0);
+}
+
+#clearAllFilesBtn,
+#clearAllMeetingFilesBtn {
+  background-color: #fc8181;
+  margin-top: 12px;
+  padding: 10px 16px;
+  font-size: 13px;
+}
+
+#clearAllFilesBtn:hover,
+#clearAllMeetingFilesBtn:hover {
+  background-color: #f56565;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #2b6cb0 0%, #2c5282 100%);
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(43, 108, 176, 0.3);
+}
+
+.btn-secondary {
+  background: #f7fafc;
+  color: #2d3748;
+  padding: 12px 20px;
+  border: 2px solid #cbd5e0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-secondary:hover {
+  background: #edf2f7;
+  border-color: #a0aec0;
+}
+
+/* ========================================
+   CONTACT/GROUP LIST - Improved
+   ======================================== */
+.contact-checklist-box {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px;
+  margin-top: 0;
+  background-color: #ffffff;
+  box-sizing: border-box;
+}
+
+.contact-checklist-box::-webkit-scrollbar {
+  width: 6px;
+}
+
+.contact-checklist-box::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.contact-checklist-box::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 10px;
+}
+
+.contact-checklist-box::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+.contact-checklist-box label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: #2d3748;
+  transition: all 0.15s ease;
+  padding: 10px 12px;
+  border-radius: 6px;
+  user-select: none;
+  background: white;
+  border: 1px solid transparent;
+}
+
+.contact-checklist-box label:last-child {
+  margin-bottom: 0;
+}
+
+.contact-checklist-box label:hover {
+  background-color: #f7fafc;
+  border-color: #e2e8f0;
+  transform: translateX(2px);
+}
+
+.contact-checklist-box input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #cbd5e0;
+  border-radius: 4px;
+  margin-right: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  background-color: white;
+}
+
+.contact-checklist-box input[type="checkbox"]:checked {
+  background-color: #2b6cb0;
+  border-color: #2b6cb0;
+  transform: scale(1.05);
+}
+
+.contact-checklist-box input[type="checkbox"]:checked::after {
+  content: "✔";
+  color: white;
+  position: absolute;
+  top: -1px;
+  left: 0;
+  font-size: 12px;
+  font-weight: bold;
+  text-align: center;
+  width: 100%;
+  line-height: 18px;
+}
+
+/* ========================================
+   CRUD FORMS
+   ======================================== */
+#contact-crud-form,
+#import-form,
+#group-crud-form {
+  background-color: #f7fafc;
+  border: 2px solid #e2e8f0;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+#contact-crud-form h3,
+#import-form h3,
+#group-crud-form h3 {
+  margin-top: 0;
+  font-size: 1.4rem;
+  color: #2c5282;
+  border-bottom: 3px solid #2b6cb0;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+form label[style*="margin-top: 20px"] {
+  border-top: 2px dashed #dee2e6;
+  padding-top: 18px;
+  margin-top: 24px !important;
+}
+
+form label i.fa-users {
+  color: #2b6cb0;
+  margin-right: 6px;
+}

@@ -1,6 +1,9 @@
 @import url('base.css');
 @import url('navbar.css');
-@import url('forms.css');
+@import url('form/form-base.css');
+@import url('form/form-tabs.css');
+@import url('form/form-groups.css');
+@import url('form/form-advanced.css');
 @import url('tables.css');
 @import url('modals.css');
 @import url('utilities.css');

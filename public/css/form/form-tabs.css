@@ -1,0 +1,119 @@
+/* ========================================
+   MAIN TABS
+   ======================================== */
+.tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 17.5px;
+  border-bottom: 2px solid #e9ecef;
+  min-height: 42px;
+  box-sizing: border-box;
+}
+
+#main-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tab-button {
+  background-color: transparent;
+  border: none;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: .95rem;
+  font-weight: 600;
+  color: #6c757d;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+  position: relative;
+  bottom: -2px;
+}
+
+.tab-button:hover {
+  color: #495057;
+  background: #f8fafc;
+}
+
+.tab-button.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  background: #f0f8ff;
+}
+
+.form-content {
+  display: none;
+}
+
+.form-content.active {
+  display: block;
+}
+
+/* ========================================
+   RECIPIENT SELECTION TABS
+   ======================================== */
+.recipient-tabs-container {
+  margin-top: 24px;
+  margin-bottom: 20px;
+}
+
+.recipient-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.recipient-tab {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  color: #718096;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  position: relative;
+  bottom: -2px;
+  border-radius: 6px 6px 0 0;
+}
+
+.recipient-tab:hover {
+  color: #2d3748;
+  background: #f8fafc;
+}
+
+.recipient-tab.active {
+  color: #2b6cb0;
+  background: #ebf8ff;
+  border-bottom-color: #2b6cb0;
+}
+
+.recipient-tab i {
+  margin-right: 6px;
+  font-size: 14px;
+}
+
+/* Tab Content Panels */
+.recipient-panel {
+  display: none;
+  padding: 20px 0 10px 0;
+  animation: fadeInPanel 0.3s ease;
+}
+
+.recipient-panel.active {
+  display: block;
+}
+
+@keyframes fadeInPanel {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
