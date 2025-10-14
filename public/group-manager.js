@@ -100,7 +100,6 @@ export async function showGroupDetail(id) {
     console.error("Error parsing group members:", e);
   }
 
-  // Gunakan container yang sama dengan form (groupMainContainer)
   const groupMainContainer = document.getElementById("groupMainContainer");
   if (!groupMainContainer) return;
 
@@ -108,49 +107,114 @@ export async function showGroupDetail(id) {
   let membersTableHTML = '';
   
   if (membersArray.length === 0) {
-    membersTableHTML = `
-      <div class="no-members">
-        <i class="fa-solid fa-users-slash"></i>
-        <p>Belum ada anggota dalam grup ini</p>
-      </div>
-    `;
-  } else {
-    const memberDetails = membersArray.map(number => {
-      const contact = contacts.find(c => c.number === number);
-      return contact || { number, name: 'Tidak dikenal', instansi: '-', jabatan: '-' };
-    });
+  membersTableHTML = `
+    <div class="no-members">
+      <i class="fa-solid fa-users-slash"></i>
+      <p>Belum ada anggota dalam grup ini</p>
+    </div>
+  `;
+} else {
+  const memberDetails = membersArray.map(number => {
+    const contact = contacts.find(c => c.number === number);
+    return contact || { number, name: 'Tidak dikenal', instansi: '-', jabatan: '-' };
+  });
 
-    membersTableHTML = `
-      <div class="members-table-wrapper">
-        <table class="members-table">
-          <thead>
-            <tr>
-              <th style="width: 40px;">
-                <input type="checkbox" id="selectAllMembersCheck" class="member-checkbox" />
-              </th>
-              <th>Nama</th>
-              <th>Nomor</th>
-              <th>Instansi</th>
-              <th>Jabatan</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${memberDetails.map(member => `
-              <tr>
-                <td>
-                  <input type="checkbox" class="member-remove-checkbox" value="${member.number}" />
-                </td>
-                <td><strong>${member.name}</strong></td>
-                <td>${member.number}</td>
-                <td>${member.instansi || '-'}</td>
-                <td>${member.jabatan || '-'}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
+  membersTableHTML = `
+    <!-- 🔍 Advanced Filter untuk Anggota -->
+    <div class="member-filter-container">
+      <div class="filter-header">
+        <h4><i class="fa-solid fa-filter"></i> Filter Anggota</h4>
+        <button id="clearAllFilters" class="clear-all-filters-btn" style="display: none;">
+          <i class="fa-solid fa-times"></i> Reset Semua Filter
+        </button>
       </div>
-    `;
-  }
+      
+      <div class="filter-grid">
+        <div class="filter-item">
+          <label><i class="fa-solid fa-user"></i> Nama</label>
+          <input 
+            type="text" 
+            id="filterName" 
+            placeholder="Cari nama..." 
+            class="filter-input"
+            autocomplete="off"
+          />
+        </div>
+        
+        <div class="filter-item">
+          <label><i class="fa-solid fa-phone"></i> Nomor</label>
+          <input 
+            type="text" 
+            id="filterNumber" 
+            placeholder="Cari nomor..." 
+            class="filter-input"
+            autocomplete="off"
+          />
+        </div>
+        
+        <div class="filter-item">
+          <label><i class="fa-solid fa-building"></i> Instansi</label>
+          <input 
+            type="text" 
+            id="filterInstansi" 
+            placeholder="Cari instansi..." 
+            class="filter-input"
+            autocomplete="off"
+          />
+        </div>
+        
+        <div class="filter-item">
+          <label><i class="fa-solid fa-briefcase"></i> Jabatan</label>
+          <input 
+            type="text" 
+            id="filterJabatan" 
+            placeholder="Cari jabatan..." 
+            class="filter-input"
+            autocomplete="off"
+          />
+        </div>
+      </div>
+      
+      <div id="filterResultInfo" class="filter-result-info"></div>
+    </div>
+
+    <div class="members-table-wrapper">
+      <table class="members-table">
+        <thead>
+          <tr>
+            <th style="width: 40px;">
+              <input type="checkbox" id="selectAllMembersCheck" class="member-checkbox" />
+            </th>
+            <th>Nama</th>
+            <th>Nomor</th>
+            <th>Instansi</th>
+            <th>Jabatan</th>
+          </tr>
+        </thead>
+        <tbody id="membersTableBody">
+          ${memberDetails.map(member => `
+            <tr data-name="${member.name.toLowerCase()}" 
+                data-number="${member.number}" 
+                data-instansi="${(member.instansi || '').toLowerCase()}" 
+                data-jabatan="${(member.jabatan || '').toLowerCase()}">
+              <td>
+                <input type="checkbox" class="member-remove-checkbox" value="${member.number}" />
+              </td>
+              <td><strong>${member.name}</strong></td>
+              <td>${member.number}</td>
+              <td>${member.instansi || '-'}</td>
+              <td>${member.jabatan || '-'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      <div id="noMemberResults" class="no-search-results" style="display: none;">
+        <i class="fa-solid fa-search"></i>
+        <p>Tidak ada anggota yang cocok dengan pencarian</p>
+      </div>
+    </div>
+  `;
+}
 
   // Ganti isi container dengan detail view
   groupMainContainer.innerHTML = `
@@ -158,8 +222,8 @@ export async function showGroupDetail(id) {
       <!-- Header dengan tombol kembali -->
       <div class="group-detail-header">
         <button id="backToGroupListBtn" class="back-button">
-  <i class="fa-solid fa-arrow-left"></i> Kembali
-</button>
+          <i class="fa-solid fa-arrow-left"></i> Kembali
+        </button>
         <h3><i class="fa-solid fa-users"></i> ${group.name}</h3>
         <span></span> <!-- Spacer untuk flex -->
       </div>
@@ -192,7 +256,7 @@ export async function showGroupDetail(id) {
   attachDetailModalListeners();
   const backBtn = document.getElementById("backToGroupListBtn");
   if (backBtn) {
-    backBtn.removeEventListener("click", backToGroupList); // Hapus listener lama jika ada
+    backBtn.removeEventListener("click", backToGroupList);
     backBtn.addEventListener("click", backToGroupList);
   }
 }
@@ -231,28 +295,29 @@ export function backToGroupList() {
  * Attach event listeners for detail modal
  */
 function attachDetailModalListeners() {
-   const backBtn = document.getElementById("backToGroupListBtn");
+  const backBtn = document.getElementById("backToGroupListBtn");
   if (backBtn) {
     backBtn.addEventListener("click", backToGroupList);
   }
-  // Add member button
+  
   const addBtn = document.getElementById("addMemberBtn");
   if (addBtn) {
     addBtn.addEventListener("click", showAddMembersModal);
   }
 
-  // Remove members button
   const removeBtn = document.getElementById("removeMembersBtn");
   if (removeBtn) {
     removeBtn.addEventListener("click", handleRemoveMembers);
   }
 
-  // Select all checkbox
+  // Select all checkbox - UPDATED untuk hanya pilih yang visible
   const selectAllCheck = document.getElementById("selectAllMembersCheck");
   if (selectAllCheck) {
     selectAllCheck.addEventListener("change", function() {
-      const checkboxes = document.querySelectorAll(".member-remove-checkbox");
-      checkboxes.forEach(cb => {
+      const visibleCheckboxes = Array.from(document.querySelectorAll(".member-remove-checkbox"))
+        .filter(cb => cb.closest('tr').style.display !== 'none');
+      
+      visibleCheckboxes.forEach(cb => {
         cb.checked = this.checked;
         if (this.checked) {
           selectedMembersToRemove.add(cb.value);
@@ -264,7 +329,6 @@ function attachDetailModalListeners() {
     });
   }
 
-  // Individual member checkboxes
   const memberCheckboxes = document.querySelectorAll(".member-remove-checkbox");
   memberCheckboxes.forEach(cb => {
     cb.addEventListener("change", function() {
@@ -276,8 +340,173 @@ function attachDetailModalListeners() {
       updateRemoveButton();
     });
   });
-}
 
+  // 🔍 Initialize Member Search
+  initMemberSearch();
+}
+function initMemberSearch() {
+  const filterName = document.getElementById("filterName");
+  const filterNumber = document.getElementById("filterNumber");
+  const filterInstansi = document.getElementById("filterInstansi");
+  const filterJabatan = document.getElementById("filterJabatan");
+  const clearAllBtn = document.getElementById("clearAllFilters");
+  const filterInfo = document.getElementById("filterResultInfo");
+  const tbody = document.getElementById("membersTableBody");
+  const noResults = document.getElementById("noMemberResults");
+  const selectAllCheck = document.getElementById("selectAllMembersCheck");
+
+  if (!tbody) {
+    console.error("Table body not found!");
+    return;
+  }
+
+  console.log("✅ Filter initialized successfully!");
+
+  function performFilter() {
+    const nameQuery = filterName ? filterName.value.toLowerCase().trim() : "";
+    const numberQuery = filterNumber ? filterNumber.value.toLowerCase().trim() : "";
+    const instansiQuery = filterInstansi ? filterInstansi.value.toLowerCase().trim() : "";
+    const jabatanQuery = filterJabatan ? filterJabatan.value.toLowerCase().trim() : "";
+    
+    const rows = tbody.querySelectorAll("tr");
+    let visibleCount = 0;
+    const totalCount = rows.length;
+
+    // Check if any filter is active
+    const hasActiveFilter = nameQuery || numberQuery || instansiQuery || jabatanQuery;
+
+    console.log("🔍 Filtering with:", { nameQuery, numberQuery, instansiQuery, jabatanQuery });
+
+    // Show/hide clear all button
+    if (clearAllBtn) {
+      clearAllBtn.style.display = hasActiveFilter ? "inline-flex" : "none";
+    }
+
+    if (!hasActiveFilter) {
+      // No filters - show all
+      rows.forEach(row => {
+        row.style.display = "";
+        visibleCount++;
+      });
+      
+      if (filterInfo) filterInfo.innerHTML = "";
+      if (noResults) noResults.style.display = "none";
+    } else {
+      // Apply ALL filters with AND logic
+      rows.forEach(row => {
+        const name = (row.dataset.name || "").toLowerCase();
+        const number = (row.dataset.number || "").toLowerCase();
+        const instansi = (row.dataset.instansi || "").toLowerCase();
+        const jabatan = (row.dataset.jabatan || "").toLowerCase();
+        
+        // Check if row matches ALL active filters
+        const matchName = !nameQuery || name.includes(nameQuery);
+        const matchNumber = !numberQuery || number.includes(numberQuery);
+        const matchInstansi = !instansiQuery || instansi.includes(instansiQuery);
+        const matchJabatan = !jabatanQuery || jabatan.includes(jabatanQuery);
+        
+        const matchAll = matchName && matchNumber && matchInstansi && matchJabatan;
+        
+        if (matchAll) {
+          row.style.display = "";
+          visibleCount++;
+        } else {
+          row.style.display = "none";
+        }
+      });
+      
+      // Update filter info
+      if (filterInfo) {
+        const activeFilters = [];
+        if (nameQuery) activeFilters.push(`Nama: "${nameQuery}"`);
+        if (numberQuery) activeFilters.push(`Nomor: "${numberQuery}"`);
+        if (instansiQuery) activeFilters.push(`Instansi: "${instansiQuery}"`);
+        if (jabatanQuery) activeFilters.push(`Jabatan: "${jabatanQuery}"`);
+        
+        if (visibleCount === 0) {
+          filterInfo.innerHTML = `
+            <i class="fa-solid fa-circle-exclamation"></i> 
+            Tidak ada hasil untuk filter: ${activeFilters.join(", ")}
+          `;
+          filterInfo.style.color = "#f56565";
+        } else if (visibleCount === totalCount) {
+          filterInfo.innerHTML = `
+            <i class="fa-solid fa-check-circle"></i> 
+            Menampilkan semua ${totalCount} anggota
+          `;
+          filterInfo.style.color = "#48bb78";
+        } else {
+          filterInfo.innerHTML = `
+            <i class="fa-solid fa-filter"></i> 
+            <strong>${visibleCount}</strong> dari ${totalCount} anggota 
+            <span style="color: #718096;">(${activeFilters.length} filter aktif)</span>
+          `;
+          filterInfo.style.color = "#4299e1";
+        }
+      }
+      
+      if (noResults) {
+        noResults.style.display = visibleCount === 0 ? "block" : "none";
+      }
+    }
+
+    // Reset select all checkbox when filtering
+    if (selectAllCheck) {
+      selectAllCheck.checked = false;
+    }
+
+    // Add visual feedback to active filters
+    updateFilterInputStyles();
+  }
+
+  function updateFilterInputStyles() {
+    const inputs = [filterName, filterNumber, filterInstansi, filterJabatan];
+    inputs.forEach(input => {
+      if (!input) return;
+      if (input.value.trim()) {
+        input.style.borderColor = "#4299e1";
+        input.style.background = "#ebf8ff";
+      } else {
+        input.style.borderColor = "#cbd5e0";
+        input.style.background = "white";
+      }
+    });
+  }
+
+  function clearAllFilters() {
+    if (filterName) filterName.value = "";
+    if (filterNumber) filterNumber.value = "";
+    if (filterInstansi) filterInstansi.value = "";
+    if (filterJabatan) filterJabatan.value = "";
+    performFilter();
+  }
+
+  // Attach event listeners
+  if (filterName) {
+    filterName.addEventListener("input", performFilter);
+    console.log("✅ filterName listener attached");
+  }
+  if (filterNumber) {
+    filterNumber.addEventListener("input", performFilter);
+    console.log("✅ filterNumber listener attached");
+  }
+  if (filterInstansi) {
+    filterInstansi.addEventListener("input", performFilter);
+    console.log("✅ filterInstansi listener attached");
+  }
+  if (filterJabatan) {
+    filterJabatan.addEventListener("input", performFilter);
+    console.log("✅ filterJabatan listener attached");
+  }
+  
+  if (clearAllBtn) {
+    clearAllBtn.addEventListener("click", clearAllFilters);
+    console.log("✅ clearAllBtn listener attached");
+  }
+
+  // Initial render
+  performFilter();
+}
 /**
  * Update remove button state
  */
