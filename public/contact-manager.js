@@ -481,12 +481,9 @@ export function getNumbersFromSelectedGroups(isForMeeting = false) {
   return Array.from(numbers);
 }
 
-/**
- * Renders contacts in the management table
- */
-/**
- * Renders contacts in the management table
- */
+let selectedContactsToDelete = new Set();
+
+
 function renderContactManagementTable() {
   const tbody = document.getElementById("contact-management-tbody");
   if (!tbody) return;
@@ -495,10 +492,9 @@ function renderContactManagementTable() {
 
   if (contacts.length === 0) {
     tbody.innerHTML =
-      '<tr><td colspan="6" style="text-align: center;">Belum ada kontak</td></tr>';
+      '<tr><td colspan="7" style="text-align: center;">Belum ada kontak</td></tr>';
     
-    // ✅ TAMBAH BARIS INI
-    initContactManagementFilter();
+    updateBulkDeleteButton();
     return;
   }
 
@@ -517,7 +513,13 @@ function renderContactManagementTable() {
       groupDisplay = contact.grup || "-";
     }
 
+    // ✅ Tambah checkbox untuk select
+    const isChecked = selectedContactsToDelete.has(contact.id) ? "checked" : "";
+    
     row.innerHTML = `
+      <td style="text-align: center; width: 40px;">
+        <input type="checkbox" class="contact-delete-checkbox" value="${contact.id}" ${isChecked} />
+      </td>
       <td>${contact.name}</td>
       <td>${contact.number}</td>
       <td>${contact.instansi}</td>
@@ -535,8 +537,202 @@ function renderContactManagementTable() {
     tbody.appendChild(row);
   });
 
-  // ✅ TAMBAH BARIS INI DI AKHIR FUNGSI
-  initContactManagementFilter();
+  // ✅ PENTING: Attach checkbox listeners SEBELUM init filter
+  attachDeleteCheckboxListeners();
+  updateBulkDeleteButton();
+  
+  // ✅ Init filter SETELAH semua row di-render dengan delay
+  setTimeout(() => {
+    initContactManagementFilter();
+  }, 100);
+}
+
+function attachDeleteCheckboxListeners() {
+  const checkboxes = document.querySelectorAll(".contact-delete-checkbox");
+  checkboxes.forEach(cb => {
+    cb.addEventListener("change", function() {
+      const contactId = parseInt(this.value);
+      if (this.checked) {
+        selectedContactsToDelete.add(contactId);
+      } else {
+        selectedContactsToDelete.delete(contactId);
+      }
+      updateBulkDeleteButton();
+      updateSelectAllCheckbox();
+    });
+  });
+}
+
+function updateBulkDeleteButton() {
+  const bulkDeleteBtn = document.getElementById("bulkDeleteContactBtn");
+  const countSpan = document.getElementById("bulkDeleteCount");
+  
+  if (bulkDeleteBtn && countSpan) {
+    const count = selectedContactsToDelete.size;
+    countSpan.textContent = count;
+    bulkDeleteBtn.disabled = count === 0;
+    
+    if (count > 0) {
+      bulkDeleteBtn.style.display = "inline-flex";
+    } else {
+      bulkDeleteBtn.style.display = "none";
+    }
+  }
+}
+
+function updateSelectAllCheckbox() {
+  const selectAllCheck = document.getElementById("selectAllContactsDelete");
+  if (!selectAllCheck) return;
+  
+  const allCheckboxes = document.querySelectorAll(".contact-delete-checkbox");
+  const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
+  selectAllCheck.checked = allChecked && allCheckboxes.length > 0;
+}
+
+/**
+ * Handle bulk delete contacts
+ */
+export async function handleBulkDeleteContacts() {
+  if (selectedContactsToDelete.size === 0) {
+    Swal.fire("Peringatan", "Pilih minimal satu kontak untuk dihapus", "warning");
+    return;
+  }
+
+  const contactNames = Array.from(selectedContactsToDelete)
+    .map(id => {
+      const contact = contacts.find(c => c.id === id);
+      return contact ? contact.name : "";
+    })
+    .filter(name => name)
+    .slice(0, 5); // Tampilkan max 5 nama
+
+  const displayNames = contactNames.join(", ") + (selectedContactsToDelete.size > 5 ? ", ..." : "");
+
+  const result = await Swal.fire({
+    title: `Hapus ${selectedContactsToDelete.size} Kontak?`,
+    html: `
+      <div style="text-align: left; padding: 10px;">
+        <p><strong>Kontak yang akan dihapus:</strong></p>
+        <p style="color: #718096;">${displayNames}</p>
+        <p style="color: #f56565; margin-top: 16px;">
+          <i class="fa-solid fa-warning"></i> 
+          Tindakan ini tidak dapat dibatalkan!
+        </p>
+      </div>
+    `,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#f56565",
+    cancelButtonColor: "#718096",
+    confirmButtonText: `<i class="fa-solid fa-trash"></i> Ya, Hapus ${selectedContactsToDelete.size} Kontak`,
+    cancelButtonText: "Batal",
+  });
+
+  if (!result.isConfirmed) return;
+
+  // Show loading
+  Swal.fire({
+    title: '<i class="fa-solid fa-spinner fa-spin"></i> Menghapus...',
+    html: '<p style="color: #718096;">Mohon tunggu, sedang menghapus kontak...</p>',
+    allowOutsideClick: false,
+    showConfirmButton: false,
+    didOpen: () => Swal.showLoading(),
+  });
+
+  try {
+    let successCount = 0;
+    let failCount = 0;
+    const errors = [];
+
+    // Hapus satu per satu
+    for (const contactId of selectedContactsToDelete) {
+      try {
+        const res = await fetch(`/api/contacts/${contactId}`, { method: "DELETE" });
+        if (res.ok) {
+          successCount++;
+        } else {
+          failCount++;
+          const contact = contacts.find(c => c.id === contactId);
+          errors.push(contact ? contact.name : `ID: ${contactId}`);
+        }
+      } catch (error) {
+        failCount++;
+        const contact = contacts.find(c => c.id === contactId);
+        errors.push(contact ? contact.name : `ID: ${contactId}`);
+      }
+    }
+
+    Swal.close();
+
+    // Show result
+    if (failCount === 0) {
+      await Swal.fire({
+        icon: "success",
+        title: "✅ Berhasil!",
+        html: `
+          <p><strong>${successCount} kontak</strong> berhasil dihapus</p>
+        `,
+        confirmButtonColor: "#48bb78",
+      });
+    } else {
+      await Swal.fire({
+        icon: "warning",
+        title: "⚠️ Selesai dengan Error",
+        html: `
+          <div style="text-align: left; padding: 10px;">
+            <p>✅ <strong>${successCount} kontak berhasil dihapus</strong></p>
+            <p>❌ <strong>${failCount} kontak gagal dihapus:</strong></p>
+            <p style="color: #f56565;">${errors.join(", ")}</p>
+          </div>
+        `,
+        confirmButtonColor: "#ed8936",
+      });
+    }
+
+    // Clear selection dan refresh
+    selectedContactsToDelete.clear();
+    await fetchAndRenderContacts();
+    await fetchGroupsForDropdown();
+
+  } catch (error) {
+    Swal.close();
+    Swal.fire({
+      icon: "error",
+      title: "❌ Gagal",
+      text: error.message || "Terjadi kesalahan saat menghapus kontak",
+      confirmButtonColor: "#f56565",
+    });
+  }
+}
+
+/**
+ * Initialize bulk delete listeners
+ * Panggil fungsi ini di initContactListeners()
+ */
+export function initBulkDeleteListeners() {
+  // Select All checkbox
+  const selectAllCheck = document.getElementById("selectAllContactsDelete");
+  if (selectAllCheck) {
+    selectAllCheck.addEventListener("change", function() {
+      const checkboxes = document.querySelectorAll(".contact-delete-checkbox");
+      checkboxes.forEach(cb => {
+        cb.checked = this.checked;
+        const contactId = parseInt(cb.value);
+        if (this.checked) {
+          selectedContactsToDelete.add(contactId);
+        } else {
+          selectedContactsToDelete.delete(contactId);
+        }
+      });
+      updateBulkDeleteButton();
+    });
+  }
+
+  // Bulk delete button
+  const bulkDeleteBtn = document.getElementById("bulkDeleteContactBtn");
+  if (bulkDeleteBtn) {
+    bulkDeleteBtn.addEventListener("click", handleBulkDeleteContacts);
+  }
 }
 
 /**
@@ -1069,6 +1265,10 @@ export function initContactListeners() {
       renderGroupSelectionList(searchQuery);
     });
   }
+  
+  // ✅ CRITICAL: Initialize bulk delete listeners
+  console.log("🎯 Initializing bulk delete listeners...");
+  initBulkDeleteListeners();
 }
 
 /**
@@ -1399,10 +1599,10 @@ export function initContactManagementFilter() {
           return;
         }
 
-        const name = (row.cells[0].textContent || "").toLowerCase();
-        const number = (row.cells[1].textContent || "").toLowerCase();
-        const instansi = (row.cells[2].textContent || "").toLowerCase();
-        const jabatan = (row.cells[3].textContent || "").toLowerCase();
+        const name = (row.cells[1].textContent || "").toLowerCase();
+        const number = (row.cells[2].textContent || "").toLowerCase();
+        const instansi = (row.cells[3].textContent || "").toLowerCase();
+        const jabatan = (row.cells[4].textContent || "").toLowerCase();
         
         // Check if row matches ALL active filters
         const matchName = !nameQuery || name.includes(nameQuery);

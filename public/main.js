@@ -62,6 +62,8 @@ import {
   initContactListeners,
   initMeetingContactListeners,
   initContactManagementFilter,
+  handleBulkDeleteContacts,
+   initBulkDeleteListeners,
   selectedNumbers,
   selectedMeetingNumbers,
   selectedGroups,
@@ -1411,6 +1413,9 @@ async function initApp() {
     await fetchAndRenderGroups();
     await fetchGroupsForDropdown();
     await fetchAndRenderContacts();
+    
+    // ✅ Wait for DOM to be fully rendered
+    await new Promise(resolve => setTimeout(resolve, 200));
     
     // After contacts are loaded, render the contact lists
     renderContactList();

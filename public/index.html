@@ -755,7 +755,11 @@
             </div>
           </div>
 
-          <!-- ✅ GANTI bagian contactMainContainer di index.html dengan ini -->
+
+
+<!-- ========================================
+     GANTI bagian contactMainContainer di index.html
+     ======================================== -->
 
 <div id="contactMainContainer" class="contact-main-container">
   <div class="schedule-header">
@@ -820,10 +824,30 @@
     <div id="filterContactResultInfo" class="filter-result-info"></div>
   </div>
 
+  <!-- ✅ NEW: Bulk Actions Bar -->
+  <div class="bulk-actions-bar" style="margin-bottom: 16px; padding: 16px; background: #f7fafc; border-radius: 8px; border: 2px solid #e2e8f0; display: flex; align-items: center; gap: 12px;">
+    <label style="display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer; user-select: none; font-weight: 600; color: #2d3748;">
+      <input type="checkbox" id="selectAllContactsDelete" style="width: 20px; height: 20px; cursor: pointer;" />
+      <span>Pilih Semua</span>
+    </label>
+    
+    <button 
+      id="bulkDeleteContactBtn" 
+      class="btn-remove-members" 
+      style="display: none; margin-left: auto; padding: 10px 16px; font-size: 14px;"
+      disabled
+    >
+      <i class="fa-solid fa-trash"></i> Hapus <span id="bulkDeleteCount">0</span> Kontak
+    </button>
+  </div>
+
   <div class="table-wrapper">
     <table id="contact-management-table">
       <thead>
         <tr>
+          <th style="width: 40px; text-align: center;">
+            <i class="fa-solid fa-check-square" style="color: #4299e1;"></i>
+          </th>
           <th>Nama</th>
           <th>Nomor</th>
           <th>Instansi</th>
