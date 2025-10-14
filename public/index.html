@@ -755,27 +755,91 @@
             </div>
           </div>
 
-          <div id="contactMainContainer" class="contact-main-container">
-            <div class="schedule-header">
-              <h3>Daftar Kontak Tersimpan</h3>
-            </div>
+          <!-- ✅ GANTI bagian contactMainContainer di index.html dengan ini -->
 
-            <div class="table-wrapper">
-              <table id="contact-management-table">
-                <thead>
-                  <tr>
-                    <th>Nama</th>
-                    <th>Nomor</th>
-                    <th>Instansi</th>
-                    <th>Jabatan</th>
-                    <th>Grup</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="contact-management-tbody"></tbody>
-              </table>
-            </div>
-          </div>
+<div id="contactMainContainer" class="contact-main-container">
+  <div class="schedule-header">
+    <h3>Daftar Kontak Tersimpan</h3>
+  </div>
+
+  <!-- 🔍 Advanced Filter untuk Kontak -->
+  <div class="member-filter-container" style="margin-bottom: 20px;">
+    <div class="filter-header">
+      <h4><i class="fa-solid fa-filter"></i> Filter Kontak</h4>
+      <button id="clearAllContactFilters" class="clear-all-filters-btn" style="display: none;">
+        <i class="fa-solid fa-times"></i> Reset Semua Filter
+      </button>
+    </div>
+    
+    <div class="filter-grid">
+      <div class="filter-item">
+        <label><i class="fa-solid fa-user"></i> Nama</label>
+        <input 
+          type="text" 
+          id="filterContactName" 
+          placeholder="Cari nama..." 
+          class="filter-input"
+          autocomplete="off"
+        />
+      </div>
+      
+      <div class="filter-item">
+        <label><i class="fa-solid fa-phone"></i> Nomor</label>
+        <input 
+          type="text" 
+          id="filterContactNumber" 
+          placeholder="Cari nomor..." 
+          class="filter-input"
+          autocomplete="off"
+        />
+      </div>
+      
+      <div class="filter-item">
+        <label><i class="fa-solid fa-building"></i> Instansi</label>
+        <input 
+          type="text" 
+          id="filterContactInstansi" 
+          placeholder="Cari instansi..." 
+          class="filter-input"
+          autocomplete="off"
+        />
+      </div>
+      
+      <div class="filter-item">
+        <label><i class="fa-solid fa-briefcase"></i> Jabatan</label>
+        <input 
+          type="text" 
+          id="filterContactJabatan" 
+          placeholder="Cari jabatan..." 
+          class="filter-input"
+          autocomplete="off"
+        />
+      </div>
+    </div>
+    
+    <div id="filterContactResultInfo" class="filter-result-info"></div>
+  </div>
+
+  <div class="table-wrapper">
+    <table id="contact-management-table">
+      <thead>
+        <tr>
+          <th>Nama</th>
+          <th>Nomor</th>
+          <th>Instansi</th>
+          <th>Jabatan</th>
+          <th>Grup</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="contact-management-tbody"></tbody>
+    </table>
+    <div id="noContactResults" class="no-search-results" style="display: none;">
+      <i class="fa-solid fa-search"></i>
+      <p>Tidak ada kontak yang cocok dengan pencarian</p>
+    </div>
+  </div>
+</div>
 
           <div id="groupMainContainer" class="contact-main-container">
             <div class="schedule-header">

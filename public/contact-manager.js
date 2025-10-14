@@ -484,6 +484,9 @@ export function getNumbersFromSelectedGroups(isForMeeting = false) {
 /**
  * Renders contacts in the management table
  */
+/**
+ * Renders contacts in the management table
+ */
 function renderContactManagementTable() {
   const tbody = document.getElementById("contact-management-tbody");
   if (!tbody) return;
@@ -493,6 +496,9 @@ function renderContactManagementTable() {
   if (contacts.length === 0) {
     tbody.innerHTML =
       '<tr><td colspan="6" style="text-align: center;">Belum ada kontak</td></tr>';
+    
+    // ✅ TAMBAH BARIS INI
+    initContactManagementFilter();
     return;
   }
 
@@ -528,6 +534,9 @@ function renderContactManagementTable() {
     `;
     tbody.appendChild(row);
   });
+
+  // ✅ TAMBAH BARIS INI DI AKHIR FUNGSI
+  initContactManagementFilter();
 }
 
 /**
@@ -1324,4 +1333,177 @@ export function getContacts() {
  */
 export function getGroups() {
   return groups;
+}
+export function initContactManagementFilter() {
+  const filterName = document.getElementById("filterContactName");
+  const filterNumber = document.getElementById("filterContactNumber");
+  const filterInstansi = document.getElementById("filterContactInstansi");
+  const filterJabatan = document.getElementById("filterContactJabatan");
+  const clearAllBtn = document.getElementById("clearAllContactFilters");
+  const filterInfo = document.getElementById("filterContactResultInfo");
+  const tbody = document.getElementById("contact-management-tbody");
+  const noResults = document.getElementById("noContactResults");
+
+  if (!tbody) {
+    console.error("Contact table body not found!");
+    return;
+  }
+
+  console.log("✅ Contact filter initialized successfully!");
+
+  function performFilter() {
+    const nameQuery = filterName ? filterName.value.toLowerCase().trim() : "";
+    const numberQuery = filterNumber ? filterNumber.value.toLowerCase().trim() : "";
+    const instansiQuery = filterInstansi ? filterInstansi.value.toLowerCase().trim() : "";
+    const jabatanQuery = filterJabatan ? filterJabatan.value.toLowerCase().trim() : "";
+    
+    const rows = tbody.querySelectorAll("tr");
+    let visibleCount = 0;
+    const totalCount = rows.length;
+
+    // Check jika ada pesan "Belum ada kontak"
+    if (totalCount === 1 && rows[0].cells.length === 1) {
+      if (filterInfo) filterInfo.innerHTML = "";
+      if (noResults) noResults.style.display = "none";
+      if (clearAllBtn) clearAllBtn.style.display = "none";
+      return;
+    }
+
+    // Check if any filter is active
+    const hasActiveFilter = nameQuery || numberQuery || instansiQuery || jabatanQuery;
+
+    console.log("🔍 Filtering contacts with:", { nameQuery, numberQuery, instansiQuery, jabatanQuery });
+
+    // Show/hide clear all button
+    if (clearAllBtn) {
+      clearAllBtn.style.display = hasActiveFilter ? "inline-flex" : "none";
+    }
+
+    if (!hasActiveFilter) {
+      // No filters - show all
+      rows.forEach(row => {
+        if (row.cells.length > 1) {
+          row.style.display = "";
+          visibleCount++;
+        }
+      });
+      
+      if (filterInfo) filterInfo.innerHTML = "";
+      if (noResults) noResults.style.display = "none";
+    } else {
+      // Apply ALL filters with AND logic
+      rows.forEach(row => {
+        // Skip jika row hanya punya 1 cell (empty state message)
+        if (row.cells.length <= 1) {
+          row.style.display = "none";
+          return;
+        }
+
+        const name = (row.cells[0].textContent || "").toLowerCase();
+        const number = (row.cells[1].textContent || "").toLowerCase();
+        const instansi = (row.cells[2].textContent || "").toLowerCase();
+        const jabatan = (row.cells[3].textContent || "").toLowerCase();
+        
+        // Check if row matches ALL active filters
+        const matchName = !nameQuery || name.includes(nameQuery);
+        const matchNumber = !numberQuery || number.includes(numberQuery);
+        const matchInstansi = !instansiQuery || instansi.includes(instansiQuery);
+        const matchJabatan = !jabatanQuery || jabatan.includes(jabatanQuery);
+        
+        const matchAll = matchName && matchNumber && matchInstansi && matchJabatan;
+        
+        if (matchAll) {
+          row.style.display = "";
+          visibleCount++;
+        } else {
+          row.style.display = "none";
+        }
+      });
+      
+      // Update filter info
+      if (filterInfo) {
+        const activeFilters = [];
+        if (nameQuery) activeFilters.push(`Nama: "${nameQuery}"`);
+        if (numberQuery) activeFilters.push(`Nomor: "${numberQuery}"`);
+        if (instansiQuery) activeFilters.push(`Instansi: "${instansiQuery}"`);
+        if (jabatanQuery) activeFilters.push(`Jabatan: "${jabatanQuery}"`);
+        
+        if (visibleCount === 0) {
+          filterInfo.innerHTML = `
+            <i class="fa-solid fa-circle-exclamation"></i> 
+            Tidak ada hasil untuk filter: ${activeFilters.join(", ")}
+          `;
+          filterInfo.style.color = "#f56565";
+        } else if (visibleCount === totalCount) {
+          filterInfo.innerHTML = `
+            <i class="fa-solid fa-check-circle"></i> 
+            Menampilkan semua ${totalCount} kontak
+          `;
+          filterInfo.style.color = "#48bb78";
+        } else {
+          filterInfo.innerHTML = `
+            <i class="fa-solid fa-filter"></i> 
+            <strong>${visibleCount}</strong> dari ${totalCount} kontak 
+            <span style="color: #718096;">(${activeFilters.length} filter aktif)</span>
+          `;
+          filterInfo.style.color = "#4299e1";
+        }
+      }
+      
+      if (noResults) {
+        noResults.style.display = visibleCount === 0 ? "block" : "none";
+      }
+    }
+
+    // Add visual feedback to active filters
+    updateFilterInputStyles();
+  }
+
+  function updateFilterInputStyles() {
+    const inputs = [filterName, filterNumber, filterInstansi, filterJabatan];
+    inputs.forEach(input => {
+      if (!input) return;
+      if (input.value.trim()) {
+        input.style.borderColor = "#4299e1";
+        input.style.background = "#ebf8ff";
+      } else {
+        input.style.borderColor = "#cbd5e0";
+        input.style.background = "white";
+      }
+    });
+  }
+
+  function clearAllFilters() {
+    if (filterName) filterName.value = "";
+    if (filterNumber) filterNumber.value = "";
+    if (filterInstansi) filterInstansi.value = "";
+    if (filterJabatan) filterJabatan.value = "";
+    performFilter();
+  }
+
+  // Attach event listeners
+  if (filterName) {
+    filterName.addEventListener("input", performFilter);
+    console.log("✅ filterContactName listener attached");
+  }
+  if (filterNumber) {
+    filterNumber.addEventListener("input", performFilter);
+    console.log("✅ filterContactNumber listener attached");
+  }
+  if (filterInstansi) {
+    filterInstansi.addEventListener("input", performFilter);
+    console.log("✅ filterContactInstansi listener attached");
+  }
+  if (filterJabatan) {
+    filterJabatan.addEventListener("input", performFilter);
+    console.log("✅ filterContactJabatan listener attached");
+  }
+  
+  if (clearAllBtn) {
+    clearAllBtn.addEventListener("click", clearAllFilters);
+    console.log("✅ clearAllContactFilters listener attached");
+  }
+
+  // Initial render
+  performFilter();
 }

@@ -61,6 +61,7 @@ import {
   renderMeetingContactList,
   initContactListeners,
   initMeetingContactListeners,
+  initContactManagementFilter,
   selectedNumbers,
   selectedMeetingNumbers,
   selectedGroups,
