@@ -838,6 +838,7 @@ form button:active {
 .btn-remove-members {
   background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
   color: white;
+  gap: 5px;
 }
 
 .btn-remove-members:hover:not(:disabled) {
@@ -1728,5 +1729,209 @@ form button:active {
   #bulkDeleteContactBtn {
     margin-left: 0 !important;
     width: 100%;
+  }
+}
+
+/* =======================================
+   BULK DELETE ACTIONS BAR - COMPACT SIZE
+   ======================================= */
+
+.bulk-actions-bar {
+  animation: slideInDown 0.3s ease;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Quick action buttons in bulk delete bar - SMALLER SIZE */
+.bulk-actions-bar .quick-action-btn {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.bulk-actions-bar .quick-action-btn.select-all {
+  background: white;
+  border: 2px solid #48bb78;
+  color: #48bb78;
+  font-weight: 600;
+}
+
+.bulk-actions-bar .quick-action-btn.select-all:hover {
+  background: #48bb78;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(72, 187, 120, 0.25);
+}
+
+.bulk-actions-bar .quick-action-btn.select-all.active {
+  background: #48bb78;
+  color: white;
+  border-color: #48bb78;
+  animation: pulseGreen 0.3s ease;
+}
+
+@keyframes pulseGreen {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+.bulk-actions-bar .quick-action-btn.deselect-all {
+  background: white;
+  border: 2px solid #fc8181;
+  color: #fc8181;
+  font-weight: 600;
+}
+
+.bulk-actions-bar .quick-action-btn.deselect-all:hover {
+  background: #fc8181;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(252, 129, 129, 0.25);
+}
+
+.bulk-actions-bar .quick-action-btn i {
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+/* Table Checkbox Styling - SMALLER */
+.contact-delete-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #cbd5e0;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  background: white;
+}
+
+.contact-delete-checkbox:hover {
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.contact-delete-checkbox:checked {
+  background: #2b6cb0;
+  border-color: #2b6cb0;
+}
+
+.contact-delete-checkbox:checked::after {
+  content: "✓";
+  color: white;
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Row hover effect when checkbox is present */
+#contact-management-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+#contact-management-table tbody tr:hover {
+  background: #f7fafc;
+}
+
+#contact-management-table tbody tr:has(.contact-delete-checkbox:checked) {
+  background: #ebf8ff;
+  border-left: 3px solid #4299e1;
+}
+
+/* Bulk Delete Button - SMALLER */
+#bulkDeleteContactBtn {
+  animation: slideInRight 0.3s ease;
+  transition: all 0.2s ease;
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+#bulkDeleteContactBtn:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(252, 129, 129, 0.3);
+}
+
+#bulkDeleteContactBtn i {
+  font-size: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .bulk-actions-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px;
+  }
+  
+  .bulk-actions-bar > div {
+    width: 100%;
+  }
+  
+  .bulk-actions-bar .quick-action-btn {
+    flex: 1;
+    font-size: 12px;
+    padding: 7px 10px;
+  }
+  
+  #bulkDeleteContactBtn {
+    margin-left: 0 !important;
+    width: 100%;
+    font-size: 12px;
+    padding: 7px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bulk-actions-bar .quick-action-btn {
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+  
+  .bulk-actions-bar .quick-action-btn i {
+    font-size: 11px;
+  }
+  
+  #bulkDeleteContactBtn {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+  
+  #bulkDeleteContactBtn i {
+    font-size: 11px;
   }
 }

@@ -558,7 +558,6 @@ function attachDeleteCheckboxListeners() {
         selectedContactsToDelete.delete(contactId);
       }
       updateBulkDeleteButton();
-      updateSelectAllCheckbox();
     });
   });
 }
@@ -569,7 +568,7 @@ function updateBulkDeleteButton() {
   
   if (bulkDeleteBtn && countSpan) {
     const count = selectedContactsToDelete.size;
-    countSpan.textContent = count;
+    countSpan.textContent = ` ${count} `;
     bulkDeleteBtn.disabled = count === 0;
     
     if (count > 0) {
@@ -584,9 +583,34 @@ function updateSelectAllCheckbox() {
   const selectAllCheck = document.getElementById("selectAllContactsDelete");
   if (!selectAllCheck) return;
   
-  const allCheckboxes = document.querySelectorAll(".contact-delete-checkbox");
-  const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
-  selectAllCheck.checked = allChecked && allCheckboxes.length > 0;
+  const tbody = document.getElementById("contact-management-tbody");
+  const checkboxes = tbody.querySelectorAll(".contact-delete-checkbox");
+  
+  // Hitung hanya checkbox yang VISIBLE (sesuai filter)
+  let visibleCheckboxes = 0;
+  let checkedVisibleCheckboxes = 0;
+  
+  checkboxes.forEach(cb => {
+    const row = cb.closest("tr");
+    if (row && row.style.display !== "none") {
+      visibleCheckboxes++;
+      if (cb.checked) {
+        checkedVisibleCheckboxes++;
+      }
+    }
+  });
+  
+  // Set indeterminate jika sebagian checked
+  if (checkedVisibleCheckboxes > 0 && checkedVisibleCheckboxes < visibleCheckboxes) {
+    selectAllCheck.indeterminate = true;
+    selectAllCheck.checked = false;
+  } else if (checkedVisibleCheckboxes === visibleCheckboxes && visibleCheckboxes > 0) {
+    selectAllCheck.indeterminate = false;
+    selectAllCheck.checked = true;
+  } else {
+    selectAllCheck.indeterminate = false;
+    selectAllCheck.checked = false;
+  }
 }
 
 /**
@@ -710,28 +734,72 @@ export async function handleBulkDeleteContacts() {
  * Panggil fungsi ini di initContactListeners()
  */
 export function initBulkDeleteListeners() {
-  // Select All checkbox
-  const selectAllCheck = document.getElementById("selectAllContactsDelete");
-  if (selectAllCheck) {
-    selectAllCheck.addEventListener("change", function() {
-      const checkboxes = document.querySelectorAll(".contact-delete-checkbox");
+  console.log("🎯 Initializing bulk delete listeners...");
+  
+  // Select All button (bukan checkbox lagi!)
+  const selectAllBtn = document.getElementById("selectAllContactsDelete");
+  if (selectAllBtn) {
+    selectAllBtn.addEventListener("click", function() {
+      console.log("✅ Select All clicked");
+      
+      // Hanya select checkbox yang VISIBLE di tabel (sesuai filter)
+      const tbody = document.getElementById("contact-management-tbody");
+      const checkboxes = tbody.querySelectorAll(".contact-delete-checkbox");
+      
+      let selectedCount = 0;
       checkboxes.forEach(cb => {
-        cb.checked = this.checked;
-        const contactId = parseInt(cb.value);
-        if (this.checked) {
+        // Cek apakah row visible
+        const row = cb.closest("tr");
+        if (row && row.style.display !== "none") {
+          cb.checked = true;
+          const contactId = parseInt(cb.value);
           selectedContactsToDelete.add(contactId);
-        } else {
-          selectedContactsToDelete.delete(contactId);
+          selectedCount++;
         }
       });
+      
+      console.log(`✅ Selected ${selectedCount} visible contacts`);
+      updateBulkDeleteButton();
+      
+      // Visual feedback
+      this.classList.add("active");
+      setTimeout(() => this.classList.remove("active"), 300);
+    });
+    console.log("✅ Select All button listener attached");
+  }
+
+  // Deselect All button
+  const deselectAllBtn = document.getElementById("deselectAllContactsDelete");
+  if (deselectAllBtn) {
+    deselectAllBtn.addEventListener("click", function() {
+      console.log("❌ Deselect All clicked");
+      
+      // Uncheck semua checkbox yang VISIBLE di tabel
+      const tbody = document.getElementById("contact-management-tbody");
+      const checkboxes = tbody.querySelectorAll(".contact-delete-checkbox");
+      
+      let deselectedCount = 0;
+      checkboxes.forEach(cb => {
+        const row = cb.closest("tr");
+        if (row && row.style.display !== "none") {
+          cb.checked = false;
+          const contactId = parseInt(cb.value);
+          selectedContactsToDelete.delete(contactId);
+          deselectedCount++;
+        }
+      });
+      
+      console.log(`❌ Deselected ${deselectedCount} visible contacts`);
       updateBulkDeleteButton();
     });
+    console.log("✅ Deselect All button listener attached");
   }
 
   // Bulk delete button
   const bulkDeleteBtn = document.getElementById("bulkDeleteContactBtn");
   if (bulkDeleteBtn) {
     bulkDeleteBtn.addEventListener("click", handleBulkDeleteContacts);
+    console.log("✅ Bulk delete button listener attached");
   }
 }
 
@@ -1206,9 +1274,12 @@ export function initContactListeners() {
     });
   }
 
-  const selectAllContactsBtn = document.getElementById("selectAllContactsBtn");
+ // Ganti bagian selectAllContactsBtn listener dengan ini:
+
+const selectAllContactsBtn = document.getElementById("selectAllContactsBtn");
   if (selectAllContactsBtn) {
     selectAllContactsBtn.addEventListener("click", function () {
+      // Pilih hanya dari filteredContacts yang sesuai dengan search di form kirim pesan
       filteredContacts.forEach((contact) =>
         selectedNumbers.add(contact.number)
       );
