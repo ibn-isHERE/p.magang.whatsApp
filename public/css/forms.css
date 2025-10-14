@@ -619,11 +619,10 @@ form label i.fa-users {
 .file-chip .remove-edit-meeting-file-btn {
   position: absolute;
   right: 8px;
-  top: 50%;
   transform: translateY(-50%);
   z-index: 3;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   border-radius: 6px;
   background: #fc8181;
   color: #fff;
