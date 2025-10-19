@@ -1,6 +1,6 @@
 // chat-client.js - Chat System Module
 
-import { playNotificationSound, showBrowserNotification } from './ui-helpers.js';
+import { playNotificationSound, showBrowserNotification } from '../ui/ui-helpers.js';
 
 let socket;
 let currentChatNumber = null;
