@@ -1,319 +1,76 @@
-@media (max-width: 1024px) {
-  .main-content {
-    flex-direction: column;
-    padding: 10.5px;
-    gap: 21px;
-    max-width: 100%;
-    width: 100%;
-  }
-  
-  .form-container {
-    width: 100%;
-    max-width: 100%;
-    position: static;
-    max-height: none;
-    overflow-y: visible;
-    flex-basis: auto;
-    padding: 24px;
-  }
-  
-  .schedule-container,
-  .contact-main-container {
-    width: 100%;
-    max-width: 100%;
-    position: static;
-    max-height: none;
-    overflow-y: visible;
-    flex-basis: auto;
-    padding: 17.5px;
-  }
-  
-  .table-wrapper {
-    max-height: 42vh;
-    overflow-x: auto;
-    overflow-y: auto;
-    min-width: 0;
-    max-width: 100%;
-    box-sizing: border-box;
-    min-height: 0;
-  }
-  
-  #scheduleTable,
-  #contact-management-table,
-  #group-management-table {
-    table-layout: auto;
-    width: 100%;
-    min-width: 700px;
-    border-collapse: separate;
-    word-break: break-word;
-  }
-  
-  .navbar-left img {
-    margin-left: 14px;
-    width: 49px;
-    height: 35px;
-  }
-  
-  .navbar-text {
-    font-size: 14px;
-  }
-}
-
-@media (max-width: 768px) {
-  .app-header h1 {
-    font-size: 2rem;
-  }
-  
-  .navbar {
-    height: 42px;
-    padding: 25px 10.5px;
-  }
-  
-  .navbar-left img {
-    margin-left: 7px;
-    width: 42px;
-    height: 31.5px;
-  }
-  
-  .navbar-text {
-    font-size: 12px;
-  }
-  
-  .form-container {
-    position: static;
-    top: auto;
-    max-height: none;
-    overflow: visible;
-    padding: 20px;
-  }
-  
-  .form-container h2,
-  .schedule-container h2,
-  .contact-main-container h3 {
-    font-size: 1.6rem;
-  }
-  
-  .tabs {
-    overflow-x: visible;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 5px;
-  }
-  
-  .tab-button {
-    font-size: 0.9rem;
-    padding: 8px 10px;
-  }
-  
-  .recipient-tabs {
-    gap: 2px;
-  }
-  
-  .recipient-tab {
-    font-size: 12px;
-    padding: 10px 12px;
-  }
-  
-  .filter-buttons {
-    gap: 5.6px;
-    justify-content: space-around;
-  }
-  
-  .filter-button {
-    padding: 5.6px 10.5px;
-    font-size: 0.9rem;
-    max-width: 84px;
-  }
-  
-  .table-wrapper {
-    min-width: 0;
-    max-width: 100%;
-    overflow-x: auto;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    max-height: 50vh;
-  }
-  
-  #scheduleTable,
-  #contact-management-table,
-  #group-management-table {
-    min-width: 600px;
-    table-layout: auto;
-  }
-  
-  #scheduleTable th,
-  #scheduleTable td,
-  #contact-management-table th,
-  #contact-management-table td,
-  #group-management-table th,
-  #group-management-table td {
-    padding: 7px 5.6px;
-    font-size: 0.85rem;
-  }
-  
-  .action-buttons {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 3px;
-  }
-  
-  .action-buttons button {
-    width: 100%;
-    padding: 5.6px 7px;
-    font-size: 0.75rem;
-    gap: 2.1px;
-  }
-  
-  .material-icons {
-    font-size: 11.2px;
-  }
-}
-
-@media (max-width: 480px) {
-  .navbar {
-    height: 35px;
-  }
-  
-  .navbar-left img {
-    margin-left: 3.5px;
-    width: 35px;
-    height: 24.5px;
-    margin-right: 5.6px;
-  }
-  
-  .navbar-text {
-    font-size: 10px;
-    text-align: right;
-  }
-  
-  .app-header h1 {
-    font-size: 1.8rem;
-  }
-  
-  .main-content {
-    padding: 7px;
-    gap: 14px;
-  }
-  
-  .form-container,
-  .schedule-container,
-  .contact-main-container {
-    padding: 16px;
-  }
-  
-  .form-container {
-    position: static;
-    top: auto;
-    max-height: none;
-    overflow: visible;
-  }
-  
-  .tabs {
-    overflow-x: visible;
-    flex-wrap: wrap;
-    gap: 4px;
-  }
-
-  .tab-button {
-    font-size: 0.75rem;
-    padding: 6px 8px;
-    flex: 1 1 auto;
-  }
-  
-  .recipient-tab {
-    font-size: 11px;
-    padding: 8px 10px;
-  }
-  
-  form input,
-  form textarea,
-  form button {
-    font-size: 14px;
-    padding: 10px 12px;
-  }
-  
-  .contact-checklist-box label,
-  #groupSelectionList label,
-  #meetingGroupSelectionList label {
-    font-size: 12px;
-    padding: 8px 10px;
-  }
-  
-  .file-upload-container {
-    padding: 12px;
-  }
-  
-  .file-upload-label {
-    font-size: 13px;
-  }
-  
-  .filter-buttons {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 7px;
-  }
-  
-  .filter-button {
-    max-width: none;
-    font-size: 1rem;
-  }
-  
-  .table-wrapper {
-    max-height: 45vh;
-    overflow-x: auto;
-    overflow-y: auto;
-    min-width: 0;
-  }
-  
-  #scheduleTable,
-  #contact-management-table,
-  #group-management-table {
-    min-width: 420px;
-    table-layout: auto;
-  }
-  
-  .file-chip {
-    padding-right: 48px;
-  }
-  
-  .file-chip button {
-    width: 28px;
-    height: 28px;
-    right: 8px;
-  }
-}
-
-@media (max-width: 360px) {
-  .app-header h1 {
-    font-size: 1.5rem;
-  }
-  
-  .navbar-text {
-    font-size: 9px;
-  }
-  
-  .tab-button {
-    font-size: 0.7rem;
-    padding: 5px 6px;
-  }
-  
-  .recipient-tab {
-    font-size: 10px;
-    padding: 7px 8px;
-  }
-  
-  .form-container h2,
-  .schedule-container h2,
-  .contact-main-container h3 {
-    font-size: 1.4rem;
-  }
-}
+/* ============================================
+   ANIMATIONS & KEYFRAMES
+   ============================================ */
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-/* Selection Info Badge - Enhanced */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes fadeInBackdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInModal {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFile {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  0% { transform: scale(0.9); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes fadeInContent {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ripple {
+  0% { box-shadow: 0 0 0 0 rgba(43, 108, 176, 0.4); }
+  100% { box-shadow: 0 0 0 10px rgba(43, 108, 176, 0); }
+}
+
+
+/* ============================================
+   ENHANCED UI COMPONENTS
+   ============================================ */
+
+/* Selection Info Badge */
 .selection-info {
   margin-top: 12px;
   padding: 12px 14px;
@@ -338,7 +95,70 @@
   font-weight: 700;
 }
 
-/* Improved Contact/Group List Items with Hover Effect */
+/* Alert Messages */
+.alert {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.alert-success {
+  background: #c6f6d5;
+  color: #22543d;
+  border-left: 4px solid #48bb78;
+}
+
+.alert-error {
+  background: #fed7d7;
+  color: #742a2a;
+  border-left: 4px solid #fc8181;
+}
+
+.alert-info {
+  background: #bee3f8;
+  color: #2c5282;
+  border-left: 4px solid #4299e1;
+}
+
+.alert-warning {
+  background: #feebc8;
+  color: #7c2d12;
+  border-left: 4px solid #f6ad55;
+}
+
+
+/* ============================================
+   INTERACTIVE ELEMENTS & EFFECTS
+   ============================================ */
+
+/* Smooth transitions */
+button, .tab-button, .filter-button, .quick-action-btn, .recipient-tab {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Focus states for accessibility */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #4299e1;
+  outline-offset: 2px;
+}
+
+/* Disabled states */
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Contact/Group List Hover Effects */
 .contact-checklist-box label,
 #groupSelectionList label,
 #meetingGroupSelectionList label {
@@ -366,21 +186,125 @@
   transform: translateX(0);
 }
 
-/* Smooth transitions for all interactive elements */
-button, .tab-button, .filter-button, .quick-action-btn, .recipient-tab {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+/* Table Row Hover */
+#scheduleTable tbody tr:hover,
+#contact-management-table tbody tr:hover,
+#group-management-table tbody tr:hover {
+  background-color: #f7fafc;
+  transition: background-color 0.15s ease;
 }
 
-/* Focus visible for accessibility */
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid #4299e1;
-  outline-offset: 2px;
+/* Primary Button Gradient */
+form button[type="submit"] {
+  background: linear-gradient(135deg, #2b6cb0 0%, #2c5282 100%);
+  position: relative;
+  overflow: hidden;
 }
 
-/* Better scrollbar for all scrollable containers */
+form button[type="submit"]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+form button[type="submit"]:hover::before {
+  left: 100%;
+}
+
+/* Button Loading State */
+button.loading {
+  position: relative;
+  color: transparent;
+  pointer-events: none;
+}
+
+button.loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  margin-left: -8px;
+  margin-top: -8px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Checkbox Ripple Effect */
+.contact-checklist-box input[type="checkbox"]:active,
+.group-selection-checkbox:active,
+.meeting-group-selection-checkbox:active {
+  animation: ripple 0.4s ease-out;
+}
+
+/* Quick Action Button Active State */
+.quick-action-btn.active {
+  animation: scaleIn 0.3s ease;
+}
+
+/* File Chip Animation */
+.file-chip {
+  animation: slideInFile 0.3s ease;
+}
+
+/* Modal Animations */
+.edit-modal {
+  animation: fadeInBackdrop 0.3s ease;
+}
+
+.edit-modal-content {
+  animation: slideInModal 0.3s ease;
+}
+
+/* Form Content Transition */
+.form-content {
+  animation: fadeInContent 0.4s ease;
+}
+
+/* Notification Badge Pulse */
+.notification-badge {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Status Badges */
+.status-terkirim,
+.status-selesai,
+.status-gagal,
+.status-terjadwal,
+.status-dibatalkan {
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+
+/* ============================================
+   CONTAINER STYLING
+   ============================================ */
+
+/* Form Container */
+.form-container {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+              0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.form-container:focus-within {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 
+              0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+
 .contact-checklist-box::-webkit-scrollbar,
 #groupSelectionList::-webkit-scrollbar,
 #meetingGroupSelectionList::-webkit-scrollbar,
@@ -417,243 +341,440 @@ textarea:focus-visible {
   background: #a0aec0;
 }
 
-/* Enhance form container with subtle shadow on scroll */
-.form-container {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
-              0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
 
-/* Add visual feedback for disabled states */
-button:disabled,
-input:disabled,
-select:disabled,
-textarea:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
 
-/* Improve table row hover effect */
-#scheduleTable tbody tr:hover,
-#contact-management-table tbody tr:hover,
-#group-management-table tbody tr:hover {
-  background-color: #f7fafc;
-  transition: background-color 0.15s ease;
-}
-
-/* Add subtle animation to status badges */
-.status-terkirim,
-.status-selesai,
-.status-gagal,
-.status-terjadwal,
-.status-dibatalkan {
-  align-items: center;
-  font-size: 0.85rem;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
+/* Tablet & Small Desktop (≤1024px) */
+@media (max-width: 1024px) {
+  body {
+    overflow-x: hidden;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  .main-content {
+    flex-direction: column;
+    padding: 10.5px;
+    gap: 21px;
+    max-width: 100%;
+    width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
-}
-
-/* Add pulse animation for notification badge */
-.notification-badge {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
+  
+  .form-container,
+  .schedule-container,
+  .contact-main-container {
+    width: 100%;
+    max-width: 100%;
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+    overflow-x: hidden;
+    flex-basis: auto;
+    box-sizing: border-box;
+    margin-left: 0;
+    margin-right: 0;
   }
-  50% {
-    opacity: 0.7;
+  
+  .form-container {
+    padding: 24px;
   }
-}
-
-/* Improve modal backdrop */
-.edit-modal {
-  animation: fadeInBackdrop 0.3s ease;
-}
-
-@keyframes fadeInBackdrop {
-  from {
-    opacity: 0;
+  
+  .schedule-container,
+  .contact-main-container {
+    padding: 17.5px;
   }
-  to {
-    opacity: 1;
+  
+  .table-wrapper {
+    max-height: 42vh;
+    overflow-x: auto;
+    overflow-y: auto;
+    width: 100%;
+    box-sizing: border-box;
   }
-}
-
-.edit-modal-content {
-  animation: slideInModal 0.3s ease;
-}
-
-@keyframes slideInModal {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
+  
+  #scheduleTable,
+  #contact-management-table,
+  #group-management-table {
+    table-layout: auto;
+    min-width: 700px;
+    border-collapse: separate;
+    word-break: break-word;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  .navbar-left img {
+    margin-left: 14px;
+    width: 49px;
+    height: 35px;
+  }
+  
+  .navbar-text {
+    font-size: 14px;
   }
 }
 
-/* Add success/error message styling */
-.alert {
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-}
-
-.alert-success {
-  background: #c6f6d5;
-  color: #22543d;
-  border-left: 4px solid #48bb78;
-}
-
-.alert-error {
-  background: #fed7d7;
-  color: #742a2a;
-  border-left: 4px solid #fc8181;
-}
-
-.alert-info {
-  background: #bee3f8;
-  color: #2c5282;
-  border-left: 4px solid #4299e1;
-}
-
-.alert-warning {
-  background: #feebc8;
-  color: #7c2d12;
-  border-left: 4px solid #f6ad55;
-}
-
-/* Enhance file chip appearance */
-.file-chip {
-  animation: slideInFile 0.3s ease;
-}
-
-@keyframes slideInFile {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
+/* Tablet Portrait (≤768px) */
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+    width: 100%;
   }
-  to {
-    opacity: 1;
-    transform: translateX(0);
+  
+  * {
+    max-width: 100vw;
+  }
+  
+  /* Header & Navigation */
+  .app-header h1 {
+    font-size: 2rem;
+  }
+  
+  .navbar {
+    height: 42px;
+    padding: 25px 10.5px;
+  }
+  
+  .navbar-left img {
+    margin-left: 7px;
+    width: 42px;
+    height: 31.5px;
+  }
+  
+  .navbar-text {
+    font-size: 12px;
+  }
+  
+  /* Layout */
+  .main-content {
+    padding: 10.5px;
+    box-sizing: border-box;
+  }
+  
+  /* Containers */
+  .form-container,
+  .schedule-container,
+  .contact-main-container {
+    position: static;
+    top: auto;
+    max-height: none;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0 auto;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+  }
+  
+  .form-container {
+    overflow: visible;
+    padding: 20px;
+  }
+  
+  .schedule-container,
+  .contact-main-container {
+    overflow-x: hidden;
+    padding: 20px;
+  }
+  
+  .form-container h2,
+  .schedule-container h2,
+  .contact-main-container h3 {
+    font-size: 1.6rem;
+  }
+  
+  /* Tabs */
+  .tabs {
+    overflow-x: visible;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  
+  .tab-button {
+    font-size: 0.9rem;
+    padding: 8px 10px;
+  }
+  
+  .recipient-tabs {
+    gap: 2px;
+  }
+  
+  .recipient-tab {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+  
+  /* Filter Buttons */
+  .filter-buttons {
+    gap: 5.6px;
+    justify-content: space-around;
+  }
+  
+  .filter-button {
+    padding: 5.6px 10.5px;
+    font-size: 0.9rem;
+    max-width: 84px;
+  }
+  
+  /* Tables */
+  .table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    max-height: 50vh;
+    box-sizing: border-box;
+  }
+  
+  #scheduleTable,
+  #contact-management-table,
+  #group-management-table {
+    min-width: 600px;
+    width: max-content;
+    table-layout: auto;
+    border-collapse: collapse;
+  }
+  
+  #scheduleTable th,
+  #scheduleTable td,
+  #contact-management-table th,
+  #contact-management-table td,
+  #group-management-table th,
+  #group-management-table td {
+    padding: 7px 5.6px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+  }
+  
+  /* Action Buttons */
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    gap: 3px;
+  }
+  
+  .action-buttons button {
+    width: auto;
+    padding: 5.6px 7px;
+    font-size: 0.75rem;
+    gap: 2.1px;
+  }
+  
+  .material-icons {
+    font-size: 11.2px;
   }
 }
 
-/* Add gradient to primary buttons */
-form button[type="submit"] {
-  background: linear-gradient(135deg, #2b6cb0 0%, #2c5282 100%);
-  position: relative;
-  overflow: hidden;
-}
-
-form button[type="submit"]::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  transition: left 0.5s;
-}
-
-form button[type="submit"]:hover::before {
-  left: 100%;
-}
-
-/* Improve quick action button active state */
-.quick-action-btn.active {
-  animation: scaleIn 0.3s ease;
-}
-
-@keyframes scaleIn {
-  0% {
-    transform: scale(0.9);
+/* Mobile Landscape & Large Phones (≤480px) */
+@media (max-width: 480px) {
+  body {
+    overflow-x: hidden;
+    width: 100%;
   }
-  50% {
-    transform: scale(1.05);
+  
+  * {
+    max-width: 100vw;
   }
-  100% {
-    transform: scale(1);
+  
+  /* Navigation */
+  .navbar {
+    height: 35px;
+  }
+  
+  .navbar-left img {
+    margin-left: 3.5px;
+    width: 35px;
+    height: 24.5px;
+    margin-right: 5.6px;
+  }
+  
+  .navbar-text {
+    font-size: 10px;
+    text-align: right;
+  }
+  
+  /* Header */
+  .app-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  /* Layout */
+  .main-content {
+    padding: 7px;
+    gap: 14px;
+    overflow-x: hidden;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .form-container,
+  .schedule-container,
+  .contact-main-container {
+    padding: 16px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0 auto;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+  }
+  
+  .form-container {
+    overflow-x: visible;
+    overflow-y: visible;
+    position: static;
+    top: auto;
+    max-height: none;
+  }
+  
+  .schedule-container,
+  .contact-main-container {
+    overflow-x: hidden;
+  }
+  
+  .form-container {
+    position: static;
+    top: auto;
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .content-area {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0 auto;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+  }
+  
+  /* Tabs */
+  .tabs {
+    overflow-x: visible;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .tab-button {
+    font-size: 0.75rem;
+    padding: 6px 8px;
+    flex: 1 1 auto;
+  }
+  
+  .recipient-tab {
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+  
+  /* Form Elements */
+  form input,
+  form textarea,
+  form button {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+  
+  .contact-checklist-box label,
+  #groupSelectionList label,
+  #meetingGroupSelectionList label {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+  
+  /* File Upload */
+  .file-upload-container {
+    padding: 12px;
+  }
+  
+  .file-upload-label {
+    font-size: 13px;
+  }
+  
+  .file-chip {
+    padding-right: 48px;
+  }
+  
+  .file-chip button {
+    width: 28px;
+    height: 28px;
+    right: 8px;
+  }
+  
+  /* Filter Buttons */
+  .filter-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+  }
+  
+  .filter-button {
+    max-width: none;
+    font-size: 1rem;
+  }
+  
+  /* Tables */
+  .table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    max-height: 45vh;
+    overflow-x: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+  }
+  
+  #scheduleTable,
+  #contact-management-table,
+  #group-management-table {
+    min-width: 420px;
+    width: max-content;
+    table-layout: auto;
+    border-collapse: collapse;
+  }
+  
+  #scheduleTable th,
+  #scheduleTable td,
+  #contact-management-table th,
+  #contact-management-table td,
+  #group-management-table th,
+  #group-management-table td {
+    padding: 6px 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
   }
 }
 
-/* Add subtle shadow to form on focus */
-.form-container:focus-within {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 
-              0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-/* Improve tab transition */
-.form-content {
-  animation: fadeInContent 0.4s ease;
-}
-
-@keyframes fadeInContent {
-  from {
-    opacity: 0;
+/* Small Mobile (≤360px) */
+@media (max-width: 360px) {
+  .app-header h1 {
+    font-size: 1.5rem;
   }
-  to {
-    opacity: 1;
+  
+  .navbar-text {
+    font-size: 9px;
   }
-}
-
-/* Add loading state for buttons */
-button.loading {
-  position: relative;
-  color: transparent;
-  pointer-events: none;
-}
-
-button.loading::after {
-  content: '';
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  top: 50%;
-  left: 50%;
-  margin-left: -8px;
-  margin-top: -8px;
-  border: 2px solid #ffffff;
-  border-radius: 50%;
-  border-top-color: transparent;
-  animation: spin 0.6s linear infinite;
-}
-
-/* Enhance checkbox with ripple effect */
-.contact-checklist-box input[type="checkbox"],
-.group-selection-checkbox,
-.meeting-group-selection-checkbox {
-  position: relative;
-}
-
-.contact-checklist-box input[type="checkbox"]:active,
-.group-selection-checkbox:active,
-.meeting-group-selection-checkbox:active {
-  animation: ripple 0.4s ease-out;
-}
-
-@keyframes ripple {
-  0% {
-    box-shadow: 0 0 0 0 rgba(43, 108, 176, 0.4);
+  
+  .tab-button {
+    font-size: 0.7rem;
+    padding: 5px 6px;
   }
-  100% {
-    box-shadow: 0 0 0 10px rgba(43, 108, 176, 0);
+  
+  .recipient-tab {
+    font-size: 10px;
+    padding: 7px 8px;
+  }
+  
+  .form-container h2,
+  .schedule-container h2,
+  .contact-main-container h3 {
+    font-size: 1.4rem;
   }
 }
