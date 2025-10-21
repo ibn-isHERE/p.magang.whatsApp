@@ -403,26 +403,35 @@ export function renderContactManagementTable(contactsData, selectedContactsToDel
     }
 
     const isChecked = selectedContactsToDeleteRef.has(contact.id) ? "checked" : "";
+
+row.setAttribute("data-contact-id", contact.id);
     
-    row.innerHTML = `
-      <td style="text-align: center; width: 40px;">
-        <input type="checkbox" class="contact-delete-checkbox" value="${contact.id}" ${isChecked} />
-      </td>
-      <td>${contact.name}</td>
-      <td>${contact.number}</td>
-      <td>${contact.instansi}</td>
-      <td>${contact.jabatan}</td>
-      <td>${groupDisplay}</td>
-      <td class="action-buttons">
-        <button class="edit-contact-btn" onclick="window.contactModule.showEditContactForm('${contact.id}')">
-          <i class="fa-solid fa-edit"></i> Edit
-        </button>
-        <button class="delete-contact-btn" onclick="window.contactModule.deleteContact('${contact.id}', '${contact.name}')">
-          <i class="fa-solid fa-trash"></i> Hapus
-        </button>
-      </td>
-    `;
-    tbody.appendChild(row);
+row.innerHTML = `
+  <td style="text-align: center; width: 40px;">
+    <input 
+      type="checkbox" 
+      class="contact-delete-checkbox" 
+      value="${contact.id}" 
+      data-contact-number="${contact.number}"
+      ${isChecked}
+      style="cursor: pointer; width: 18px; height: 18px;"
+    />
+  </td>
+  <td>${contact.name}</td>
+  <td>${contact.number}</td>
+  <td>${contact.instansi}</td>
+  <td>${contact.jabatan}</td>
+  <td>${groupDisplay}</td>
+  <td class="action-buttons">
+    <button class="edit-contact-btn" onclick="window.contactModule.showEditContactForm('${contact.id}')">
+      <i class="fa-solid fa-edit"></i> Edit
+    </button>
+    <button class="delete-contact-btn" onclick="window.contactModule.deleteContact('${contact.id}', '${contact.name}')">
+      <i class="fa-solid fa-trash"></i> Hapus
+    </button>
+  </td>
+`;
+tbody.appendChild(row);
   });
 
   attachDeleteCheckboxListeners(selectedContactsToDeleteRef);
@@ -640,7 +649,7 @@ export function initBulkDeleteListeners() {
   const bulkDeleteBtn = document.getElementById("bulkDeleteContactBtn");
   if (bulkDeleteBtn) {
     bulkDeleteBtn.addEventListener("click", async () => {
-      const contactManager = await import('../contacts/contact-manager');
+      const contactManager = await import('./contact-manager.js');
       contactManager.handleBulkDeleteContacts();
     });
   }

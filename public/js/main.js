@@ -1,4 +1,4 @@
-// main.js - Main Application Entry Point (FIXED)
+// main.js - Main Application Entry Point (DEBUGGING VERSION)
 
 import {
   showForm as showFormOriginal,
@@ -7,7 +7,8 @@ import {
   showMediaModal,
   closeMediaModal,
   closeEditContactModal,
-  closeAddMembersModal        
+  closeAddMembersModal,
+  closeDetailGroupModal
 } from './modules/ui/ui-helpers.js';
 
 import {
@@ -32,7 +33,7 @@ async function showForm(formId) {
     const contactManager = await import('./modules/contacts/contact-manager.js');
     const contactUI = await import('./modules/contacts/contact-ui.js');
     await contactManager.fetchAndRenderContacts();
-      contactUI.initBulkDeleteListeners();
+    contactUI.initBulkDeleteListeners();
     
     const contactMainContainer = document.getElementById("contactMainContainer");
     const groupMainContainer = document.getElementById("groupMainContainer");
@@ -43,7 +44,6 @@ async function showForm(formId) {
   if (formId === "group") {
     const groupManager = await import('./modules/groups/group-manager.js');
     await groupManager.fetchAndRenderGroups();
-      contactUI.initBulkDeleteListeners();
     
     const contactMainContainer = document.getElementById("contactMainContainer");
     const groupMainContainer = document.getElementById("groupMainContainer");
@@ -55,7 +55,6 @@ async function showForm(formId) {
     const contactManager = await import('./modules/contacts/contact-manager.js');
     const contactUI = await import('./modules/contacts/contact-ui.js');
     const contactGroups = await import('./modules/contacts/contact-groups.js');
-    
     
     contactUI.renderMeetingContactList();
     contactGroups.renderMeetingGroupSelectionList();
@@ -88,95 +87,96 @@ async function showForm(formId) {
 async function initApp() {
   console.log("🚀 Starting app initialization...");
 
-  // Load all modules dynamically
-  const contactManager = await import('./modules/contacts/contact-manager.js');
-  const groupManager = await import('./modules/groups/group-manager.js');
-  const groupDetail = await import('./modules/groups/group-detail.js');
-  const scheduleManager = await import('./modules/schedule/schedule-manager.js');
-  const scheduleRender = await import('./modules/schedule/schedule-render.js');
-  const chatClient = await import('./modules/chat/chat-client.js');
-
-  // Export modules to window for onclick handlers
-  window.groupModule = {
-    fetchAndRenderGroups: groupManager.fetchAndRenderGroups,
-    showGroupDetail: groupDetail.showGroupDetail,
-    deleteGroup: groupManager.deleteGroup,
-    resetGroupForm: groupManager.resetGroupForm,
-    renderGroupContactChecklist: groupManager.renderGroupContactChecklist
-  };
-
-  window.contactModule = {
-    showEditContactForm: contactManager.showEditContactForm,
-    deleteContact: contactManager.deleteContact
-  };
-
-  // Export UI helpers to window
-  window.showForm = showForm;
-  window.showEditModal = showEditModal;
-  window.closeEditModal = closeEditModal;
-  window.showMediaModal = showMediaModal;
-  window.closeMediaModal = closeMediaModal;
-  window.closeEditContactModal = closeEditContactModal;
-  window.closeAddMembersModal = closeAddMembersModal;
-  window.showNotification = showNotification;
-
-  // Export contact manager to window for references
-  window.contactManagerModule = contactManager;
-
-  // Initialize contact management
-  await contactManager.initContactListeners();
-  
-  // Initialize file uploads
-  initFileUploadListener();
-  initMeetingFileUploadListener();
-  initFileUploadLabelHandlers();
-  
-  // Initialize schedule management
-  scheduleManager.initFilterButtons();
-  initReminderForm();
-  initMeetingForm();
-  await contactManager.initMeetingContactListeners();
-  
-  // Initialize media modal
-  initMediaModalListeners();
-
-  // Initialize realtime updates
-  await initRealtimeScheduleUpdates();
-
-  // Contact CRUD form
-  const contactForm = document.getElementById("contact-crud-form");
-  if (contactForm) {
-    contactForm.addEventListener("submit", async (e) => {
-      await contactManager.handleContactFormSubmit(e);
-      await contactManager.fetchGroupsForDropdown();
-      window.groupModule.renderGroupContactChecklist(); 
-    });
-  }
-
-  // Group CRUD form
-  const groupForm = document.getElementById("group-crud-form");
-  if (groupForm) {
-    groupForm.addEventListener("submit", groupManager.handleGroupFormSubmit); 
-  }
-
-  // Group Cancel listener
-  const groupCancelBtn = document.getElementById("group-crud-cancel");
-  if (groupCancelBtn) {
-    groupCancelBtn.addEventListener("click", groupManager.resetGroupForm);
-  }
-  
-  // Initialize group form listeners
-  groupManager.initGroupFormListeners();
-
-  const contactCancelBtn = document.getElementById("contact-crud-cancel");
-  if (contactCancelBtn) {
-    contactCancelBtn.addEventListener("click", contactManager.resetContactCrudForm);
-  }
-
-  // Load initial data
-  console.log("📊 Loading initial data...");
-  
   try {
+    // Load all modules dynamically
+    const contactManager = await import('./modules/contacts/contact-manager.js');
+    const groupManager = await import('./modules/groups/group-manager.js');
+    const groupDetail = await import('./modules/groups/group-detail.js');
+    const scheduleManager = await import('./modules/schedule/schedule-manager.js');
+    const scheduleRender = await import('./modules/schedule/schedule-render.js');
+    const chatClient = await import('./modules/chat/chat-client.js');
+
+    // Export modules to window for onclick handlers
+    window.groupModule = {
+      fetchAndRenderGroups: groupManager.fetchAndRenderGroups,
+      showGroupDetail: groupDetail.showGroupDetail,
+      deleteGroup: groupManager.deleteGroup,
+      resetGroupForm: groupManager.resetGroupForm,
+      renderGroupContactChecklist: groupManager.renderGroupContactChecklist
+    };
+
+    window.contactModule = {
+      showEditContactForm: contactManager.showEditContactForm,
+      deleteContact: contactManager.deleteContact
+    };
+
+    // Export UI helpers to window
+    window.showForm = showForm;
+    window.showEditModal = showEditModal;
+    window.closeEditModal = closeEditModal;
+    window.showMediaModal = showMediaModal;
+    window.closeMediaModal = closeMediaModal;
+    window.closeEditContactModal = closeEditContactModal;
+    window.closeAddMembersModal = closeAddMembersModal;
+    window.closeDetailGroupModal = closeDetailGroupModal;
+    window.showNotification = showNotification;
+
+    // Export contact manager to window for references
+    window.contactManagerModule = contactManager;
+
+    // Initialize contact management
+    await contactManager.initContactListeners();
+    
+    // Initialize file uploads
+    initFileUploadListener();
+    initMeetingFileUploadListener();
+    initFileUploadLabelHandlers();
+    
+    // Initialize schedule management
+    scheduleManager.initFilterButtons();
+    initReminderForm();
+    initMeetingForm();
+    await contactManager.initMeetingContactListeners();
+    
+    // Initialize media modal
+    initMediaModalListeners();
+
+    // Initialize realtime updates
+    await initRealtimeScheduleUpdates();
+
+    // Contact CRUD form
+    const contactForm = document.getElementById("contact-crud-form");
+    if (contactForm) {
+      contactForm.addEventListener("submit", async (e) => {
+        await contactManager.handleContactFormSubmit(e);
+        await contactManager.fetchGroupsForDropdown();
+        window.groupModule.renderGroupContactChecklist(); 
+      });
+    }
+
+    // Group CRUD form
+    const groupForm = document.getElementById("group-crud-form");
+    if (groupForm) {
+      groupForm.addEventListener("submit", groupManager.handleGroupFormSubmit); 
+    }
+
+    // Group Cancel listener
+    const groupCancelBtn = document.getElementById("group-crud-cancel");
+    if (groupCancelBtn) {
+      groupCancelBtn.addEventListener("click", groupManager.resetGroupForm);
+    }
+    
+    // Initialize group form listeners
+    groupManager.initGroupFormListeners();
+
+    const contactCancelBtn = document.getElementById("contact-crud-cancel");
+    if (contactCancelBtn) {
+      contactCancelBtn.addEventListener("click", contactManager.resetContactCrudForm);
+    }
+
+    // Load initial data
+    console.log("📊 Loading initial data...");
+    
     await groupManager.fetchAndRenderGroups();
     await contactManager.fetchGroupsForDropdown();
     await contactManager.fetchAndRenderContacts();
@@ -197,42 +197,229 @@ async function initApp() {
     contactManager.initMeetingFormTabs();
     
     console.log("✅ Initial data loaded successfully");
+    
+    await scheduleManager.loadMeetingRooms();
+    scheduleManager.updateFilterButtonActiveState("all");
+    await scheduleRender.renderScheduleTable();
+
+    console.log("💬 Initializing chat system...");
+    chatClient.initChatSystem();
+
+    initSmoothAnimations();
+
+    // Start countdown timer updates
+    setInterval(() => scheduleRender.updateCountdownTimers(), 1000);
+
+    console.log("✅ App initialization complete");
+    
   } catch (error) {
-    console.error("❌ Error loading initial data:", error);
+    console.error("❌ Error during app initialization:", error);
+    showNotification('Error', 'Gagal menginisialisasi aplikasi. Silakan refresh halaman.', 'error');
   }
-  
-  await scheduleManager.loadMeetingRooms();
-  scheduleManager.updateFilterButtonActiveState("all");
-  await scheduleRender.renderScheduleTable();
-
-  console.log("💬 Initializing chat system...");
-  chatClient.initChatSystem();
-
-  initSmoothAnimations();
-
-  // Start countdown timer updates
-  setInterval(() => scheduleRender.updateCountdownTimers(), 1000);
-
-  console.log("✅ App initialization complete");
 }
 
 /**
- * Modal click handlers
+ * Setup button listeners PROPERLY
  */
-document.addEventListener('DOMContentLoaded', function() {
-  // Close modals on outside click
-  document.addEventListener('click', function(e) {
-    const detailModal = document.getElementById('detailGroupModal');
-    if (detailModal && e.target === detailModal) {
-      closeDetailGroupModal();
-    }
+function setupImportButtons() {
+  console.log('🔧 Setting up import buttons...');
+  
+  // CSV Template Button
+  const csvBtn = document.getElementById('downloadCSVTemplate');
+  if (csvBtn) {
+    // Remove old listeners by cloning
+    const newCsvBtn = csvBtn.cloneNode(true);
+    csvBtn.replaceWith(newCsvBtn);
     
-    const addMembersModal = document.getElementById('addMembersModal');
-    if (addMembersModal && e.target === addMembersModal) {
-      closeAddMembersModal();
-    }
-  });
+    newCsvBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('✅ CSV button clicked, calling downloadCSVTemplate');
+      window.downloadCSVTemplate();
+    });
+    console.log('✅ CSV Template button setup complete');
+  } else {
+    console.warn('⚠️ CSV button not found in DOM');
+  }
+  
+  // Excel Guide Button
+  const excelBtn = document.getElementById('showExcelGuide');
+  if (excelBtn) {
+    const newExcelBtn = excelBtn.cloneNode(true);
+    excelBtn.replaceWith(newExcelBtn);
+    
+    newExcelBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('✅ Excel button clicked, calling downloadExcelTemplate');
+      window.downloadExcelTemplate();
+    });
+    console.log('✅ Excel Guide button setup complete');
+  } else {
+    console.warn('⚠️ Excel button not found in DOM');
+  }
+  
+  // Help Button
+  const helpBtn = document.querySelector('.import-help-btn');
+  if (helpBtn) {
+    const newHelpBtn = helpBtn.cloneNode(true);
+    helpBtn.replaceWith(newHelpBtn);
+    
+    newHelpBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('✅ Help button clicked, calling showImportHelp');
+      window.showImportHelp();
+    });
+    console.log('✅ Help button setup complete');
+  } else {
+    console.warn('⚠️ Help button not found in DOM');
+  }
+}
 
-  // Initialize app
-  initApp();
+/**
+ * Initialize import functionality
+ */
+async function initImportSystem() {
+  try {
+    console.log('📦 Starting import system initialization...');
+    
+    const importModule = await import('./modules/contacts/contact-import.js');
+    const { 
+      initContactImport, 
+      downloadCSVTemplate, 
+      downloadExcelTemplate,
+      showImportHelp 
+    } = importModule;
+    
+    console.log('✅ Import module loaded successfully');
+    
+    // Export functions to window IMMEDIATELY
+    window.downloadCSVTemplate = downloadCSVTemplate;
+    window.downloadExcelTemplate = downloadExcelTemplate;
+    window.showImportHelp = showImportHelp;
+    
+    console.log('✅ Functions exported to window:');
+    console.log('   - window.downloadCSVTemplate:', typeof window.downloadCSVTemplate);
+    console.log('   - window.downloadExcelTemplate:', typeof window.downloadExcelTemplate);
+    console.log('   - window.showImportHelp:', typeof window.showImportHelp);
+    
+    // Initialize form handlers
+    initContactImport();
+    console.log('✅ initContactImport() called');
+    
+    // Small delay to ensure DOM is ready
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Setup button listeners
+    setupImportButtons();
+    
+    console.log('✅ Import system fully initialized');
+    
+  } catch (error) {
+    console.error('❌ Error initializing import system:', error);
+    console.error('Stack:', error.stack);
+  }
+}
+
+/**
+ * DOM Content Loaded Handler
+ */
+document.addEventListener('DOMContentLoaded', async function() {
+  console.log('📄 DOM Content Loaded - Starting initialization');
+  
+  try {
+    // Close modals on outside click
+    document.addEventListener('click', function(e) {
+      const detailModal = document.getElementById('detailGroupModal');
+      if (detailModal && e.target === detailModal) {
+        closeDetailGroupModal();
+      }
+      
+      const addMembersModal = document.getElementById('addMembersModal');
+      if (addMembersModal && e.target === addMembersModal) {
+        closeAddMembersModal();
+      }
+    });
+
+    // Initialize import system FIRST with error handling
+    console.log('Step 1: Initializing import system...');
+    await initImportSystem();
+    console.log('Step 1: ✅ Import system ready');
+    
+    // Initialize main app
+    console.log('Step 2: Initializing main app...');
+    await initApp();
+    console.log('Step 2: ✅ Main app ready');
+    
+    console.log('✅✅✅ ALL INITIALIZATION COMPLETE ✅✅✅');
+    
+  } catch (error) {
+    console.error('❌ Critical error during initialization:', error);
+    console.error('Stack trace:', error.stack);
+    
+    // Show user-friendly error message
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal Memuat Aplikasi',
+        html: `
+          <div style="text-align: left; padding: 10px;">
+            <p style="color: #e53e3e; margin-bottom: 12px;">
+              <strong>Terjadi kesalahan saat memuat aplikasi.</strong>
+            </p>
+            <div style="background: #fff5f5; padding: 12px; border-radius: 6px; border-left: 4px solid #f56565;">
+              <small style="color: #742a2a; font-family: monospace; word-break: break-word;">${error.message}</small>
+            </div>
+            <p style="margin-top: 16px; color: #4a5568; font-size: 13px;">
+              Silakan refresh halaman atau hubungi administrator jika masalah berlanjut.
+            </p>
+          </div>
+        `,
+        confirmButtonText: 'Refresh Halaman',
+        confirmButtonColor: '#4299e1',
+        showCancelButton: true,
+        cancelButtonText: 'Tutup',
+        cancelButtonColor: '#718096'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          location.reload();
+        }
+      });
+    } else {
+      alert('Gagal memuat aplikasi. Error: ' + error.message);
+    }
+  }
 });
+
+/**
+ * Handle page visibility change
+ */
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden) {
+    console.log('📱 Page became visible - checking for updates...');
+  }
+});
+
+/**
+ * Handle before unload (cleanup)
+ */
+window.addEventListener('beforeunload', function() {
+  console.log('👋 Page unloading - cleaning up...');
+});
+
+/**
+ * Global error handler
+ */
+window.addEventListener('error', function(event) {
+  console.error('🔴 Global error caught:', event.error);
+});
+
+/**
+ * Unhandled promise rejection handler
+ */
+window.addEventListener('unhandledrejection', function(event) {
+  console.error('🔴 Unhandled promise rejection:', event.reason);
+});
+
+console.log('📦 main.js loaded and ready');

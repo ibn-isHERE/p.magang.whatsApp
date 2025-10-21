@@ -1,6 +1,66 @@
-// routes/contacts.js - Updated with Multi-Group Support
+// routes/contacts.js - Updated with Phone Number Validation
 const express = require("express");
 const util = require("util");
+
+// ========================================
+// ✅ PHONE NUMBER VALIDATOR
+// ========================================
+function validatePhoneNumber(number) {
+  const cleaned = String(number).trim().replace(/[^\d+]/g, '');
+  
+  if (!cleaned) {
+    return {
+      valid: false,
+      message: 'Nomor telepon tidak boleh kosong'
+    };
+  }
+
+  const digitOnly = cleaned.replace(/\+/g, '');
+  if (digitOnly.length < 10) {
+    return {
+      valid: false,
+      message: 'Nomor telepon minimal 10 digit'
+    };
+  }
+  
+  if (digitOnly.length > 15) {
+    return {
+      valid: false,
+      message: 'Nomor telepon maksimal 15 digit'
+    };
+  }
+
+  const patterns = [
+    /^08\d{8,13}$/,           // 08xxxxxxxxxx
+    /^\+628\d{8,13}$/,        // +628xxxxxxxxxx
+    /^628\d{8,13}$/           // 628xxxxxxxxxx
+  ];
+
+  const isValidFormat = patterns.some(pattern => pattern.test(cleaned));
+  
+  if (!isValidFormat) {
+    return {
+      valid: false,
+      message: 'Format nomor tidak valid. Gunakan format: 08xx, +628xx, atau 628xx'
+    };
+  }
+
+  // Normalize to 08xx format
+  let normalized = cleaned;
+  if (normalized.startsWith('+62')) {
+    normalized = '0' + normalized.slice(3);
+  } else if (normalized.startsWith('628')) {
+    normalized = '0' + normalized.slice(2);
+  } else if (normalized.startsWith('62') && !normalized.startsWith('620')) {
+    normalized = '0' + normalized.slice(2);
+  }
+
+  return {
+    valid: true,
+    message: 'Nomor telepon valid',
+    normalized: normalized
+  };
+}
 
 function createContactsRouter(db) {
   const router = express.Router();
@@ -12,6 +72,15 @@ function createContactsRouter(db) {
       db.run(sql, params, function (err) {
         if (err) return reject(err);
         resolve({ lastID: this.lastID, changes: this.changes });
+      });
+    });
+  };
+
+  const dbGet = (sql, params = []) => {
+    return new Promise((resolve, reject) => {
+      db.get(sql, params, (err, row) => {
+        if (err) return reject(err);
+        resolve(row);
       });
     });
   };
@@ -72,19 +141,59 @@ function createContactsRouter(db) {
   router.post("/", async (req, res) => {
     const { name, number, instansi, jabatan, grup } = req.body;
 
-    if (!name || !number || !instansi || !jabatan) {
-      return res
-        .status(400)
-        .json({ error: "Nama, nomor, instansi, dan jabatan wajib diisi." });
+    if (!name || !number) {
+      return res.status(400).json({ 
+        error: "Nama dan nomor wajib diisi." 
+      });
     }
 
-    // ✅ Support multiple groups - already in JSON array format from frontend
+    // ✅ VALIDASI NAMA
+    if (name.trim().length < 2) {
+      return res.status(400).json({ 
+        error: "Nama minimal 2 karakter",
+        field: 'name'
+      });
+    }
+
+    // ✅ VALIDASI NOMOR TELEPON
+    const phoneValidation = validatePhoneNumber(number);
+    
+    if (!phoneValidation.valid) {
+      return res.status(400).json({ 
+        error: phoneValidation.message,
+        field: 'number'
+      });
+    }
+
+    // ✅ CEK DUPLIKASI NOMOR
+    try {
+      const existingContact = await dbGet(
+        "SELECT id, name FROM contacts WHERE number = ?",
+        [phoneValidation.normalized]
+      );
+      
+      if (existingContact) {
+        return res.status(409).json({ 
+          error: `Nomor ${phoneValidation.normalized} sudah terdaftar atas nama "${existingContact.name}"`,
+          field: 'number',
+          duplicate: true,
+          existingContact: {
+            id: existingContact.id,
+            name: existingContact.name
+          }
+        });
+      }
+    } catch (err) {
+      console.error("Error checking duplicate:", err);
+      return res.status(500).json({ error: "Gagal memeriksa duplikasi nomor" });
+    }
+
+    // ✅ Support multiple groups
     let groupValue = null;
     let groupNamesForSync = [];
 
     if (typeof grup === "string" && grup.trim()) {
       try {
-        // Try to parse as JSON array first
         const parsed = JSON.parse(grup);
         if (Array.isArray(parsed) && parsed.length > 0) {
           groupValue = grup;
@@ -93,7 +202,6 @@ function createContactsRouter(db) {
             .filter(Boolean);
         }
       } catch (e) {
-        // If not JSON, treat as single group
         groupValue = JSON.stringify([grup.trim()]);
         groupNamesForSync = [grup.trim()];
       }
@@ -105,32 +213,42 @@ function createContactsRouter(db) {
       groupNamesForSync = trimmed;
     }
 
-    const sql =
-      "INSERT INTO contacts (name, number, instansi, jabatan, grup) VALUES (?, ?, ?, ?, ?)";
+    const sql = "INSERT INTO contacts (name, number, instansi, jabatan, grup) VALUES (?, ?, ?, ?, ?)";
 
     try {
       const result = await dbRun(sql, [
-        name,
-        number,
-        instansi,
-        jabatan,
+        name.trim(),
+        phoneValidation.normalized,
+        instansi || null,  // ← Bisa NULL
+        jabatan || null,   // ← Bisa NULL
         groupValue,
       ]);
+      
 
-      // Respond first
-      res.json({ message: "Kontak berhasil ditambahkan", id: result.lastID });
+      // Respond with success
+      res.json({ 
+        message: "Kontak berhasil ditambahkan", 
+        id: result.lastID,
+        data: {
+          id: result.lastID,
+          name: name.trim(),
+          number: phoneValidation.normalized,
+          instansi,
+          jabatan,
+          grup: groupValue
+        }
+      });
 
-      // Sync all groups (don't wait)
+      // Sync all groups (async, don't wait)
       if (groupNamesForSync.length > 0) {
         for (const groupName of groupNamesForSync) {
-          await updateGroupMembers(groupName, number, "add").catch((e) =>
-            console.error(`sync add group ${groupName} failed:`, e)
-          );
+          await updateGroupMembers(groupName, phoneValidation.normalized, "add")
+            .catch((e) => console.error(`sync add group ${groupName} failed:`, e));
         }
       }
     } catch (err) {
       console.error("Insert contact error:", err);
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: "Gagal menambahkan kontak ke database" });
     }
   });
 
@@ -139,7 +257,49 @@ function createContactsRouter(db) {
     const { id } = req.params;
     const { name, number, instansi, jabatan, grup } = req.body;
 
+     if (!name || !number) {
+      return res.status(400).json({ 
+        error: "Nama dan nomor wajib diisi." 
+      });
+    }
+
+    // ✅ VALIDASI NAMA
+    if (name.trim().length < 2) {
+      return res.status(400).json({ 
+        error: "Nama minimal 2 karakter",
+        field: 'name'
+      });
+    }
+
+    // ✅ VALIDASI NOMOR TELEPON
+    const phoneValidation = validatePhoneNumber(number);
+    
+    if (!phoneValidation.valid) {
+      return res.status(400).json({ 
+        error: phoneValidation.message,
+        field: 'number'
+      });
+    }
+
     try {
+      // ✅ CEK DUPLIKASI (kecuali untuk kontak yang sedang diedit)
+      const existingContact = await dbGet(
+        "SELECT id, name FROM contacts WHERE number = ? AND id != ?",
+        [phoneValidation.normalized, id]
+      );
+      
+      if (existingContact) {
+        return res.status(409).json({ 
+          error: `Nomor ${phoneValidation.normalized} sudah terdaftar atas nama "${existingContact.name}"`,
+          field: 'number',
+          duplicate: true,
+          existingContact: {
+            id: existingContact.id,
+            name: existingContact.name
+          }
+        });
+      }
+
       // Get old contact data for synchronization
       const oldRows = await dbAll(
         "SELECT number, grup FROM contacts WHERE id = ?",
@@ -147,9 +307,9 @@ function createContactsRouter(db) {
       );
 
       if (!oldRows || oldRows.length === 0) {
-        return res
-          .status(404)
-          .json({ message: `Kontak dengan ID ${id} tidak ditemukan.` });
+        return res.status(404).json({ 
+          error: `Kontak dengan ID ${id} tidak ditemukan.` 
+        });
       }
 
       const oldNumber = oldRows[0].number;
@@ -183,30 +343,37 @@ function createContactsRouter(db) {
         newGrupArray = trimmed;
       }
 
-      // Update contact
-      const sql =
-        "UPDATE contacts SET name = ?, number = ?, instansi = ?, jabatan = ?, grup = ? WHERE id = ?";
-      const result = await dbRun(sql, [
-        name,
-        number,
-        instansi,
-        jabatan,
+      const sql = "UPDATE contacts SET name = ?, number = ?, instansi = ?, jabatan = ?, grup = ? WHERE id = ?";
+    
+    const result = await dbRun(sql, [
+        name.trim(),
+        phoneValidation.normalized,
+        instansi || null,  // ← Bisa NULL
+        jabatan || null,   // ← Bisa NULL
         groupValue,
         id,
-      ]);
+    ]);
 
       if (result.changes === 0) {
-        return res
-          .status(404)
-          .json({ message: `Kontak dengan ID ${id} tidak ditemukan.` });
+        return res.status(404).json({ 
+          error: `Kontak dengan ID ${id} tidak ditemukan.` 
+        });
       }
 
       res.json({
-        message: `Kontak ${id} berhasil diperbarui`,
+        message: `Kontak berhasil diperbarui`,
         changes: result.changes,
+        data: {
+          id,
+          name: name.trim(),
+          number: phoneValidation.normalized,
+          instansi,
+          jabatan,
+          grup: groupValue
+        }
       });
 
-      // SYNCHRONIZATION LOGIC for multiple groups
+      // SYNCHRONIZATION LOGIC for multiple groups (async)
       (async () => {
         try {
           const oldSet = new Set(oldGrupArray.map(String));
@@ -222,16 +389,15 @@ function createContactsRouter(db) {
           // Add to new groups
           for (const newGroup of newGrupArray) {
             if (!oldSet.has(String(newGroup))) {
-              await updateGroupMembers(newGroup, number, "add");
+              await updateGroupMembers(newGroup, phoneValidation.normalized, "add");
             }
           }
 
           // If number changed, update all current groups
-          if (oldNumber !== number) {
-            // Remove old number from all current groups
+          if (oldNumber !== phoneValidation.normalized) {
             for (const groupName of newGrupArray) {
               await updateGroupMembers(groupName, oldNumber, "remove");
-              await updateGroupMembers(groupName, number, "add");
+              await updateGroupMembers(groupName, phoneValidation.normalized, "add");
             }
           }
         } catch (e) {
@@ -240,7 +406,7 @@ function createContactsRouter(db) {
       })();
     } catch (err) {
       console.error("Update contact error:", err);
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: "Gagal mengupdate kontak" });
     }
   });
 
@@ -256,9 +422,9 @@ function createContactsRouter(db) {
       );
 
       if (!rows || rows.length === 0) {
-        return res
-          .status(404)
-          .json({ message: `Kontak dengan ID ${id} tidak ditemukan.` });
+        return res.status(404).json({ 
+          error: `Kontak dengan ID ${id} tidak ditemukan.` 
+        });
       }
 
       const number = rows[0].number;
@@ -273,17 +439,17 @@ function createContactsRouter(db) {
       const result = await dbRun("DELETE FROM contacts WHERE id = ?", [id]);
 
       if (result.changes === 0) {
-        return res
-          .status(404)
-          .json({ message: `Kontak dengan ID ${id} tidak ditemukan.` });
+        return res.status(404).json({ 
+          error: `Kontak dengan ID ${id} tidak ditemukan.` 
+        });
       }
 
       res.json({
-        message: `Kontak ${id} berhasil dihapus`,
-        changes: result.changes,
+        message: `Kontak berhasil dihapus`,
+        changes: result.changes
       });
 
-      // Synchronization: remove number from all assigned groups
+      // Synchronization: remove number from all assigned groups (async)
       (async () => {
         try {
           for (const g of Array.isArray(grups) ? grups : []) {
@@ -297,7 +463,7 @@ function createContactsRouter(db) {
       })();
     } catch (err) {
       console.error("Delete contact error:", err);
-      return res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: "Gagal menghapus kontak" });
     }
   });
 

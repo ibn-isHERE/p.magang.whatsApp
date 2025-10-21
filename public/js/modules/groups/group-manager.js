@@ -1,4 +1,4 @@
-// group-manager.js - Group Management Module (FIXED - Export semua functions)
+// group-manager.js - Group Management Module (UPDATED dengan Auto-Sync)
 
 let groups = [];
 export let selectedGroupMembers = new Set();
@@ -172,7 +172,56 @@ function updateGroupMembersInput() {
 }
 
 /**
- * Handles group form submission (ADD only)
+ * AUTO-SYNC: Cari kontak yang punya grup name di field 'grup' mereka
+ * Ini dipanggil saat grup baru dibuat
+ */
+async function autoSyncGroupMembers(groupName, selectedMembers) {
+  try {
+    console.log(`🔍 Auto-syncing grup "${groupName}"...`);
+    
+    // Fetch all contacts dari server
+    const res = await fetch("/api/contacts");
+    const result = await res.json();
+    const allContacts = result.data || [];
+
+    // Find kontak yang punya grup name ini di field 'grup' mereka
+    const contactsWithThisGroup = allContacts.filter(contact => {
+      try {
+        let grupArray = [];
+        if (contact.grup) {
+          const parsed = JSON.parse(contact.grup);
+          grupArray = Array.isArray(parsed) ? parsed : [contact.grup];
+        }
+        return grupArray.some(g => String(g).toLowerCase() === String(groupName).toLowerCase());
+      } catch (e) {
+        return String(contact.grup).toLowerCase() === String(groupName).toLowerCase();
+      }
+    });
+
+    console.log(`📊 Found ${contactsWithThisGroup.length} contacts dengan grup "${groupName}"`);
+
+    // Merge dengan selected members
+    const membersSet = new Set(selectedMembers.map(String));
+    
+    contactsWithThisGroup.forEach(contact => {
+      membersSet.add(String(contact.number));
+    });
+
+    const finalMembers = Array.from(membersSet);
+    
+    console.log(`✅ Final members untuk grup "${groupName}": ${finalMembers.length}`);
+    console.log(`   Members:`, finalMembers);
+
+    return finalMembers;
+
+  } catch (error) {
+    console.error(`❌ Error in autoSyncGroupMembers:`, error);
+    return selectedMembers; // Fallback ke selected members saja
+  }
+}
+
+/**
+ * Handles group form submission (ADD only) - WITH AUTO-SYNC
  */
 export async function handleGroupFormSubmit(e) {
   e.preventDefault();
@@ -182,7 +231,13 @@ export async function handleGroupFormSubmit(e) {
   const membersInput = document.getElementById("group-crud-members");
   
   const name = nameInput.value.trim();
-  const contactNumbers = membersInput.value;
+  let selectedMembers = [];
+  
+  try {
+    selectedMembers = membersInput.value ? JSON.parse(membersInput.value) : [];
+  } catch (err) {
+    selectedMembers = [];
+  }
 
   if (!name) {
     Swal.fire("Peringatan", "Nama grup wajib diisi.", "warning");
@@ -196,10 +251,21 @@ export async function handleGroupFormSubmit(e) {
   }
 
   try {
+    // ✨ AUTO-SYNC: Cari kontak yang udah punya grup name ini di import sebelumnya
+    const finalMembers = await autoSyncGroupMembers(name, selectedMembers);
+    
+    // Prepare payload dengan final members
+    const payload = { 
+      name, 
+      contactNumbers: JSON.stringify(finalMembers)
+    };
+
+    console.log(`📤 Mengirim ke server:`, payload);
+
     const res = await fetch("/api/groups", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, contactNumbers }),
+      body: JSON.stringify(payload),
     });
 
     const result = await res.json();
@@ -211,7 +277,17 @@ export async function handleGroupFormSubmit(e) {
     const contactManager = await import('../contacts/contact-manager.js');
     await contactManager.fetchAndRenderContacts();
     
-    Swal.fire("Sukses", result.message || "Grup berhasil ditambah.", "success");
+    // Tampilkan pesan dengan detail sync
+    const syncInfo = finalMembers.length > selectedMembers.length 
+      ? `<br><small style="color: #48bb78;">✨ ${finalMembers.length - selectedMembers.length} kontak dari import sebelumnya ditambahkan otomatis</small>`
+      : '';
+    
+    Swal.fire(
+      "Sukses", 
+      result.message + syncInfo || "Grup berhasil ditambah." + syncInfo, 
+      "success"
+    );
+    
     resetGroupForm();
     await contactManager.fetchGroupsForDropdown(); 
     fetchAndRenderGroups();

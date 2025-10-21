@@ -7,7 +7,7 @@
     <link
       rel="icon"
       type="image/x-icon"
-      href="/wa_pengingat/public/asset/result_bps.png"
+      href="./asset/result_bps.png"
     />
     <link rel="stylesheet" href="chat_style.css" />
     <link rel="stylesheet" href="css/main.css" />
@@ -21,6 +21,8 @@
       rel="stylesheet"
     />
     <script src="/socket.io/socket.io.js"></script>
+    <script src="./js/phone-validator.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   </head>
 
   <body>
@@ -575,23 +577,70 @@
             </form>
 
             <form
-              id="import-form"
-              action="/api/import"
-              method="post"
-              enctype="multipart/form-data"
-              style="margin-top: 30px"
-            >
-              <h3>Import Kontak dari File</h3>
-              <input
-                type="file"
-                name="contactFile"
-                accept=".csv, .json, .xlsx, .xls"
-                required
-              />
-              <button type="submit">
-                <i class="fa-solid fa-file-import"></i> Import
-              </button>
-            </form>
+  id="import-form"
+  action="/api/import"
+  method="post"
+  enctype="multipart/form-data"
+  style="margin-top: 30px"
+>
+  <h3>Import Kontak dari File</h3>
+  
+  <!-- Help Section -->
+  <div class="import-help-banner">
+    <div class="import-help-content">
+      <div class="import-help-text">
+        <strong class="import-help-title">
+          <i class="fa-solid fa-info-circle"></i> Format yang Didukung
+        </strong>
+        <small class="import-help-subtitle">
+          CSV (.csv), Excel (.xlsx, .xls), JSON (.json) • Max 5MB
+        </small>
+      </div>
+      <button type="button" onclick="window.showImportHelp()" class="import-help-btn">
+        <i class="fa-solid fa-question-circle"></i> Bantuan
+      </button>
+    </div>
+  </div>
+
+  <!-- Template Downloads -->
+  <div class="import-template-buttons">
+    <button type="button" id="downloadCSVTemplate" class="import-template-btn csv-btn">
+      <i class="fa-solid fa-download"></i> Download Template CSV
+    </button>
+    <button type="button" id="showExcelGuide" class="import-template-btn excel-btn">
+      <i class="fa-solid fa-file-excel"></i> Format Excel
+    </button>
+  </div>
+
+  <!-- File Input -->
+  <div class="import-file-wrapper">
+    <label for="contactFileInput" class="import-file-label">
+      <div class="import-file-dropzone">
+        <i class="fa-solid fa-cloud-upload import-file-icon"></i>
+        <strong class="import-file-title">Pilih File untuk Import</strong>
+        <small class="import-file-subtitle">
+          Klik di sini atau drag & drop file
+        </small>
+      </div>
+    </label>
+    <input
+      type="file"
+      id="contactFileInput"
+      name="contactFile"
+      accept=".csv, .json, .xlsx, .xls"
+      required
+      class="import-file-input"
+    />
+  </div>
+
+  <!-- File preview will be inserted here by JavaScript -->
+  <!-- The .import-file-info div will be dynamically added -->
+
+  <!-- Submit Button -->
+  <button type="submit" class="import-submit-btn">
+    <i class="fa-solid fa-file-import"></i> Import Kontak
+  </button>
+</form>
           </div>
 
           <div id="groupsFormContainer" class="form-content hidden">

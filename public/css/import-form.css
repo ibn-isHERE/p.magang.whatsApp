@@ -1,0 +1,470 @@
+/* ========================================
+   IMPORT FORM STYLING
+   Path: public/css/import-form.css
+   ======================================== */
+
+/* Import Help Banner */
+.import-help-banner {
+  background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border-left: 4px solid #4299e1;
+  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.1);
+}
+
+.import-help-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.import-help-text {
+  flex: 1;
+}
+
+.import-help-title {
+  color: #2c5282;
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.import-help-title i {
+  margin-right: 6px;
+  color: #4299e1;
+}
+
+.import-help-subtitle {
+  color: #4a5568;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.import-help-btn {
+  background: white;
+  border: 2px solid #4299e1;
+  color: #2c5282;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.import-help-btn:hover {
+  background: #4299e1;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(66, 153, 225, 0.25);
+}
+
+.import-help-btn i {
+  font-size: 14px;
+}
+
+/* Template Download Buttons */
+.import-template-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.import-template-btn {
+  flex: 1;
+  border: none;
+  padding: 11px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all 0.2s ease;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.import-template-btn i {
+  font-size: 14px;
+}
+
+.csv-btn {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+}
+
+.csv-btn:hover {
+  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(72, 187, 120, 0.3);
+}
+
+.excel-btn {
+  background: linear-gradient(135deg, #4299e1 0%, #2b6cb0 100%);
+}
+
+.excel-btn:hover {
+  background: linear-gradient(135deg, #2b6cb0 0%, #2c5282 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(66, 153, 225, 0.3);
+}
+
+/* File Input Wrapper */
+.import-file-wrapper {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.import-file-label {
+  cursor: pointer;
+  display: block;
+}
+
+.import-file-dropzone {
+  border: 2px dashed #cbd5e0;
+  padding: 28px 20px;
+  border-radius: 10px;
+  text-align: center;
+  transition: all 0.3s ease;
+  background: #f7fafc;
+}
+
+.import-file-label:hover .import-file-dropzone {
+  background-color: #ebf8ff;
+  border-color: #4299e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.15);
+}
+
+.import-file-icon {
+  font-size: 42px;
+  color: #4299e1;
+  margin-bottom: 12px;
+  display: block;
+  animation: floatIcon 3s ease-in-out infinite;
+}
+
+@keyframes floatIcon {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.import-file-title {
+  color: #2d3748;
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.import-file-subtitle {
+  color: #718096;
+  font-size: 12px;
+  display: block;
+}
+
+.import-file-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* File Info Preview (dynamically added) */
+.import-file-info {
+  margin-top: 12px;
+  padding: 14px;
+  background: linear-gradient(135deg, #ebf8ff 0%, #e6fffa 100%);
+  border-radius: 8px;
+  border-left: 4px solid #4299e1;
+  font-size: 13px;
+  color: #2c5282;
+  animation: slideInDown 0.3s ease;
+  box-shadow: 0 2px 8px rgba(66, 153, 225, 0.1);
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.import-file-info > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.import-file-info .file-icon-box {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  background: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.import-file-info .file-icon-box i {
+  font-size: 20px;
+  color: #4299e1;
+}
+
+.import-file-info .file-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.import-file-info strong {
+  display: block;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #2d3748;
+  font-size: 13px;
+}
+
+.import-file-info small {
+  color: #718096;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.import-file-info .file-type-badge {
+  background: #4299e1;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.import-file-info button {
+  flex-shrink: 0;
+  background: #fc8181;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.import-file-info button:hover {
+  background: #f56565;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(252, 129, 129, 0.4);
+}
+
+.import-file-info button i {
+  font-size: 14px;
+}
+
+/* Submit Button */
+.import-submit-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #2b6cb0 0%, #2c5282 100%);
+  color: white;
+  border: none;
+  padding: 13px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 16px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(43, 108, 176, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.import-submit-btn:hover {
+  background: linear-gradient(135deg, #2c5282 0%, #1a365d 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(43, 108, 176, 0.3);
+}
+
+.import-submit-btn:active {
+  transform: translateY(0);
+}
+
+.import-submit-btn i {
+  font-size: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .import-help-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .import-help-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .import-template-buttons {
+    flex-direction: column;
+  }
+
+  .import-file-dropzone {
+    padding: 20px 16px;
+  }
+
+  .import-file-icon {
+    font-size: 36px;
+  }
+
+  .import-file-title {
+    font-size: 13px;
+  }
+
+  .import-file-subtitle {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .import-help-title {
+    font-size: 13px;
+  }
+
+  .import-help-subtitle {
+    font-size: 11px;
+  }
+
+  .import-template-btn {
+    padding: 10px 12px;
+    font-size: 11px;
+  }
+
+  .import-file-dropzone {
+    padding: 18px 14px;
+  }
+
+  .import-file-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+  }
+
+  .import-file-info {
+    padding: 12px;
+  }
+
+  .import-file-info .file-icon-box {
+    width: 36px;
+    height: 36px;
+  }
+
+  .import-file-info .file-icon-box i {
+    font-size: 18px;
+  }
+
+  .import-submit-btn {
+    padding: 11px 16px;
+    font-size: 13px;
+  }
+}
+
+/* Loading State */
+.import-submit-btn.loading {
+  position: relative;
+  color: transparent;
+  pointer-events: none;
+}
+
+.import-submit-btn.loading::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  top: 50%;
+  left: 50%;
+  margin-left: -9px;
+  margin-top: -9px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Success/Error States */
+.import-file-dropzone.success {
+  border-color: #48bb78;
+  background: #f0fff4;
+}
+
+.import-file-dropzone.error {
+  border-color: #fc8181;
+  background: #fff5f5;
+}
+
+/* Drag and Drop States */
+.import-file-dropzone.drag-over {
+  background: #e6fffa;
+  border-color: #38b2ac;
+  transform: scale(1.02);
+}
+
+/* Focus States for Accessibility */
+.import-file-label:focus-within .import-file-dropzone {
+  outline: 2px solid #4299e1;
+  outline-offset: 2px;
+}
+
+.import-template-btn:focus,
+.import-help-btn:focus,
+.import-submit-btn:focus {
+  outline: 2px solid #4299e1;
+  outline-offset: 2px;
+}
+
+/* Disable State */
+.import-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.import-submit-btn:disabled:hover {
+  transform: none;
+  box-shadow: 0 4px 6px rgba(43, 108, 176, 0.2);
+}

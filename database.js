@@ -64,23 +64,48 @@ db.serialize(() => {
 
     // 3. Tabel untuk manajemen kontak (contacts)
     db.run(
-        `CREATE TABLE IF NOT EXISTS contacts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            number TEXT NOT NULL UNIQUE,
-            instansi TEXT NOT NULL,
-            jabatan TEXT NOT NULL,
-            grup TEXT,
-            createdAt TEXT DEFAULT CURRENT_TIMESTAMP
-        )`,
-        (err) => {
-            if (err) {
-                console.error("Gagal membuat tabel 'contacts':", err.message);
-            } else {
-                console.log("Tabel 'contacts' siap digunakan.");
-            }
+    `CREATE TABLE IF NOT EXISTS contacts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        number TEXT NOT NULL UNIQUE,
+        instansi TEXT NOT NULL,
+        jabatan TEXT NOT NULL,
+        grup TEXT,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    (err) => {
+        if (err) {
+            console.error("Gagal membuat tabel 'contacts':", err.message);
+        } else {
+            console.log("Tabel 'contacts' siap digunakan.");
+            
+            // ✅ MIGRATION LANGSUNG
+            console.log("🔄 Melakukan migration schema...");
+            
+            db.serialize(() => {
+                db.run(`CREATE TABLE contacts_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    number TEXT NOT NULL UNIQUE,
+                    instansi TEXT,
+                    jabatan TEXT,
+                    grup TEXT,
+                    createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+                )`);
+                
+                db.run(`INSERT INTO contacts_new SELECT * FROM contacts`);
+                
+                db.run(`DROP TABLE contacts`);
+                
+                db.run(`ALTER TABLE contacts_new RENAME TO contacts`, (err) => {
+                    if (!err) {
+                        console.log("✅ Migration berhasil! instansi & jabatan sekarang optional.");
+                    }
+                });
+            });
         }
-    );
+    }
+);
 
      // 4. Tabel untuk chat/customer service (UPDATED WITH MEDIA SUPPORT)
     db.run(

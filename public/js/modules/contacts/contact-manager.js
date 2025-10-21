@@ -1,4 +1,4 @@
-// contact-manager.js - Contact Management Module (FIXED - No Circular Dependencies)
+// contact-manager.js - Contact Management Module with Phone Validation
 
 import { showEditContactModal, closeEditContactModal } from "../ui/ui-helpers.js";
 
@@ -33,7 +33,6 @@ export async function fetchAndRenderContacts() {
     contacts = result.data;
     filteredContacts = contacts;
 
-    // Import dynamically to avoid circular dependency
     const contactUI = await import('./contact-ui.js');
     contactUI.renderContactManagementTable(contacts, selectedContactsToDelete);
     contactUI.renderContactList();
@@ -54,7 +53,6 @@ export async function fetchGroupsForDropdown() {
     if (res.ok && result.data) {
       const groups = result.data.sort((a, b) => a.name.localeCompare(b.name));
       
-      // Import dynamically
       const contactGroups = await import('./contact-groups.js');
       contactGroups.setGroups(groups);
       contactGroups.renderGroupSelectionList();
@@ -99,13 +97,19 @@ export async function showEditContactForm(id) {
     <form id="editContactForm">
       <input type="hidden" id="edit-contact-id" value="${contact.id}">
       
-      <label for="edit-contact-name">Nama Kontak:</label>
+      <label for="edit-contact-name">
+        <i class="fa-solid fa-user"></i> Nama Kontak:
+      </label>
       <input type="text" id="edit-contact-name" class="phone-num-input" value="${contact.name}" required>
       
-      <label for="edit-contact-number">Nomor (contoh: 0812...):</label>
+      <label for="edit-contact-number">
+        <i class="fa-solid fa-phone"></i> Nomor (contoh: 0812...):
+      </label>
       <input type="tel" id="edit-contact-number" class="phone-num-input" value="${contact.number}" required>
 
-      <label for="edit-contact-instansi">Instansi:</label>
+      <label for="edit-contact-instansi">
+        <i class="fa-solid fa-building"></i> Instansi:
+      </label>
       <select id="edit-contact-instansi" class="phone-num-input" required>
         <option value="">-- Pilih Instansi --</option>
         <option value="Tim ZI">Tim ZI</option>
@@ -122,14 +126,18 @@ export async function showEditContactForm(id) {
         <option value="Tim Manajemen dan Tata Kelola">Tim Manajemen dan Tata Kelola</option>
       </select>
 
-      <label for="edit-contact-jabatan">Jabatan:</label>
+      <label for="edit-contact-jabatan">
+        <i class="fa-solid fa-briefcase"></i> Jabatan:
+      </label>
       <select id="edit-contact-jabatan" class="phone-num-input" required>
         <option value="">-- Pilih Jabatan --</option>
         <option value="Kepala Bagian Umum">Kepala Bagian Umum</option>
         <option value="Pegawai">Pegawai</option>
       </select>
 
-      <label for="editContactGroupSearch">Grup (pilih satu atau lebih):</label>
+      <label for="editContactGroupSearch">
+        <i class="fa-solid fa-users"></i> Grup (pilih satu atau lebih):
+      </label>
       <div class="search-box-wrapper" style="margin-bottom: 8px;">
         <i class="fa-solid fa-search"></i>
         <input type="text" id="editContactGroupSearch" placeholder="Cari grup..." autocomplete="off" />
@@ -139,8 +147,12 @@ export async function showEditContactForm(id) {
         <small style='color: #a0aec0;'>Belum ada grup dipilih</small>
       </div>
 
-      <button type="submit" id="updateContactBtn">Update Kontak</button>
-      <button type="button" id="cancelEditContactBtn" style="background-color: #6c757d; margin-top: 10px;">Batal</button>
+      <button type="submit" id="updateContactBtn">
+        <i class="fa-solid fa-save"></i> Update Kontak
+      </button>
+      <button type="button" id="cancelEditContactBtn" style="background-color: #6c757d; margin-top: 10px;">
+        <i class="fa-solid fa-times"></i> Batal
+      </button>
     </form>
   `;
 
@@ -157,6 +169,9 @@ export async function showEditContactForm(id) {
     });
   }
 
+  // ✅ Setup real-time validation untuk edit form
+  setupEditFormValidation();
+
   showEditContactModal();
 
   document.getElementById("editContactForm").addEventListener("submit", handleEditContactSubmit);
@@ -164,7 +179,51 @@ export async function showEditContactForm(id) {
 }
 
 /**
- * Handles edit contact form submission
+ * ✅ Setup real-time validation untuk edit form
+ */
+function setupEditFormValidation() {
+  const numberInput = document.getElementById("edit-contact-number");
+  if (numberInput) {
+    numberInput.addEventListener('input', function() {
+      const value = this.value.trim();
+      
+      if (!value) {
+        this.style.borderColor = '#cbd5e0';
+        this.style.background = 'white';
+        return;
+      }
+      
+      if (window.PhoneValidator) {
+        const validation = window.PhoneValidator.validatePhoneNumber(value);
+        
+        if (validation.valid) {
+          this.style.borderColor = '#48bb78';
+          this.style.background = '#f0fff4';
+        } else {
+          this.style.borderColor = '#f56565';
+          this.style.background = '#fff5f5';
+        }
+      }
+    });
+    
+    numberInput.addEventListener('blur', function() {
+      const value = this.value.trim();
+      if (!value) return;
+      
+      if (window.PhoneValidator) {
+        const validation = window.PhoneValidator.validatePhoneNumber(value);
+        if (validation.valid) {
+          this.value = validation.normalized;
+          this.style.borderColor = '#48bb78';
+          this.style.background = '#f0fff4';
+        }
+      }
+    });
+  }
+}
+
+/**
+ * ✅ Handles edit contact form submission with validation
  */
 async function handleEditContactSubmit(event) {
   event.preventDefault();
@@ -175,6 +234,59 @@ async function handleEditContactSubmit(event) {
   const instansi = document.getElementById("edit-contact-instansi").value;
   const jabatan = document.getElementById("edit-contact-jabatan").value;
 
+  // ✅ VALIDASI NAMA
+  if (!name || name.trim().length < 2) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Nama Tidak Valid',
+      text: 'Nama minimal 2 karakter',
+      confirmButtonColor: '#f56565'
+    });
+    return;
+  }
+
+  // ✅ VALIDASI NOMOR TELEPON
+  if (!window.PhoneValidator) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'Phone validator tidak tersedia. Silakan refresh halaman.',
+      confirmButtonColor: '#f56565'
+    });
+    return;
+  }
+
+  const phoneValidation = window.PhoneValidator.validatePhoneNumber(number);
+  
+  if (!phoneValidation.valid) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Format Nomor Salah',
+      html: `
+        <p style="margin-bottom: 12px;">${phoneValidation.message}</p>
+        <div style="text-align: left; background: #f7fafc; padding: 12px; border-radius: 6px; font-size: 13px;">
+          <strong>Format yang diterima:</strong>
+          <ul style="margin: 8px 0; padding-left: 20px;">
+            <li>08xxxxxxxxxx (10-15 digit)</li>
+            <li>+628xxxxxxxxxx</li>
+            <li>628xxxxxxxxxx</li>
+          </ul>
+          <strong>Contoh:</strong> 081234567890
+        </div>
+      `,
+      confirmButtonColor: '#f56565'
+    });
+    
+    const numberInput = document.getElementById("edit-contact-number");
+    if (numberInput) {
+      numberInput.style.borderColor = '#f56565';
+      numberInput.style.background = '#fff5f5';
+      numberInput.focus();
+    }
+    
+    return;
+  }
+
   const grupArray = Array.from(selectedEditContactGroups);
   const grup = grupArray.length > 0 ? JSON.stringify(grupArray) : null;
 
@@ -182,19 +294,59 @@ async function handleEditContactSubmit(event) {
     const res = await fetch(`/api/contacts/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, number, instansi, jabatan, grup }),
+      body: JSON.stringify({ 
+        name: name.trim(), 
+        number: phoneValidation.normalized, 
+        instansi, 
+        jabatan, 
+        grup 
+      }),
     });
 
     const result = await res.json();
+    
+    // ✅ HANDLE ERROR DUPLIKASI
+    if (res.status === 409 && result.duplicate) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Nomor Sudah Terdaftar',
+        html: `
+          <div style="text-align: left;">
+            <p style="margin-bottom: 12px;">${result.error}</p>
+            <div style="background: #fff5f5; padding: 12px; border-radius: 6px; border-left: 4px solid #f56565;">
+              <strong>📋 Kontak yang sudah ada:</strong><br>
+              <strong>Nama:</strong> ${result.existingContact?.name || 'Unknown'}<br>
+              <strong>ID:</strong> #${result.existingContact?.id || 'N/A'}
+            </div>
+          </div>
+        `,
+        confirmButtonText: 'Mengerti',
+        confirmButtonColor: '#f56565'
+      });
+      return;
+    }
+    
     if (!res.ok) throw new Error(result.error || "Terjadi kesalahan.");
 
-    Swal.fire("Sukses!", `Kontak berhasil diupdate.`, "success");
+    Swal.fire({
+      icon: "success",
+      title: "Sukses!",
+      text: "Kontak berhasil diupdate.",
+      confirmButtonColor: "#48bb78"
+    });
+    
     closeEditContactModal();
     selectedEditContactGroups.clear();
     await fetchGroupsForDropdown();
     await fetchAndRenderContacts();
+    
   } catch (error) {
-    Swal.fire("Error", error.message, "error");
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: error.message,
+      confirmButtonColor: "#f56565"
+    });
   }
 }
 
@@ -207,6 +359,13 @@ export async function resetContactCrudForm() {
   document.getElementById("contact-crud-submit").textContent = "Tambah Kontak";
   document.getElementById("contact-crud-cancel").style.display = "none";
   selectedContactGroups.clear();
+  
+  // ✅ Reset input styling
+  const numberInput = document.getElementById("contact-crud-number");
+  if (numberInput) {
+    numberInput.style.borderColor = '#cbd5e0';
+    numberInput.style.background = 'white';
+  }
   
   const contactGroups = await import('./contact-groups.js');
   contactGroups.renderContactCrudGroupList();
@@ -351,7 +510,7 @@ export async function handleBulkDeleteContacts() {
 }
 
 /**
- * Handles contact form submission (add/edit)
+ * ✅ Handles contact form submission (add/edit) with validation
  */
 let isSubmittingContact = false;
 
@@ -368,6 +527,59 @@ export async function handleContactFormSubmit(event) {
   const number = document.getElementById("contact-crud-number").value;
   const instansi = document.getElementById("contact-crud-instansi").value;
   const jabatan = document.getElementById("contact-crud-jabatan").value;
+
+  // ✅ VALIDASI NAMA
+  if (!name || name.trim().length < 2) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Nama Tidak Valid',
+      text: 'Nama minimal 2 karakter',
+      confirmButtonColor: '#f56565'
+    });
+    return;
+  }
+
+  // ✅ VALIDASI NOMOR TELEPON
+  if (!window.PhoneValidator) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'Phone validator tidak tersedia. Silakan refresh halaman.',
+      confirmButtonColor: '#f56565'
+    });
+    return;
+  }
+
+  const phoneValidation = window.PhoneValidator.validatePhoneNumber(number);
+  
+  if (!phoneValidation.valid) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Format Nomor Salah',
+      html: `
+        <p style="margin-bottom: 12px;">${phoneValidation.message}</p>
+        <div style="text-align: left; background: #f7fafc; padding: 12px; border-radius: 6px; font-size: 13px;">
+          <strong>Format yang diterima:</strong>
+          <ul style="margin: 8px 0; padding-left: 20px;">
+            <li>08xxxxxxxxxx (10-15 digit)</li>
+            <li>+628xxxxxxxxxx</li>
+            <li>628xxxxxxxxxx</li>
+          </ul>
+          <strong>Contoh:</strong> 081234567890
+        </div>
+      `,
+      confirmButtonColor: '#f56565'
+    });
+    
+    const numberInput = document.getElementById("contact-crud-number");
+    if (numberInput) {
+      numberInput.style.borderColor = '#f56565';
+      numberInput.style.background = '#fff5f5';
+      numberInput.focus();
+    }
+    
+    return;
+  }
 
   const grupArray = Array.from(selectedContactGroups);
   const grup = grupArray.length > 0 ? JSON.stringify(grupArray) : null;
@@ -388,21 +600,67 @@ export async function handleContactFormSubmit(event) {
     const res = await fetch(url, {
       method: method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, number, instansi, jabatan, grup }),
+      // ✅ Gunakan nomor yang sudah dinormalisasi
+      body: JSON.stringify({ 
+        name: name.trim(), 
+        number: phoneValidation.normalized, 
+        instansi, 
+        jabatan, 
+        grup 
+      }),
     });
 
     const result = await res.json();
+    
+    // ✅ HANDLE ERROR DUPLIKASI
+    if (res.status === 409 && result.duplicate) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Nomor Sudah Terdaftar',
+        html: `
+          <div style="text-align: left;">
+            <p style="margin-bottom: 12px;">${result.error}</p>
+            <div style="background: #fff5f5; padding: 12px; border-radius: 6px; border-left: 4px solid #f56565;">
+              <strong>📋 Kontak yang sudah ada:</strong><br>
+              <strong>Nama:</strong> ${result.existingContact?.name || 'Unknown'}<br>
+              <strong>ID:</strong> #${result.existingContact?.id || 'N/A'}
+            </div>
+          </div>
+        `,
+        confirmButtonText: 'Mengerti',
+        confirmButtonColor: '#f56565'
+      });
+      
+      const numberInput = document.getElementById("contact-crud-number");
+      if (numberInput) {
+        numberInput.style.borderColor = '#f56565';
+        numberInput.style.background = '#fff5f5';
+        numberInput.focus();
+        numberInput.select();
+      }
+      
+      return;
+    }
+    
     if (!res.ok) throw new Error(result.error || "Terjadi kesalahan.");
 
-    Swal.fire(
-      "Sukses!",
-      `Kontak berhasil ${isEditing ? "diupdate" : "ditambahkan"}.`,
-      "success"
-    );
-    resetContactCrudForm();
-    fetchAndRenderContacts();
+    Swal.fire({
+      icon: "success",
+      title: "Sukses!",
+      text: `Kontak berhasil ${isEditing ? "diupdate" : "ditambahkan"}.`,
+      confirmButtonColor: "#48bb78"
+    });
+    
+    await resetContactCrudForm();
+    await fetchAndRenderContacts();
+    
   } catch (error) {
-    Swal.fire("Error", error.message, "error");
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: error.message,
+      confirmButtonColor: "#f56565"
+    });
   } finally {
     isSubmittingContact = false;
     if (submitBtn) {
@@ -434,7 +692,7 @@ export function setFilteredContacts(filtered) {
 }
 
 /**
- * Initialize contact listeners
+ * ✅ Initialize contact listeners with real-time validation
  */
 export async function initContactListeners() {
   const contactSearch = document.getElementById("contactSearch");
@@ -457,6 +715,52 @@ export async function initContactListeners() {
   const cancelBtn = document.getElementById("contact-crud-cancel");
   if (cancelBtn) {
     cancelBtn.addEventListener("click", resetContactCrudForm);
+  }
+
+  // ✅ SETUP REAL-TIME VALIDATION UNTUK INPUT NOMOR
+  const numberInput = document.getElementById("contact-crud-number");
+  if (numberInput) {
+    // Remove existing listeners
+    const newInput = numberInput.cloneNode(true);
+    numberInput.parentNode.replaceChild(newInput, numberInput);
+    
+    // Add validation on input
+    newInput.addEventListener('input', function() {
+      const value = this.value.trim();
+      
+      if (!value) {
+        this.style.borderColor = '#cbd5e0';
+        this.style.background = 'white';
+        return;
+      }
+      
+      if (window.PhoneValidator) {
+        const validation = window.PhoneValidator.validatePhoneNumber(value);
+        
+        if (validation.valid) {
+          this.style.borderColor = '#48bb78';
+          this.style.background = '#f0fff4';
+        } else {
+          this.style.borderColor = '#f56565';
+          this.style.background = '#fff5f5';
+        }
+      }
+    });
+    
+    // Auto-format on blur
+    newInput.addEventListener('blur', function() {
+      const value = this.value.trim();
+      if (!value) return;
+      
+      if (window.PhoneValidator) {
+        const validation = window.PhoneValidator.validatePhoneNumber(value);
+        if (validation.valid) {
+          this.value = validation.normalized;
+          this.style.borderColor = '#48bb78';
+          this.style.background = '#f0fff4';
+        }
+      }
+    });
   }
 
   // Initialize contact CRUD group search

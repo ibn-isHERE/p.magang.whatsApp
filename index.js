@@ -482,64 +482,353 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.post('/api/import', upload.single('contactFile'), (req, res) => {
+function validatePhoneNumber(number) {
+  const cleaned = String(number).trim().replace(/[^\d+]/g, '');
+  
+  if (!cleaned) {
+    return { valid: false, message: 'Nomor telepon tidak boleh kosong' };
+  }
+
+  const digitOnly = cleaned.replace(/\+/g, '');
+  if (digitOnly.length < 10) {
+    return { valid: false, message: 'Nomor telepon minimal 10 digit' };
+  }
+  
+  if (digitOnly.length > 15) {
+    return { valid: false, message: 'Nomor telepon maksimal 15 digit' };
+  }
+
+  const patterns = [
+    /^08\d{8,13}$/,
+    /^\+628\d{8,13}$/,
+    /^628\d{8,13}$/
+  ];
+
+  const isValidFormat = patterns.some(pattern => pattern.test(cleaned));
+  
+  if (!isValidFormat) {
+    return { valid: false, message: 'Format nomor tidak valid' };
+  }
+
+  let normalized = cleaned;
+  if (normalized.startsWith('+62')) {
+    normalized = '0' + normalized.slice(3);
+  } else if (normalized.startsWith('628')) {
+    normalized = '0' + normalized.slice(2);
+  } else if (normalized.startsWith('62') && !normalized.startsWith('620')) {
+    normalized = '0' + normalized.slice(2);
+  }
+
+  return {
+    valid: true,
+    message: 'Nomor telepon valid',
+    normalized: normalized
+  };
+}
+
+function parseGroupsFromImport(grupValue) {
+  if (!grupValue) return [];
+  
+  const stringValue = String(grupValue).trim();
+  
+  // Jika kosong
+  if (stringValue.length === 0) return [];
+  
+  // Cek apakah JSON array
+  if (stringValue.startsWith('[') && stringValue.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(stringValue);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map(g => String(g).trim())
+          .filter(g => g.length > 0);
+      }
+    } catch (e) {
+      console.warn('Failed to parse JSON array:', stringValue);
+    }
+  }
+  
+  // Deteksi separator (koma atau pipe)
+  let separator = ',';
+  if (stringValue.includes('|') && !stringValue.includes(',')) {
+    separator = '|';
+  }
+  
+  // Split dan clean
+  const groups = stringValue
+    .split(separator)
+    .map(g => g.trim())
+    .filter(g => g.length > 0);
+  
+  return groups;
+}
+
+app.post('/api/import', upload.single('contactFile'), async (req, res) => {
     if (!req.file) {
-        return res.status(400).send('Tidak ada file yang diunggah.');
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Tidak ada file yang diunggah.' 
+        });
     }
 
     const filePath = req.file.path;
     const fileExt = path.extname(req.file.originalname).toLowerCase();
     let contactsToImport = [];
 
-    const processAndSave = (contacts) => {
-        if (!contacts || contacts.length === 0) {
-            fs.unlinkSync(filePath);
-            return res.redirect('/?import_status=error&message=No+valid+contacts+found');
+    const processAndSave = async (contacts) => {
+    if (!contacts || contacts.length === 0) {
+        fs.unlinkSync(filePath);
+        return res.status(400).json({ 
+          success: false, 
+          message: 'File tidak mengandung data kontak yang valid' 
+        });
+    }
+
+    let imported = 0;
+    let skipped = 0;
+    let errors = [];
+    let groupsCreated = 0;
+    let groupsSynced = 0;
+    const groupsToCreate = new Set();
+    const groupMemberMap = {};
+
+    try {
+        console.log("📋 STEP 1: Validating contacts...");
+        
+        for (let index = 0; index < contacts.length; index++) {
+            const contact = contacts[index];
+            
+            console.log(`\n📝 Baris ${index + 1}:`, {
+                name: contact.name,
+                number: contact.number,
+                instansi: contact.instansi,
+                jabatan: contact.jabatan,
+                grup: contact.grup
+            });
+            
+            try {
+                // Validate name
+                if (!contact.name || contact.name.trim().length < 2) {
+                    skipped++;
+                    errors.push(`Baris ${index + 1}: Nama tidak valid`);
+                    continue;
+                }
+
+                // Validate and normalize phone number
+                const phoneValidation = validatePhoneNumber(contact.number);
+                if (!phoneValidation.valid) {
+                    skipped++;
+                    errors.push(`Baris ${index + 1}: ${phoneValidation.message}`);
+                    continue;
+                }
+
+                const normalizedNumber = phoneValidation.normalized;
+
+                // Check if number already exists
+                const existingContact = await new Promise((resolve, reject) => {
+                    db.get('SELECT id FROM contacts WHERE number = ?', [normalizedNumber], (err, row) => {
+                        if (err) reject(err);
+                        else resolve(row);
+                    });
+                });
+
+                if (existingContact) {
+                    skipped++;
+                    console.log(`⏭️  Nomor ${normalizedNumber} sudah ada - skip`);
+                    continue;
+                }
+
+                // ✅ PARSE GROUPS - SUPPORT MULTIPLE FORMAT
+                const grupArray = parseGroupsFromImport(contact.grup);
+                console.log(`👥 Groups untuk kontak ini:`, grupArray);
+
+                const instansi = contact.instansi && contact.instansi.trim() ? contact.instansi.trim() : null;
+                const jabatan = contact.jabatan && contact.jabatan.trim() ? contact.jabatan.trim() : null;
+                
+                console.log(`✅ Akan menyimpan:`, {
+                    name: contact.name.trim(),
+                    number: normalizedNumber,
+                    instansi,
+                    jabatan,
+                    groups: grupArray
+                });
+
+                // Insert contact ke database
+                const contactId = await new Promise((resolve, reject) => {
+                    db.run(
+                        `INSERT INTO contacts (name, number, instansi, jabatan, grup) VALUES (?, ?, ?, ?, ?)`,
+                        [
+                            contact.name.trim(), 
+                            normalizedNumber, 
+                            instansi, 
+                            jabatan,
+                            grupArray.length > 0 ? JSON.stringify(grupArray) : null
+                        ],
+                        function(err) {
+                            if (err) reject(err);
+                            else {
+                                imported++;
+                                resolve(this.lastID);
+                            }
+                        }
+                    );
+                });
+
+                // Track semua groups untuk sync
+                for (const groupName of grupArray) {
+                    groupsToCreate.add(groupName);
+                    
+                    if (!groupMemberMap[groupName]) {
+                        groupMemberMap[groupName] = [];
+                    }
+                    groupMemberMap[groupName].push(normalizedNumber);
+                }
+
+            } catch (error) {
+                skipped++;
+                errors.push(`Baris ${index + 1}: ${error.message}`);
+                console.error(`❌ Error pada baris ${index + 1}:`, error);
+            }
         }
 
-        const sql = 'INSERT OR IGNORE INTO contacts (name, number) VALUES (?, ?)';
-        db.serialize(() => {
-            db.run('BEGIN TRANSACTION');
-            const stmt = db.prepare(sql);
-            contacts.forEach(contact => {
-                if (contact.name && contact.number) {
-                    const cleanedNumber = String(contact.number).replace(/[^0-9+]/g, '');
-                    stmt.run(String(contact.name), cleanedNumber);
+        console.log("\n📊 STEP 1 Complete - Summary:");
+        console.log(`  ✅ Imported: ${imported}`);
+        console.log(`  ⏭️  Skipped: ${skipped}`);
+        console.log(`  👥 Groups to sync: ${Array.from(groupsToCreate).length}`);
+
+        // STEP 2: Sync ke existing groups (jika ada)
+        console.log("\n📋 STEP 2: Syncing with existing groups...");
+        
+        for (const groupName of groupsToCreate) {
+            try {
+                const existingGroup = await new Promise((resolve, reject) => {
+                    db.get('SELECT id, members FROM groups WHERE name = ?', [groupName], (err, row) => {
+                        if (err) reject(err);
+                        else resolve(row);
+                    });
+                });
+
+                const memberNumbers = groupMemberMap[groupName] || [];
+
+                if (existingGroup) {
+                    // Grup sudah ada - merge members
+                    let existingMembers = [];
+                    try {
+                        existingMembers = existingGroup.members ? JSON.parse(existingGroup.members) : [];
+                    } catch (e) {
+                        existingMembers = [];
+                    }
+
+                    if (!Array.isArray(existingMembers)) {
+                        existingMembers = [];
+                    }
+
+                    const mergedSet = new Set([
+                        ...existingMembers.map(String),
+                        ...memberNumbers.map(String)
+                    ]);
+                    const mergedArray = Array.from(mergedSet);
+                    const mergedJson = JSON.stringify(mergedArray);
+
+                    await new Promise((resolve, reject) => {
+                        db.run(
+                            'UPDATE groups SET members = ? WHERE id = ?',
+                            [mergedJson, existingGroup.id],
+                            (err) => {
+                                if (err) reject(err);
+                                else resolve();
+                            }
+                        );
+                    });
+
+                    console.log(`📝 Updated grup "${groupName}" dengan ${memberNumbers.length} member baru`);
+                    groupsSynced++;
+                } else {
+                    console.log(`⏸️  Grup "${groupName}" belum ada - akan dibuat manual oleh user`);
                 }
-            });
-            stmt.finalize();
-            db.run('COMMIT', (err) => {
-                fs.unlinkSync(filePath);
-                if (err) {
-                    return res.redirect('/?import_status=error&message=Database+error');
-                }
-                res.redirect('/?import_status=success');
-            });
+
+            } catch (syncError) {
+                console.error(`❌ Error syncing grup "${groupName}":`, syncError);
+                errors.push(`Group sync error: ${groupName}`);
+            }
+        }
+
+        fs.unlinkSync(filePath);
+
+        console.log("\n✅ Import Complete!");
+        res.json({
+            success: true,
+            message: `Import selesai - ${imported} kontak berhasil ditambahkan`,
+            stats: {
+                imported: imported,
+                skipped: skipped,
+                total: contacts.length,
+                groupsToSync: Array.from(groupsToCreate).length,
+                groupsSynced: groupsSynced
+            },
+            details: {
+                groupList: Array.from(groupsToCreate),
+                errorSummary: errors.slice(0, 10)
+            },
+            errors: errors.slice(0, 10)
         });
-    };
+
+    } catch (error) {
+        console.error("Import processing error:", error);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan saat memproses import',
+            error: error.message
+        });
+    }
+};
 
     try {
         if (fileExt === '.csv') {
+            // Process CSV
             fs.createReadStream(filePath)
                 .pipe(csv())
                 .on('data', (row) => contactsToImport.push(row))
-                .on('end', () => processAndSave(contactsToImport));
+                .on('end', () => processAndSave(contactsToImport))
+                .on('error', (error) => {
+                    console.error('CSV parsing error:', error);
+                    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+                    res.status(500).json({
+                        success: false,
+                        message: 'Gagal membaca file CSV',
+                        error: error.message
+                    });
+                });
+                
         } else if (fileExt === '.xlsx' || fileExt === '.xls') {
+            // Process Excel
             const workbook = xlsx.readFile(filePath);
             const sheet = workbook.Sheets[workbook.SheetNames[0]];
             contactsToImport = xlsx.utils.sheet_to_json(sheet);
-            processAndSave(contactsToImport);
+            await processAndSave(contactsToImport);
+            
         } else if (fileExt === '.json') {
+            // Process JSON
             contactsToImport = JSON.parse(fs.readFileSync(filePath));
-            processAndSave(contactsToImport);
+            await processAndSave(contactsToImport);
+            
         } else {
             fs.unlinkSync(filePath);
-            res.status(400).send('Tipe file tidak didukung. Harap gunakan CSV, Excel, atau JSON.');
+            res.status(400).json({ 
+              success: false, 
+              message: 'Tipe file tidak didukung. Harap gunakan CSV, Excel, atau JSON.' 
+            });
         }
     } catch (error) {
         console.error("Gagal memproses file import:", error);
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        res.status(500).send('Terjadi kesalahan saat memproses file.');
+        res.status(500).json({ 
+          success: false, 
+          message: 'Terjadi kesalahan saat memproses file.',
+          error: error.message 
+        });
     }
 });
 
