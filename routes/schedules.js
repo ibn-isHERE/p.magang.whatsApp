@@ -10,7 +10,7 @@ const {
   validateScheduleTime,
   validateReminderInput,
   parseAndValidateNumbers,
-} = require("./schedules/validation");
+} = require("./schedules/validation.js");
 
 const {
   upload,
@@ -18,7 +18,7 @@ const {
   prepareFilesData,
   cleanupUploadedFiles,
   cleanupFiles,
-} = require("./schedules/fileHandler");
+} = require("./schedules/fileHandler.js");
 
 const {
   setWhatsappClient,
@@ -26,13 +26,13 @@ const {
   scheduleMessage,
   loadAndScheduleExistingMessages,
   cancelScheduleJob,
-} = require("./schedules/scheduler");
+} = require("./schedules/scheduler.js");
 
 const {
   generateScheduleId,
   safeJsonParse,
   formatNumbersForDisplay,
-} = require("./schedules/helpers");
+} = require("./schedules/helpers.js");
 
 // Set database for scheduler module
 setDatabase(db);
@@ -365,17 +365,30 @@ router.put("/edit-schedule/:id", (req, res) => {
 
     let { numbers, message, datetime, deletedFiles, keepExistingFiles } = req.body;
 
-    // Parse deletedFiles if provided
-    let deletedNames = safeJsonParse(deletedFiles, []);
+    // ✅ FIXED: Parse dengan validasi untuk undefined/null
+    let deletedNames = [];
+    if (deletedFiles && deletedFiles !== 'undefined' && deletedFiles !== 'null') {
+      deletedNames = safeJsonParse(deletedFiles, []);
+    }
     if (!Array.isArray(deletedNames)) {
       deletedNames = [];
     }
 
-    // Parse keepExistingFiles if provided
-    let keepExistingNames = safeJsonParse(keepExistingFiles, []);
+    // ✅ FIXED: Parse dengan validasi untuk undefined/null
+    let keepExistingNames = [];
+    if (keepExistingFiles && keepExistingFiles !== 'undefined' && keepExistingFiles !== 'null') {
+      keepExistingNames = safeJsonParse(keepExistingFiles, []);
+    }
     if (!Array.isArray(keepExistingNames)) {
       keepExistingNames = [];
     }
+
+    console.log(`📝 Edit Schedule ID ${id}:`, {
+      hasNewFiles: newFiles && newFiles.length > 0,
+      newFilesCount: newFiles ? newFiles.length : 0,
+      keepExistingCount: keepExistingNames.length,
+      deletedCount: deletedNames.length
+    });
 
     // Validasi nomor
     const parsedNumbersResult = parseAndValidateNumbers(numbers);
@@ -408,12 +421,25 @@ router.put("/edit-schedule/:id", (req, res) => {
       }
       datetime = timeValidation.adjustedTime;
 
-      const oldFilesDataParsed = safeJsonParse(oldSchedule.filesData, []);
+      // ✅ FIXED: Proper null/undefined handling untuk filesData
+      let oldFilesDataParsed = [];
+      if (oldSchedule.filesData && 
+          oldSchedule.filesData !== 'undefined' && 
+          oldSchedule.filesData !== 'null') {
+        oldFilesDataParsed = safeJsonParse(oldSchedule.filesData, []);
+      }
+      
+      // Ensure it's always an array
+      if (!Array.isArray(oldFilesDataParsed)) {
+        oldFilesDataParsed = [];
+      }
+      
+      console.log(`📦 Old files in database:`, oldFilesDataParsed.length);
 
-      // Gabungkan file lama yang di-keep dengan file baru
+      // ✅ FIXED: Gabungkan file lama yang di-keep dengan file baru
       let finalFilesArray = [];
 
-      // 1. Tambahkan file existing yang masih di-keep
+      // 1. Tambahkan file existing yang masih di-keep (JIKA ADA)
       if (keepExistingNames.length > 0) {
         const keptFiles = oldFilesDataParsed.filter((f) => {
           const name = f.name || f.filename || f;
@@ -421,15 +447,20 @@ router.put("/edit-schedule/:id", (req, res) => {
         });
         finalFilesArray.push(...keptFiles);
         console.log(
-          `Kept ${keptFiles.length} existing files:`,
+          `✅ Kept ${keptFiles.length} existing files:`,
           keptFiles.map((f) => f.name)
         );
-      } else if (
-        deletedNames.length === 0 &&
-        (!newFiles || newFiles.length === 0)
+      } 
+      // ✅ CRITICAL FIX: Jika tidak ada keepExistingFiles DAN tidak ada deletedFiles
+      // DAN tidak ada file baru, berarti user tidak mengubah file sama sekali
+      // Maka pertahankan semua file lama
+      else if (
+        deletedNames.length === 0 && 
+        (!newFiles || newFiles.length === 0) &&
+        oldFilesDataParsed.length > 0
       ) {
-        // Jika tidak ada perubahan file, pertahankan semua file lama
         finalFilesArray.push(...oldFilesDataParsed);
+        console.log(`✅ No file changes, keeping all ${oldFilesDataParsed.length} existing files`);
       }
 
       // 2. Tambahkan file baru yang diupload
@@ -442,7 +473,7 @@ router.put("/edit-schedule/:id", (req, res) => {
         }));
         finalFilesArray.push(...newFilesData);
         console.log(
-          `Added ${newFiles.length} new files:`,
+          `✅ Added ${newFiles.length} new files:`,
           newFilesData.map((f) => f.name)
         );
       }
@@ -455,11 +486,11 @@ router.put("/edit-schedule/:id", (req, res) => {
         });
         toDelete.forEach((file) => {
           deleteFileIfExists(file.path);
-          console.log(`Deleted file: ${file.name || file.filename}`);
+          console.log(`🗑️ Deleted file: ${file.name || file.filename}`);
         });
       }
 
-      // 4. Hapus file lama yang TIDAK di-keep
+      // 4. Hapus file lama yang TIDAK di-keep (hanya jika ada keepExistingNames)
       if (keepExistingNames.length > 0) {
         const filesToDelete = oldFilesDataParsed.filter((f) => {
           const name = f.name || f.filename || f;
@@ -470,7 +501,7 @@ router.put("/edit-schedule/:id", (req, res) => {
         filesToDelete.forEach((file) => {
           deleteFileIfExists(file.path);
           console.log(
-            `Deleted old file not kept: ${file.name || file.filename}`
+            `🗑️ Deleted old file not kept: ${file.name || file.filename}`
           );
         });
       }
@@ -479,10 +510,13 @@ router.put("/edit-schedule/:id", (req, res) => {
       const finalFilesData =
         finalFilesArray.length > 0 ? JSON.stringify(finalFilesArray) : null;
 
-      console.log(`Final files count: ${finalFilesArray.length}`);
+      console.log(`📊 Final files count: ${finalFilesArray.length}`);
 
-      // Validasi: harus ada pesan atau file
-      if (!message && finalFilesArray.length === 0) {
+      // ✅ FIXED: Validasi pesan atau file (keduanya boleh kosong jika salah satu ada)
+      const hasMessage = message && message.trim() !== "";
+      const hasFiles = finalFilesArray.length > 0;
+      
+      if (!hasMessage && !hasFiles) {
         cleanupUploadedFiles(newFiles);
         return res
           .status(400)
@@ -494,12 +528,12 @@ router.put("/edit-schedule/:id", (req, res) => {
       // Batalkan job lama
       cancelScheduleJob(id);
 
-      // Update database
+      // ✅ FIXED: Update database dengan validasi yang benar
       db.run(
         `UPDATE schedules SET numbers = ?, message = ?, filesData = ?, scheduledTime = ?, status = ? WHERE id = ?`,
         [
           JSON.stringify(parsedNumbers),
-          message,
+          hasMessage ? message : null, // Set null jika tidak ada pesan
           finalFilesData,
           datetime,
           "terjadwal",
@@ -515,17 +549,32 @@ router.put("/edit-schedule/:id", (req, res) => {
             return res.status(500).send("Gagal memperbarui jadwal pesan.");
           }
 
-          console.log(`Jadwal pesan ID ${id} berhasil diperbarui.`);
+          console.log(`✅ Jadwal pesan ID ${id} berhasil diperbarui.`);
           
           // Jadwalkan ulang
           scheduleMessage({
             id,
             numbers: JSON.stringify(parsedNumbers),
-            message,
+            message: hasMessage ? message : null,
             filesData: finalFilesData,
             scheduledTime: datetime,
             status: "terjadwal",
           });
+          
+          // ✅ EMIT SOCKET EVENT dengan info file changes
+          if (global.emitScheduleUpdated) {
+            const hasFileChanges = 
+              (newFiles && newFiles.length > 0) || 
+              deletedNames.length > 0 ||
+              (keepExistingNames.length > 0 && keepExistingNames.length !== oldFilesDataParsed.length);
+            
+            global.emitScheduleUpdated({
+              scheduleId: id,
+              filesChanged: hasFileChanges,
+              filesData: finalFilesArray,
+              forceRefresh: hasFileChanges
+            });
+          }
           
           res
             .status(200)

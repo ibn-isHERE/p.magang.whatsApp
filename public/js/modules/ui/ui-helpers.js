@@ -1,4 +1,4 @@
-// ui-helpers.js - UI Helper Functions Module (Updated)
+// ui-helpers.js - UI Helper Functions Module (FIXED - Clear selections on modal close)
 
 /**
  * Shows a specific form/tab and hides others
@@ -81,11 +81,53 @@ export function showEditModal(title) {
 
 /**
  * Closes edit modal and resets content
+ * ✅ FIXED: Now clears selected contacts to prevent carryover to new schedules
  */
-export function closeEditModal() {
+export async function closeEditModal() {
   const modal = document.getElementById("editModal");
   modal.style.display = "none";
   document.getElementById("editModalBody").innerHTML = "";
+  
+  // ✅ CRITICAL FIX: Clear selected numbers when closing edit modal
+  try {
+    const contactManager = await import('../contacts/contact-manager.js');
+    
+    // Clear message form selections
+    if (contactManager.selectedNumbers) {
+      const prevCount = contactManager.selectedNumbers.size;
+      contactManager.selectedNumbers.clear();
+      console.log(`✅ Cleared ${prevCount} selectedNumbers on modal close`);
+    }
+    
+    // Clear meeting form selections  
+    if (contactManager.selectedMeetingNumbers) {
+      const prevCount = contactManager.selectedMeetingNumbers.size;
+      contactManager.selectedMeetingNumbers.clear();
+      console.log(`✅ Cleared ${prevCount} selectedMeetingNumbers on modal close`);
+    }
+    
+    // Re-render contact lists to reflect cleared selections
+    // Small delay to ensure DOM is ready
+    setTimeout(async () => {
+      try {
+        const contactUI = await import('../contacts/contact-ui.js');
+        if (contactUI.renderContactList) {
+          contactUI.renderContactList();
+        }
+        if (contactUI.renderMeetingContactList) {
+          contactUI.renderMeetingContactList();
+        }
+        console.log('✅ Contact lists re-rendered after clearing selections');
+      } catch (err) {
+        console.error('Error re-rendering contact lists:', err);
+      }
+    }, 100);
+    
+    console.log('✅ Contact selections cleared successfully on modal close');
+    
+  } catch (error) {
+    console.error('❌ Error clearing selections on modal close:', error);
+  }
 }
 
 /**

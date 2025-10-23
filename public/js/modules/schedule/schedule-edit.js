@@ -443,37 +443,56 @@ export async function handleReminderFormSubmit(e) {
   const formData = new FormData(form);
   formData.delete("fileUpload");
 
+  console.log(`📝 Submitting reminder form (isEditing: ${isEditing})`);
+
   if (isEditing) {
-    const keepExistingFiles = existingEditFiles.map((f) => f.name || f.filename || f);
-    if (keepExistingFiles.length > 0) {
+    // ✅ CRITICAL FIX: Hanya kirim keepExistingFiles jika ada file yang di-keep
+    if (existingEditFiles.length > 0) {
+      const keepExistingFiles = existingEditFiles.map((f) => f.name || f.filename || f);
       formData.append("keepExistingFiles", JSON.stringify(keepExistingFiles));
-    }
+      console.log(`✅ Keeping ${keepExistingFiles.length} existing files:`, keepExistingFiles);
+    } 
+    // ✅ IMPORTANT: Jangan kirim field kosong atau undefined
+    // Biarkan tidak ada di FormData sama sekali
     
+    // ✅ Kirim file baru jika ada
     if (Array.isArray(selectedEditFiles) && selectedEditFiles.length > 0) {
       selectedEditFiles.forEach((f) => formData.append("files", f));
+      console.log(`✅ Adding ${selectedEditFiles.length} new files`);
     }
     
+    // ✅ Kirim daftar file yang dihapus (hanya jika ada)
     if (removedExistingEditFiles.length > 0) {
       formData.append("deletedFiles", JSON.stringify(removedExistingEditFiles));
+      console.log(`✅ Deleting ${removedExistingEditFiles.length} files:`, removedExistingEditFiles);
     }
   } else {
+    // Untuk schedule baru, gunakan selectedFiles dari schedule-manager
     const { getSelectedFiles } = await import('../schedule/schedule-manager.js');
     const selectedFiles = getSelectedFiles();
     if (Array.isArray(selectedFiles) && selectedFiles.length > 0) {
       selectedFiles.forEach((f) => formData.append("files", f));
+      console.log(`✅ Adding ${selectedFiles.length} files for new schedule`);
     }
   }
 
+  // ✅ FIXED: Parse nomor dengan benar
   const contactManager = await import('../contacts/contact-manager.js');
-  const manualNumbers = formData.get("manualNumbers").split(",").map((n) => n.trim()).filter(Boolean);
-  const finalNumbers = JSON.stringify(Array.from(new Set([...contactManager.selectedNumbers, ...manualNumbers])));
+  const manualNumbers = formData.get("manualNumbers")
+    .split(",")
+    .map((n) => n.trim())
+    .filter(Boolean);
+  
+  const finalNumbers = JSON.stringify(
+    Array.from(new Set([...contactManager.selectedNumbers, ...manualNumbers]))
+  );
   formData.set("numbers", finalNumbers);
 
   let url = isEditing ? `/edit-schedule/${editId}` : "/add-reminder";
   let method = isEditing ? "PUT" : "POST";
 
   try {
-    // ✅ Deteksi apakah ada file yang ditambahkan
+    // ✅ Deteksi perubahan file
     const hasNewFiles = selectedEditFiles.length > 0;
     const hasFileChanges = hasNewFiles || removedExistingEditFiles.length > 0;
     
@@ -485,6 +504,19 @@ export async function handleReminderFormSubmit(e) {
       existingEditFiles: existingEditFiles.length,
       removedFiles: removedExistingEditFiles.length
     });
+
+    // ✅ Debug: Log FormData contents
+    console.log('📦 FormData contents:');
+    for (let pair of formData.entries()) {
+      if (pair[0] === 'files') {
+        console.log(`  ${pair[0]}:`, pair[1].name, `(${Math.round(pair[1].size / 1024)} KB)`);
+      } else if (pair[0] === 'keepExistingFiles' || pair[0] === 'deletedFiles') {
+        console.log(`  ${pair[0]}:`, pair[1]);
+      } else {
+        const value = pair[1].toString();
+        console.log(`  ${pair[0]}:`, value.length > 50 ? value.substring(0, 50) + '...' : value);
+      }
+    }
 
     Swal.fire({
       title: "Memproses...",
@@ -500,8 +532,13 @@ export async function handleReminderFormSubmit(e) {
     if (res.ok) {
       console.log('✅ Reminder update success');
       
-      Swal.fire(isEditing ? "Jadwal Diupdate!" : "Pesan Terjadwal!", text, "success");
+      Swal.fire(
+        isEditing ? "Jadwal Diupdate!" : "Pesan Terjadwal!", 
+        text, 
+        "success"
+      );
 
+      // ✅ Reset file management variables
       const { setSelectedFiles } = await import('../schedule/schedule-manager.js');
       setSelectedFiles([]);
       selectedEditFiles = [];
@@ -531,18 +568,20 @@ export async function handleReminderFormSubmit(e) {
         }, 800);
       } else {
         // Untuk perubahan biasa, delay normal
+        console.log('🔄 No file changes, normal refresh...');
         await new Promise(resolve => setTimeout(resolve, 300));
         await renderScheduleTable();
       }
       
       console.log('✅ Schedule table re-rendered after reminder edit');
     } else {
+      console.error('❌ Server error:', text);
       Swal.fire("Gagal", text, "error");
     }
   } catch (err) {
     Swal.close();
-    Swal.fire("Gagal koneksi ke server", err.message, "error");
     console.error('❌ Reminder form submit error:', err);
+    Swal.fire("Gagal koneksi ke server", err.message, "error");
   }
 }
 

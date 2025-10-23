@@ -7,7 +7,7 @@ const {
     formatNumber,
     validateMeetingInput,
     checkRoomConflict,
-} = require("./meetings/validation");
+} = require("./meetings/validation.js");
 
 const {
     dateTimeToEpoch,
@@ -17,7 +17,7 @@ const {
     formatNumbersForDisplay,
     parseFilesData,
     parseNumbers,
-} = require("./meetings/helpers");
+} = require("./meetings/helpers.js");
 
 const {
     upload,
@@ -26,7 +26,7 @@ const {
     cleanupUploadedFiles,
     deleteFilesFromData,
     mergeFilesForEdit,
-} = require("./meetings/fileHandler");
+} = require("./meetings/fileHandler.js");
 
 const {
     setDatabase,
@@ -38,7 +38,7 @@ const {
     updateMeeting,
     deleteMeeting,
     getAllMeetings,
-} = require("./meetings/dbOperations");
+} = require("./meetings/dbOperations.js");
 
 const {
     setWhatsappClient,
@@ -46,7 +46,7 @@ const {
     cancelMeetingJob,
     loadAndScheduleExistingMeetings,
     sendCancellationNotification,
-} = require("./meetings/scheduler");
+} = require("./meetings/scheduler.js");
 
 // Middleware untuk parsing JSON body
 router.use(express.json());
