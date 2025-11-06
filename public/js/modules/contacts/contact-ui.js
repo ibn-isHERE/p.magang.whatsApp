@@ -95,6 +95,49 @@ export function renderContactList() {
 }
 
 /**
+ * ✅ NEW: Get filtered contacts for edit form
+ */
+export function getFilteredContactsForEdit() {
+  const contacts = getContactsRef();
+  const searchInput = document.getElementById("edit-contactSearch");
+  
+  if (!searchInput) {
+    return contacts;
+  }
+  
+  const query = searchInput.value.toLowerCase().trim();
+  
+  if (!query) {
+    return contacts;
+  }
+  
+  return contacts.filter(
+    (c) => c.name.toLowerCase().includes(query) || c.number.includes(query)
+  );
+}
+
+/**
+ * ✅ NEW: Get filtered meeting contacts for edit form
+ */
+export function getFilteredMeetingContactsForEdit() {
+  const contacts = getContactsRef();
+  const searchInput = document.getElementById("edit-meetingContactSearch");
+  
+  if (!searchInput) {
+    return contacts;
+  }
+  
+  const query = searchInput.value.toLowerCase().trim();
+  
+  if (!query) {
+    return contacts;
+  }
+  
+  return contacts.filter(
+    (c) => c.name.toLowerCase().includes(query) || c.number.includes(query)
+  );
+}
+/**
  * Renders meeting contact list with checkboxes
  */
 export function renderMeetingContactList() {
@@ -302,23 +345,79 @@ export function renderContactListForEdit() {
   const contacts = getContactsRef();
   const selectedNumbers = getSelectedNumbersRef();
   
+  const searchInput = document.getElementById("edit-contactSearch");
+  const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : "";
+  
+  const filteredContacts = searchQuery
+    ? contacts.filter(c => 
+        c.name.toLowerCase().includes(searchQuery) || 
+        c.number.includes(searchQuery)
+      )
+    : contacts;
+  
   list.innerHTML = "";
-  contacts.forEach((contact) => {
+  
+  if (filteredContacts.length === 0) {
+    list.innerHTML = "<p>Tidak ada kontak ditemukan.</p>";
+    return;
+  }
+  
+  filteredContacts.forEach((contact) => {
     const label = document.createElement("label");
+    // ✅ PERBAIKAN: Pastikan cek dari selectedNumbers yang benar
     const isChecked = selectedNumbers.has(contact.number) ? "checked" : "";
-    label.innerHTML = `<input type="checkbox" class="contact-checkbox-edit" value="${contact.number}" ${isChecked}> <strong>${contact.name}</strong> – ${contact.number}`;
+    
+    label.innerHTML = `
+      <input type="checkbox" class="contact-checkbox-edit" value="${contact.number}" ${isChecked}> 
+      <strong>${contact.name}</strong> – ${contact.number}
+    `;
     list.appendChild(label);
   });
   
   document.querySelectorAll(".contact-checkbox-edit").forEach((checkbox) => {
     checkbox.addEventListener("change", function () {
       const selectedNumbers = getSelectedNumbersRef();
-      if (this.checked) selectedNumbers.add(this.value);
-      else selectedNumbers.delete(this.value);
-      document.getElementById("edit-manualNumbers").value = Array.from(selectedNumbers).join(", ");
+      if (this.checked) {
+        selectedNumbers.add(this.value);
+      } else {
+        selectedNumbers.delete(this.value);
+      }
+      
+      // ✅ Update info display
+      updateContactSelectionInfoForEdit();
     });
   });
+  
+  updateContactSelectionInfoForEdit();
 }
+
+function updateContactSelectionInfoForEdit() {
+  const infoDiv = document.getElementById("editContactSelectionInfo");
+  if (!infoDiv) return;
+
+  const contacts = getContactsRef();
+  const selectedNumbers = getSelectedNumbersRef();
+
+  if (selectedNumbers.size === 0) {
+    infoDiv.innerHTML = "<small>Belum ada kontak dipilih</small>";
+    return;
+  }
+
+  const selectedNames = Array.from(selectedNumbers)
+    .map((number) => {
+      const contact = contacts.find((c) => c.number === number);
+      return contact ? contact.name : number;
+    })
+    .slice(0, 3);
+
+  let infoText = `<strong>${selectedNumbers.size} kontak dipilih</strong>`;
+  if (selectedNames.length > 0) {
+    infoText += `<br><small>${selectedNames.join(", ")}${selectedNumbers.size > 3 ? ", ..." : ""}</small>`;
+  }
+
+  infoDiv.innerHTML = infoText;
+}
+
 
 /**
  * Renders meeting contact list for edit form
@@ -348,7 +447,9 @@ export function renderMeetingContactListForEdit() {
 
   filteredContacts.forEach((contact) => {
     const label = document.createElement("label");
+    // ✅ PERBAIKAN: Pastikan cek dari selectedMeetingNumbers yang benar
     const isChecked = selectedMeetingNumbers.has(contact.number) ? "checked" : "";
+    
     label.innerHTML = `
       <input type="checkbox" class="meeting-contact-checkbox-edit" value="${contact.number}" ${isChecked}> 
       <strong>${contact.name}</strong> – ${contact.number}
@@ -364,13 +465,42 @@ export function renderMeetingContactListForEdit() {
       } else {
         selectedMeetingNumbers.delete(this.value);
       }
-      const numbersInput = document.getElementById("edit-meetingNumbers");
-      if (numbersInput) {
-        numbersInput.value = Array.from(selectedMeetingNumbers).join(", ");
-      }
+      
+      // ✅ Update info display
+      updateMeetingContactSelectionInfoForEdit();
     });
   });
+  
+  updateMeetingContactSelectionInfoForEdit();
 }
+
+function updateMeetingContactSelectionInfoForEdit() {
+  const infoDiv = document.getElementById("editMeetingContactSelectionInfo");
+  if (!infoDiv) return;
+
+  const contacts = getContactsRef();
+  const selectedMeetingNumbers = getSelectedMeetingNumbersRef();
+
+  if (selectedMeetingNumbers.size === 0) {
+    infoDiv.innerHTML = "<small>Belum ada kontak dipilih</small>";
+    return;
+  }
+
+  const selectedNames = Array.from(selectedMeetingNumbers)
+    .map((number) => {
+      const contact = contacts.find((c) => c.number === number);
+      return contact ? contact.name : number;
+    })
+    .slice(0, 3);
+
+  let infoText = `<strong>${selectedMeetingNumbers.size} kontak dipilih</strong>`;
+  if (selectedNames.length > 0) {
+    infoText += `<br><small>${selectedNames.join(", ")}${selectedMeetingNumbers.size > 3 ? ", ..." : ""}</small>`;
+  }
+
+  infoDiv.innerHTML = infoText;
+}
+
 
 /**
  * Renders contact management table

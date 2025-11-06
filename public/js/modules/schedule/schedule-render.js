@@ -1,4 +1,4 @@
-// schedule-render.js - Schedule Table Rendering & Countdown
+// schedule-render.js - FINAL FIX: Display group names correctly
 
 import { formatTimeDifference } from '../ui/ui-helpers.js';
 import { getContacts } from '../contacts/contact-manager.js';
@@ -13,6 +13,72 @@ import {
   handleMeetingFormSubmit
 } from './schedule-edit.js';
 
+/**
+ * ✅ FINAL FIX: Format recipients display - ONLY show group names, NOT member names
+ */
+async function formatRecipientsDisplay(numbersArray, groupInfo) {
+  const contacts = getContacts();
+  
+  // Parse groupInfo jika ada
+  let groupInfoArray = [];
+  if (groupInfo) {
+    try {
+      groupInfoArray = typeof groupInfo === 'string' ? JSON.parse(groupInfo) : groupInfo;
+      if (!Array.isArray(groupInfoArray)) {
+        groupInfoArray = [];
+      }
+    } catch (e) {
+      console.warn('Error parsing groupInfo:', e);
+      groupInfoArray = [];
+    }
+  }
+  
+  const displayItems = [];
+  const processedNumbers = new Set();
+  
+  // ✅ STEP 1: Mark all group members as processed first
+  if (groupInfoArray.length > 0) {
+    groupInfoArray.forEach(group => {
+      if (group.members && Array.isArray(group.members)) {
+        group.members.forEach(memberNum => {
+          processedNumbers.add(memberNum);
+        });
+      }
+    });
+  }
+  
+  // ✅ STEP 2: Display ONLY group names (NOT members)
+  if (groupInfoArray.length > 0) {
+    groupInfoArray.forEach(group => {
+      displayItems.push(`<span style="color: #4299e1; font-weight: 500;">
+        <i class="fa-solid fa-users" style="font-size: 11px;"></i> ${group.name}
+      </span>`);
+    });
+  }
+  
+  // ✅ STEP 3: Display individual contacts yang BUKAN member grup
+  numbersArray.forEach(num => {
+    if (!processedNumbers.has(num)) {
+      const contact = contacts.find(c => c.number === num);
+      if (contact) {
+        displayItems.push(`<span style="color: #48bb78;">
+          <i class="fa-solid fa-user" style="font-size: 11px;"></i> ${contact.name}
+        </span>`);
+      } else {
+        displayItems.push(`<span style="color: #718096;">${num}</span>`);
+      }
+      processedNumbers.add(num);
+    }
+  });
+  
+  return {
+    html: displayItems.join(', '),
+    totalRecipients: numbersArray.length,
+    groupCount: groupInfoArray.length,
+    individualCount: displayItems.length - groupInfoArray.length
+  };
+}
+
 const schedulesContainer = document.querySelector("#scheduleTable tbody");
 
 function getContactNameOrNumber(number) {
@@ -24,7 +90,7 @@ function getContactNameOrNumber(number) {
 /**
  * Creates HTML for schedule row
  */
-function createScheduleRowHtml(schedule) {
+async function createScheduleRowHtml(schedule) {
   const scheduledTimeFull = new Date(schedule.scheduledTime);
   const scheduledTimeFormatted = scheduledTimeFull.toLocaleString("id-ID", {
     dateStyle: "medium",
@@ -62,7 +128,9 @@ function createScheduleRowHtml(schedule) {
     return num;
   });
 
-  const displayNumbers = numbersArray.map(num => getContactNameOrNumber(num));
+  // ✅ FORMAT WITH GROUP DISPLAY - gunakan groupInfo dari database
+  const recipientDisplay = await formatRecipientsDisplay(numbersArray, schedule.groupInfo);
+  
   const numberOfRecipients = numbersArray.length;
   const isMeeting = schedule.type === "meeting" || schedule.meetingRoom;
 
@@ -248,9 +316,21 @@ function createScheduleRowHtml(schedule) {
     }
   }
 
+  // ✅ IMPROVED: Better recipient display with group indication
+  let recipientDisplayHtml = recipientDisplay.html || "-";
+  let recipientSummary = `${recipientDisplay.totalRecipients} nomor`;
+  
+  if (recipientDisplay.groupCount > 0 && recipientDisplay.individualCount > 0) {
+    recipientSummary += ` (${recipientDisplay.groupCount} grup, ${recipientDisplay.individualCount} kontak)`;
+  } else if (recipientDisplay.groupCount > 0) {
+    recipientSummary += ` (${recipientDisplay.groupCount} grup)`;
+  } else if (recipientDisplay.individualCount > 0) {
+    recipientSummary += ` (${recipientDisplay.individualCount} kontak)`;
+  }
+
   return `
     <td data-scheduled-time="${schedule.scheduledTime}">${timeCellContent}</td>
-    <td>${displayNumbers.join(", ") || "-"} <br> <small>(${numberOfRecipients} nomor)</small></td>
+    <td>${recipientDisplayHtml}<br><small style="color: #718096;">(${recipientSummary})</small></td>
     <td>${messageDisplay}</td>
     <td>${fileDisplay}</td>
     <td class="${statusClass}">${statusIcon} ${statusText}</td>
@@ -325,12 +405,15 @@ export async function renderScheduleTable() {
     if (filteredSchedules.length === 0) {
       schedulesContainer.innerHTML = '<tr><td colspan="6" class="text-center">Belum ada jadwal untuk filter ini.</td></tr>';
     } else {
-      filteredSchedules.forEach((schedule) => {
+      const rowPromises = filteredSchedules.map(async (schedule) => {
         const newRow = document.createElement("tr");
         newRow.dataset.id = schedule.id;
-        newRow.innerHTML = createScheduleRowHtml(schedule);
-        schedulesContainer.appendChild(newRow);
+        newRow.innerHTML = await createScheduleRowHtml(schedule);
+        return newRow;
       });
+      
+      const rows = await Promise.all(rowPromises);
+      rows.forEach(row => schedulesContainer.appendChild(row));
     }
 
     updateCountdownTimers();
@@ -348,7 +431,6 @@ export function updateCountdownTimers() {
   const schedules = getSchedules();
   if (schedules.length === 0) return;
 
-  // Cache query untuk performa
   const rows = document.querySelectorAll("#scheduleTable tbody tr[data-id]");
   
   rows.forEach((row) => {
@@ -368,7 +450,6 @@ export function updateCountdownTimers() {
 
       const newCountdownText = `(${formatTimeDifference(countdownBaseTime)})`;
 
-      // Create element if doesn't exist
       if (!smallElement) {
         smallElement = document.createElement("small");
         smallElement.className = "countdown-timer";
@@ -376,8 +457,6 @@ export function updateCountdownTimers() {
         timeCell.appendChild(smallElement);
       }
 
-      // Gunakan requestAnimationFrame untuk smooth update
-      // Hanya update jika text berubah
       if (smallElement.textContent !== newCountdownText) {
         requestAnimationFrame(() => {
           if (smallElement) {
@@ -386,12 +465,10 @@ export function updateCountdownTimers() {
         });
       }
     } else {
-      // Hapus countdown timer jika status bukan terjadwal
       const timeCell = row.cells[0];
       if (timeCell) {
         const smallElement = timeCell.querySelector("small.countdown-timer");
         if (smallElement) {
-          // Smooth removal dengan fade out
           requestAnimationFrame(() => {
             if (smallElement.parentNode) {
               smallElement.style.transition = "opacity 0.2s ease";
@@ -422,22 +499,18 @@ export async function smartUpdateScheduleStatus() {
 
     const schedules = getSchedules();
 
-    // Hanya update status yang berubah
     newSchedules.forEach((newSchedule) => {
       const oldSchedule = schedules.find(s => s.id === newSchedule.id);
       
-      // Cek apakah status berubah
       if (oldSchedule && oldSchedule.status !== newSchedule.status) {
         const row = document.querySelector(`#scheduleTable tbody tr[data-id="${newSchedule.id}"]`);
         if (row && row.cells[4]) {
           const statusCell = row.cells[4];
           
-          // Smooth transition dengan fade
           statusCell.style.transition = "opacity 0.3s ease";
           statusCell.style.opacity = "0.3";
           
           setTimeout(() => {
-            // Update status HTML
             const statusConfig = {
               'terkirim': { icon: 'check_circle', text: 'Terkirim', class: 'status-terkirim' },
               'gagal': { icon: 'cancel', text: 'Gagal', class: 'status-gagal' },
@@ -455,7 +528,6 @@ export async function smartUpdateScheduleStatus() {
       }
     });
 
-    // Update schedules array
     setSchedules(newSchedules);
 
   } catch (error) {
@@ -471,72 +543,72 @@ async function attachScheduleActionListeners() {
 
   // Edit button handlers
   document.querySelectorAll(".edit-btn").forEach((button) => {
-  button.onclick = async function () {
-    const id = this.dataset.id;
-    const type = this.dataset.type;
-    const isMeeting = type === "meeting";
+    button.onclick = async function () {
+      const id = this.dataset.id;
+      const type = this.dataset.type;
+      const isMeeting = type === "meeting";
 
-    const scheduleToEdit = schedules.find((s) => s.id == id);
-    if (!scheduleToEdit) {
-      Swal.fire("Error", "Data jadwal tidak ditemukan", "error");
-      return;
-    }
-
-    const modalBody = document.getElementById("editModalBody");
-
-    if (isMeeting) {
-      window.showEditModal("Edit Jadwal Rapat");
-      modalBody.innerHTML = createMeetingEditFormHtml(scheduleToEdit);
-      
-      // ✅ PERBAIKAN: Pastikan ini di-call SEBELUM populate form
-      if (window.afterEditMeetingModalOpen) {
-        window.afterEditMeetingModalOpen();
+      const scheduleToEdit = schedules.find((s) => s.id == id);
+      if (!scheduleToEdit) {
+        Swal.fire("Error", "Data jadwal tidak ditemukan", "error");
+        return;
       }
 
-      try {
-        await populateMeetingEditForm(scheduleToEdit);
-      } catch (error) {
-        console.error("Error saat mengisi form meeting:", error);
-        Swal.fire("Error", "Gagal memuat data ruangan rapat", "error");
+      const modalBody = document.getElementById("editModalBody");
+
+      if (isMeeting) {
+        window.showEditModal("Edit Jadwal Rapat");
+        modalBody.innerHTML = createMeetingEditFormHtml(scheduleToEdit);
+        
+        // ✅ PERBAIKAN: Pastikan ini di-call SEBELUM populate form
+        if (window.afterEditMeetingModalOpen) {
+          window.afterEditMeetingModalOpen();
+        }
+
+        try {
+          await populateMeetingEditForm(scheduleToEdit);
+        } catch (error) {
+          console.error("Error saat mengisi form meeting:", error);
+          Swal.fire("Error", "Gagal memuat data ruangan rapat", "error");
+        }
+
+        // ✅ PERBAIKAN: Setup event listeners untuk form
+        const editForm = document.getElementById("editMeetingForm");
+        if (editForm) {
+          editForm.addEventListener("submit", handleMeetingFormSubmit);
+        }
+
+        const cancelBtn = document.getElementById("cancel-edit-meeting-btn");
+        if (cancelBtn) {
+          cancelBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            window.closeEditModal();
+          });
+        }
+
+        await initEditMeetingContactListeners();
+      } else {
+        window.showEditModal("Edit Jadwal Pesan");
+        modalBody.innerHTML = createMessageEditFormHtml(scheduleToEdit);
+        populateMessageEditForm(scheduleToEdit);
+
+        const editForm = document.getElementById("editReminderForm");
+        if (editForm) {
+          editForm.addEventListener("submit", handleReminderFormSubmit);
+        }
+
+        const cancelBtn = document.getElementById("cancel-edit-message-btn");
+        if (cancelBtn) {
+          cancelBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            window.closeEditModal();
+          });
+        }
       }
 
-      // ✅ PERBAIKAN: Setup event listeners untuk form
-      const editForm = document.getElementById("editMeetingForm");
-      if (editForm) {
-        editForm.addEventListener("submit", handleMeetingFormSubmit);
-      }
-
-      const cancelBtn = document.getElementById("cancel-edit-meeting-btn");
-      if (cancelBtn) {
-        cancelBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          window.closeEditModal();
-        });
-      }
-
-      await initEditMeetingContactListeners();
-    } else {
-      window.showEditModal("Edit Jadwal Pesan");
-      modalBody.innerHTML = createMessageEditFormHtml(scheduleToEdit);
-      populateMessageEditForm(scheduleToEdit);
-
-      const editForm = document.getElementById("editReminderForm");
-      if (editForm) {
-        editForm.addEventListener("submit", handleReminderFormSubmit);
-      }
-
-      const cancelBtn = document.getElementById("cancel-edit-message-btn");
-      if (cancelBtn) {
-        cancelBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          window.closeEditModal();
-        });
-      }
-    }
-
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-});
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+  });
 
   // Cancel meeting button
   document.querySelectorAll(".cancel-meeting-btn").forEach((button) => {

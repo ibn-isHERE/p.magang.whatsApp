@@ -804,6 +804,7 @@ export async function initMeetingContactListeners() {
 export function initMessageFormTabs() {
   const tabs = document.querySelectorAll("#messageFormContainer .recipient-tab");
   const panels = document.querySelectorAll("#messageFormContainer .recipient-panel");
+  const manualNumbersInput = document.getElementById("manualNumbers");
 
   tabs.forEach((tab) => {
     tab.addEventListener("click", function () {
@@ -816,8 +817,25 @@ export function initMessageFormTabs() {
 
       if (targetTab === "contacts") {
         document.getElementById("contactsPanel").classList.add("active");
+        
+        // ✅ Enable manual numbers
+        if (manualNumbersInput) {
+          manualNumbersInput.disabled = false;
+          manualNumbersInput.placeholder = 'Contoh: 08123456789, 08234567890';
+          manualNumbersInput.style.backgroundColor = '';
+          manualNumbersInput.style.color = '';
+        }
       } else if (targetTab === "groups") {
         document.getElementById("groupsPanel").classList.add("active");
+        
+        // ✅ DISABLE & CLEAR manual numbers
+        if (manualNumbersInput) {
+          manualNumbersInput.value = '';
+          manualNumbersInput.disabled = true;
+          manualNumbersInput.placeholder = 'Tidak digunakan saat memilih grup';
+          manualNumbersInput.style.backgroundColor = '#f7fafc';
+          manualNumbersInput.style.color = '#a0aec0';
+        }
       }
     });
   });
@@ -829,6 +847,7 @@ export function initMessageFormTabs() {
 export function initMeetingFormTabs() {
   const tabs = document.querySelectorAll("#meetingFormContainer .recipient-tab");
   const panels = document.querySelectorAll("#meetingFormContainer .recipient-panel");
+  const meetingNumbersInput = document.getElementById("meetingNumbers"); // ✅ Ambil input manual numbers
 
   tabs.forEach((tab) => {
     tab.addEventListener("click", function () {
@@ -841,8 +860,27 @@ export function initMeetingFormTabs() {
 
       if (targetTab === "meeting-contacts") {
         document.getElementById("meetingContactsPanel").classList.add("active");
+        
+        // ✅ ENABLE manual numbers saat di tab Kontak
+        if (meetingNumbersInput) {
+          meetingNumbersInput.disabled = false;
+          meetingNumbersInput.placeholder = 'Contoh: 081234567890, 089876543210';
+          meetingNumbersInput.style.backgroundColor = '';
+          meetingNumbersInput.style.color = '';
+          console.log('✅ Manual numbers ENABLED (Contacts tab)');
+        }
       } else if (targetTab === "meeting-groups") {
         document.getElementById("meetingGroupsPanel").classList.add("active");
+        
+        // ✅ DISABLE & CLEAR manual numbers saat di tab Grup
+        if (meetingNumbersInput) {
+          meetingNumbersInput.value = ''; // Clear isi
+          meetingNumbersInput.disabled = true; // Disable input
+          meetingNumbersInput.placeholder = 'Tidak digunakan saat memilih grup';
+          meetingNumbersInput.style.backgroundColor = '#f7fafc'; // Abu-abu muda
+          meetingNumbersInput.style.color = '#a0aec0'; // Text abu-abu
+          console.log('✅ Manual numbers DISABLED & CLEARED (Groups tab)');
+        }
       }
     });
   });

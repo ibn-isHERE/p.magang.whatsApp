@@ -1,8 +1,8 @@
 const express = require("express");
-const multer = require("multer"); // Pastikan multer di-import
+const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const { MessageMedia } = require("whatsapp-web.js"); // Import MessageMedia
+const { MessageMedia } = require("whatsapp-web.js");
 
 function createChatsRouter(db, whatsappClient, io) {
   const router = express.Router();
@@ -24,13 +24,12 @@ function createChatsRouter(db, whatsappClient, io) {
 
   const upload = multer({
     storage,
-    limits: { fileSize: 50 * 1024 * 1024 }, // batas 50MB, ubah sesuai kebutuhan
+    limits: { fileSize: 50 * 1024 * 1024 },
   });
 
   // Endpoint untuk mendapatkan daftar percakapan unik dengan info kontak
   router.get("/conversations", (req, res) => {
     const { status } = req.query;
-    // Menentukan klausa WHERE berdasarkan status yang diminta
     const whereClause =
       status === "history"
         ? "WHERE status = 'history'"
@@ -69,11 +68,10 @@ function createChatsRouter(db, whatsappClient, io) {
     });
   });
 
-  // Endpoint untuk mendapatkan riwayat chat dengan nomor tertentu (SUDAH DIPERBAIKI)
+  // Endpoint untuk mendapatkan riwayat chat dengan nomor tertentu
   router.get("/conversation/:number", (req, res) => {
     const number = req.params.number;
 
-    // **PERBAIKAN: Menghapus LIMIT dan OFFSET untuk memuat semua pesan**
     const query = `
             SELECT
                 c.*,
@@ -170,7 +168,7 @@ function createChatsRouter(db, whatsappClient, io) {
       { timeZone: "Asia/Jakarta" }
     )} WIB ---`;
 
-    // BARU: Kirim notifikasi ke user terlebih dahulu
+    // Kirim notifikasi ke user terlebih dahulu
     try {
       const formattedNumber = number.includes('@c.us') ? number : `${number}@c.us`;
       await whatsappClient.sendMessage(
@@ -180,13 +178,11 @@ function createChatsRouter(db, whatsappClient, io) {
       console.log(`📤 Notifikasi end session dikirim ke ${number}`);
     } catch (sendError) {
       console.error(`❌ Error mengirim notifikasi ke ${number}:`, sendError);
-      // Lanjut proses meski gagal kirim notifikasi
     }
 
     db.serialize(() => {
       db.run("BEGIN TRANSACTION");
 
-      // Langkah 1: Ubah status semua pesan dari nomor ini menjadi 'history'
       db.run(
         `UPDATE chats SET status = 'history' WHERE fromNumber = ?`,
         [number],
@@ -202,7 +198,6 @@ function createChatsRouter(db, whatsappClient, io) {
               });
           }
 
-          // Langkah 2: Tambahkan pesan penutup sesi
           const insertQuery = `
                 INSERT INTO chats (fromNumber, message, direction, timestamp, messageType, status) 
                 VALUES (?, ?, 'out', ?, 'system', 'history')
@@ -238,7 +233,7 @@ function createChatsRouter(db, whatsappClient, io) {
                   `[LOGIC] Sesi untuk ${number} telah diakhiri dan dipindahkan ke history.`
                 );
 
-                // PENTING: Clear state dan timer via messageHandler
+                // Clear state dan timer via messageHandler
                 const messageHandler = req.app.get('messageHandler');
                 if (messageHandler) {
                   messageHandler.clearUserState(number);
@@ -257,7 +252,7 @@ function createChatsRouter(db, whatsappClient, io) {
     });
   });
 
-  // Endpoint untuk mengirim pesan balasan
+  // ⭐ ENDPOINT DIPERBAIKI: Mengirim pesan balasan + Aktivasi Session
   router.post("/send", async (req, res) => {
     const { to, message } = req.body;
 
@@ -314,6 +309,22 @@ function createChatsRouter(db, whatsappClient, io) {
         isRead: true,
       };
 
+      // ⭐ TAMBAHAN BARU: Aktifkan chat session jika user dalam CHATTING_WAITING
+      const messageHandler = req.app.get('messageHandler');
+      if (messageHandler) {
+        const fromNumberClean = to.replace("@c.us", "");
+        const userState = messageHandler.getUserState(fromNumberClean);
+        
+        if (userState === 'CHATTING_WAITING') {
+          const activated = messageHandler.activateChatSessionForNumber(fromNumberClean);
+          if (activated) {
+            console.log(`✅ Chat session ACTIVATED untuk ${fromNumberClean} - Admin telah reply! Timer dimulai.`);
+          }
+        } else if (userState === 'CHATTING_ACTIVE') {
+          console.log(`🔄 User ${fromNumberClean} sudah dalam CHATTING_ACTIVE, timer akan di-reset saat user reply.`);
+        }
+      }
+
       io.emit("messageSent", messageData);
 
       res.json({
@@ -341,12 +352,11 @@ function createChatsRouter(db, whatsappClient, io) {
     }
   });
 
-  // NEW: Endpoint untuk mengirim media (foto/video/pdf)
+  // ⭐ ENDPOINT DIPERBAIKI: Mengirim media + Aktivasi Session
   router.post("/send-media", upload.array("media", 12), async (req, res) => {
     const to = req.body.to;
     const caption = req.body.caption || "";
     if (!to || !req.files || req.files.length === 0) {
-      // cleanup any uploaded files if needed
       (req.files || []).forEach((f) => f.path && fs.unlink(f.path, () => {}));
       return res
         .status(400)
@@ -368,27 +378,21 @@ function createChatsRouter(db, whatsappClient, io) {
       const results = [];
 
       for (const file of req.files) {
-        const filePath = file.path; // physical path on server
+        const filePath = file.path;
         const publicUrl = `${req.protocol}://${req.get(
           "host"
         )}/uploads/chat_media/${encodeURIComponent(file.filename)}`;
 
-        // Determine message type
         let mtype = "document";
         if (file.mimetype.startsWith("image/")) mtype = "image";
         else if (file.mimetype.startsWith("video/")) mtype = "video";
 
-        // prepare MessageMedia
         const media = MessageMedia.fromFilePath(filePath);
-
-        // options for whatsapp-web.js
         const options = { caption };
         if (mtype === "document") options.sendMediaAsDocument = true;
 
-        // send to whatsapp
         await whatsappClient.sendMessage(formattedNumber, media, options);
 
-        // build message payload to store in DB (object)
         const messageObj = {
           url: publicUrl,
           filename: file.filename,
@@ -398,7 +402,6 @@ function createChatsRouter(db, whatsappClient, io) {
           caption,
         };
 
-        // insert into DB (separate row per file)
         const dbResult = await new Promise((resolve, reject) => {
           const timestamp = new Date().toISOString();
           const query = `
@@ -426,12 +429,24 @@ function createChatsRouter(db, whatsappClient, io) {
         };
 
         results.push(resultMessage);
-
-        // DO NOT delete file here if you want to keep preview/download available.
-        // If you want to cleanup disk later, schedule a cleanup job.
       }
 
-      // emit all messages (or single) via socket
+      // ⭐ TAMBAHAN BARU: Aktifkan chat session jika user dalam CHATTING_WAITING
+      const messageHandler = req.app.get('messageHandler');
+      if (messageHandler) {
+        const fromNumberClean = to.replace("@c.us", "");
+        const userState = messageHandler.getUserState(fromNumberClean);
+        
+        if (userState === 'CHATTING_WAITING') {
+          const activated = messageHandler.activateChatSessionForNumber(fromNumberClean);
+          if (activated) {
+            console.log(`✅ Chat session ACTIVATED untuk ${fromNumberClean} - Admin kirim media! Timer dimulai.`);
+          }
+        } else if (userState === 'CHATTING_ACTIVE') {
+          console.log(`🔄 User ${fromNumberClean} sudah dalam CHATTING_ACTIVE, timer akan di-reset saat user reply.`);
+        }
+      }
+
       results.forEach((m) => io.emit("messageSent", m));
 
       res.json({
@@ -441,7 +456,7 @@ function createChatsRouter(db, whatsappClient, io) {
       });
     } catch (err) {
       console.error("Error send-media:", err);
-      (req.files || []).forEach((f) => f.path && fs.unlink(f.path, () => {})); // cleanup
+      (req.files || []).forEach((f) => f.path && fs.unlink(f.path, () => {}));
       res
         .status(500)
         .json({
@@ -477,7 +492,6 @@ function createChatsRouter(db, whatsappClient, io) {
     });
   });
 
-  // Endpoint untuk menandai pesan sebagai sudah dibaca
   router.put("/mark-read/:number", (req, res) => {
     const { number } = req.params;
 
@@ -513,8 +527,6 @@ function createChatsRouter(db, whatsappClient, io) {
     });
   });
 
-  // ... (sisa kode di file chats.js tidak perlu diubah) ...
-  // Endpoint untuk mendapatkan statistik chat
   router.get("/stats", (req, res) => {
     const statsQuery = `
             SELECT 
@@ -568,10 +580,8 @@ function createChatsRouter(db, whatsappClient, io) {
     });
   });
 
-  // Endpoint untuk menghapus chat dengan nomor tertentu
   router.delete("/conversation/:number", (req, res) => {
     const number = req.params.number;
-
     const deleteQuery = "DELETE FROM chats WHERE fromNumber = ?";
 
     db.run(deleteQuery, [number], function (err) {
@@ -594,7 +604,6 @@ function createChatsRouter(db, whatsappClient, io) {
     });
   });
 
-  // Endpoint untuk menghapus pesan tertentu
   router.delete("/message/:messageId", (req, res) => {
     const messageId = req.params.messageId;
 
@@ -637,7 +646,6 @@ function createChatsRouter(db, whatsappClient, io) {
     );
   });
 
-  // Endpoint untuk mendapatkan info kontak berdasarkan nomor
   router.get("/contact-info/:number", (req, res) => {
     const number = req.params.number;
 
@@ -707,7 +715,6 @@ function createChatsRouter(db, whatsappClient, io) {
     });
   });
 
-  // Endpoint untuk backup chat DENGAN nomor spesifik
   router.get("/backup/:number", (req, res) => {
     const number = req.params.number;
     const query =
@@ -736,7 +743,7 @@ function createChatsRouter(db, whatsappClient, io) {
       });
     });
   });
-  // Endpoint untuk backup SEMUA chat
+
   router.get("/backup", (req, res) => {
     const query = "SELECT * FROM chats ORDER BY timestamp ASC";
 

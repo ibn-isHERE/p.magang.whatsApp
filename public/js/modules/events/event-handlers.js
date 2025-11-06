@@ -1,8 +1,73 @@
 // event-handlers.js - Form Submissions & Realtime Updates (FIXED)
 
-/**
- * Initializes file upload listener for message form
- */
+async function detectSelectedGroups(selectedNumbers) {
+  try {
+    const response = await fetch('/api/groups'); // ✅ FIX: Ganti ke /groups
+    
+    if (!response.ok) {
+      console.warn('Failed to fetch groups:', response.status);
+      return [];
+    }
+    
+    const data = await response.json();
+    
+    // ✅ FIX: Handle berbagai format response
+    let groups = [];
+    if (Array.isArray(data)) {
+      groups = data;
+    } else if (data.groups && Array.isArray(data.groups)) {
+      groups = data.groups;
+    } else {
+      console.warn('Unexpected groups data format:', data);
+      return [];
+    }
+    
+    const detectedGroups = [];
+    const selectedSet = new Set(selectedNumbers);
+    
+    for (const group of groups) {
+      let groupMembers;
+      try {
+        groupMembers = typeof group.members === 'string' 
+          ? JSON.parse(group.members) 
+          : group.members || [];
+      } catch (e) {
+        groupMembers = [];
+      }
+      
+      // Normalize group members
+      const normalizedGroupMembers = groupMembers.map(num => {
+        if (typeof num === 'string') {
+          let cleanNum = num.replace("@c.us", "");
+          if (cleanNum.startsWith("62")) {
+            cleanNum = "0" + cleanNum.slice(2);
+          }
+          return cleanNum;
+        }
+        return num;
+      });
+      
+      // Check jika semua member grup ada di selected numbers
+      const allMembersSelected = normalizedGroupMembers.length > 0 && 
+        normalizedGroupMembers.every(member => selectedSet.has(member));
+      
+      if (allMembersSelected) {
+        detectedGroups.push({
+          id: group.id,
+          name: group.name,
+          members: normalizedGroupMembers
+        });
+      }
+    }
+    
+    return detectedGroups;
+  } catch (error) {
+    console.error('Error detecting groups:', error);
+    return [];
+  }
+}
+
+
 export function initFileUploadListener() {
   const fileInput = document.getElementById("fileUpload");
   const filePreview = document.getElementById("customFilePreview");
@@ -181,11 +246,15 @@ export function initMeetingFileUploadListener() {
 /**
  * Initializes reminder form
  */
+// event-handlers.js - FIXED: Combine groups AND individual contacts
+
+// ... (keep all existing code until initReminderForm submit handler)
+
 export function initReminderForm() {
   const reminderForm = document.getElementById("reminderForm");
   if (!reminderForm) return;
 
-  // ✅ FIXED: Select All / Deselect All untuk Kontak dengan Filter Support
+  // Select All / Deselect All buttons (keep existing code)
   const selectAllContactsBtn = document.getElementById("selectAllContactsBtn");
   const deselectAllContactsBtn = document.getElementById("deselectAllContactsBtn");
 
@@ -193,8 +262,6 @@ export function initReminderForm() {
     selectAllContactsBtn.addEventListener("click", async function() {
       const contactManager = await import('../contacts/contact-manager.js');
       const contactUI = await import('../contacts/contact-ui.js');
-      
-      // ✅ AMBIL KONTAK YANG TERFILTER (sesuai pencarian)
       const filteredContacts = contactUI.getFilteredContacts() || [];
       
       filteredContacts.forEach(contact => {
@@ -211,8 +278,6 @@ export function initReminderForm() {
     deselectAllContactsBtn.addEventListener("click", async function() {
       const contactManager = await import('../contacts/contact-manager.js');
       const contactUI = await import('../contacts/contact-ui.js');
-      
-      // ✅ HAPUS HANYA KONTAK YANG TERFILTER (sesuai pencarian)
       const filteredContacts = contactUI.getFilteredContacts() || [];
       
       filteredContacts.forEach(contact => {
@@ -225,6 +290,7 @@ export function initReminderForm() {
     });
   }
 
+  // ✅ FIXED SUBMIT HANDLER - COMBINE GROUPS + CONTACTS
   reminderForm.addEventListener("submit", async function (e) {
     e.preventDefault();
 
@@ -236,39 +302,60 @@ export function initReminderForm() {
     const message = document.getElementById("message").value.trim();
     const datetime = document.getElementById("datetime").value;
     const manualInput = document.getElementById("manualNumbers").value;
-    const fileInput = document.getElementById("fileUpload");
-    const uploadedFiles = fileInput.files;
 
+    console.log('📋 Submitting reminder form...');
+    
+    let finalNumbers = [];
+    let groupInfoForBackend = [];
+    
+    // ✅ FIXED: COMBINE groups AND individual contacts
+    
+    // 1. Get numbers from selected GROUPS
+    const selectedGroupsInfo = contactGroups.getSelectedGroups(false);
+    
+    if (selectedGroupsInfo.length > 0) {
+      selectedGroupsInfo.forEach(group => {
+        groupInfoForBackend.push({
+          id: group.id,
+          name: group.name,
+          members: group.members || []
+        });
+        
+        // Add group members to finalNumbers
+        finalNumbers.push(...(group.members || []));
+      });
+      
+      console.log(`✅ ${groupInfoForBackend.length} groups selected with ${finalNumbers.length} members`);
+    }
+    
+    // 2. Get INDIVIDUAL contacts (yang tidak termasuk dalam grup)
     const selectedContactNumbers = Array.from(contactManager.selectedNumbers);
-    const groupNumbers = contactGroups.getNumbersFromSelectedGroups(false);
+    
+    if (selectedContactNumbers.length > 0) {
+      // Filter out contacts yang sudah ada di grup
+      const groupMemberSet = new Set(finalNumbers);
+      const individualContacts = selectedContactNumbers.filter(num => !groupMemberSet.has(num));
+      
+      // Add individual contacts to finalNumbers
+      finalNumbers.push(...individualContacts);
+      
+      console.log(`✅ ${individualContacts.length} individual contacts (not in groups)`);
+    }
+    
+    // 3. Get MANUAL numbers
     const manualNumbers = manualInput.split(",").map((num) => num.trim()).filter((num) => num !== "");
     
-    const allNumbersSet = new Set([...selectedContactNumbers, ...groupNumbers, ...manualNumbers]);
-    const finalNumbers = Array.from(allNumbersSet).map((num) => num.replace(/\D/g, "").trim()).filter((num) => num !== "");
-
-    const submitButton = document.querySelector('#reminderForm button[type="submit"]');
-    const editId = submitButton ? submitButton.dataset.editId : null;
-    const isEditing = !!editId;
-
-    const hasFilesUploaded = uploadedFiles.length > 0;
-    const hasMessage = message.length > 0;
-    let hasExistingFiles = false;
-
-    if (isEditing) {
-      const currentSchedule = scheduleManager.getSchedules().find((s) => s.id == editId);
-      hasExistingFiles = currentSchedule && currentSchedule.filesData && currentSchedule.filesData.length > 0;
+    if (manualNumbers.length > 0) {
+      finalNumbers.push(...manualNumbers);
+      console.log(`✅ ${manualNumbers.length} manual numbers`);
     }
-
-    if (!hasFilesUploaded && !hasMessage && !hasExistingFiles) {
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Mohon isi pesan atau pilih minimal satu file yang ingin dikirim.",
-        confirmButtonColor: "#2b6cb0"
-      });
-      return;
-    }
-
+    
+    // Remove duplicates
+    finalNumbers = [...new Set(finalNumbers)];
+    
+    console.log(`📊 Total recipients: ${finalNumbers.length} (${groupInfoForBackend.length} groups + individual contacts)`);
+    
+    // Validation
     if (finalNumbers.length === 0) {
       Swal.fire({
         icon: "error",
@@ -278,7 +365,8 @@ export function initReminderForm() {
       });
       return;
     }
-
+    
+    // Validate number format
     const regexPattern = /^(0|62)\d{8,13}$/;
     const invalidNumbersFrontend = finalNumbers.filter((n) => !regexPattern.test(n));
 
@@ -296,9 +384,30 @@ export function initReminderForm() {
       return;
     }
 
+    // Validate message or files
+    const fileInput = document.getElementById("fileUpload");
+    const hasFilesUploaded = fileInput && fileInput.files.length > 0;
+    const hasMessage = message.length > 0;
+
+    if (!hasFilesUploaded && !hasMessage) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Mohon isi pesan atau pilih minimal satu file yang ingin dikirim.",
+        confirmButtonColor: "#2b6cb0"
+      });
+      return;
+    }
+
     const formData = new FormData();
     formData.append("numbers", JSON.stringify(finalNumbers));
     formData.append("datetime", datetime);
+    
+    // ✅ ATTACH GROUP INFO (jika ada grup yang dipilih)
+    if (groupInfoForBackend.length > 0) {
+      formData.append("groupInfo", JSON.stringify(groupInfoForBackend));
+      console.log('✅ Sending groupInfo:', groupInfoForBackend.map(g => g.name).join(', '));
+    }
 
     if (message) {
       formData.append("message", message);
@@ -309,13 +418,7 @@ export function initReminderForm() {
       currentFiles.forEach((f) => formData.append("files", f));
     }
 
-    let url = "/add-reminder";
-    let method = "POST";
-
-    if (isEditing) {
-      url = `/edit-schedule/${editId}`;
-      method = "PUT";
-    }
+    const submitButton = document.querySelector('#reminderForm button[type="submit"]');
 
     try {
       if (submitButton) {
@@ -328,13 +431,11 @@ export function initReminderForm() {
         html: '<p style="color: #718096;">Mohon tunggu, sedang menjadwalkan pesan...</p>',
         allowOutsideClick: false,
         showConfirmButton: false,
-        didOpen: () => {
-          Swal.showLoading();
-        },
+        didOpen: () => Swal.showLoading(),
       });
 
-      const res = await fetch(url, {
-        method: method,
+      const res = await fetch("/add-reminder", {
+        method: "POST",
         body: formData,
       });
 
@@ -342,55 +443,106 @@ export function initReminderForm() {
       Swal.close();
 
       if (res.ok) {
-        await Swal.fire({
-          icon: "success",
-          title: isEditing ? "✅ Jadwal Diupdate!" : "✅ Pesan Terjadwal!",
-          html: `
-            <div style="text-align: left; padding: 10px;">
-              <p><strong>📊 Jumlah Penerima:</strong> <span class="badge badge-primary">${finalNumbers.length} nomor</span></p>
-              <p><strong>💬 Pesan:</strong> ${message ? message : '<em style="color: #a0aec0;">(Tanpa Pesan Teks)</em>'}</p>
-              <p><strong>⏰ Waktu Kirim:</strong> ${new Date(datetime).toLocaleString("id-ID")}</p>
-            </div>
-          `,
-          confirmButtonColor: "#48bb78",
-          confirmButtonText: '<i class="fa-solid fa-check"></i> OK'
-        });
+  // Build detailed message
+  let recipientDetails = [];
+  
+  if (groupInfoForBackend.length > 0) {
+    recipientDetails.push(`<div style="margin-top: 8px;">
+      <i class="fa-solid fa-users" style="color: #4299e1;"></i> 
+      <strong>${groupInfoForBackend.length} Grup:</strong>
+      <ul style="margin: 4px 0 0 24px; padding: 0; list-style: none;">
+        ${groupInfoForBackend.map(g => `<li>• ${g.name}</li>`).join('')}
+      </ul>
+    </div>`);
+  }
+  
+  const individualCount = selectedContactNumbers.length;
+  if (individualCount > 0) {
+    recipientDetails.push(`<div style="margin-top: 8px;">
+      <i class="fa-solid fa-user" style="color: #48bb78;"></i> 
+      <strong>${individualCount} Kontak Individual</strong>
+    </div>`);
+  }
 
-        this.reset();
-        contactManager.selectedNumbers.clear();
-        contactGroups.clearSelectedGroups();
-        
-        const contactUI = await import('../contacts/contact-ui.js');
-        contactUI.renderContactList();
-        contactGroups.renderGroupSelectionList();
+  await Swal.fire({
+    icon: "success",
+    title: "✅ Pesan Terjadwal!",
+    html: `
+      <div style="text-align: left; padding: 10px;">
+        <p><strong>📊 Total Penerima:</strong> <span class="badge badge-primary">${finalNumbers.length} nomor</span></p>
+        ${recipientDetails.join('')}
+        <p style="margin-top: 12px;"><strong>💬 Pesan:</strong> ${message ? message : '<em style="color: #a0aec0;">(Tanpa Pesan Teks)</em>'}</p>
+        <p><strong>⏰ Waktu Kirim:</strong> ${new Date(datetime).toLocaleString("id-ID")}</p>
+      </div>
+    `,
+    confirmButtonColor: "#48bb78",
+    confirmButtonText: '<i class="fa-solid fa-check"></i> OK'
+  });
 
-        scheduleManager.setSelectedFiles([]);
-        const fileInputEl = document.getElementById("fileUpload");
-        if (fileInputEl) fileInputEl.value = "";
+  // ✅ STEP 1: Reset form HTML elements
+  this.reset();
+  console.log('✅ Form reset called');
+  
+  // ✅ STEP 2: Clear selected contacts
+  contactManager.selectedNumbers.clear();
+  console.log('✅ Selected contacts cleared');
+  
+  // ✅ STEP 3: Clear selected groups
+  contactGroups.clearSelectedGroups();
+  console.log('✅ Selected groups cleared');
+  
+  // ✅ STEP 4: Re-render contact and group lists
+  const contactUI = await import('../contacts/contact-ui.js');
+  contactUI.renderContactList();
+  contactGroups.renderGroupSelectionList();
+  console.log('✅ Contact and group lists re-rendered');
 
-        const filePreview = document.getElementById("customFilePreview");
-        if (filePreview) {
-          filePreview.innerHTML = "<span style='color: #718096; font-size: 13px;'>Tidak ada file terpilih</span>";
-        }
+  // ✅ STEP 5: Clear files
+  scheduleManager.setSelectedFiles([]);
+  const fileInputEl = document.getElementById("fileUpload");
+  if (fileInputEl) {
+    fileInputEl.value = "";
+    console.log('✅ File input cleared');
+  }
 
-        const clearAllBtn = document.getElementById("clearAllFilesBtn");
-        if (clearAllBtn) {
-          clearAllBtn.style.display = "none";
-        }
-        
-        if (submitButton) {
-          delete submitButton.dataset.editId;
-          submitButton.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kirim Pesan';
-        }
-        
-        const manualNumbersInput = document.getElementById("manualNumbers");
-        if (manualNumbersInput) {
-          manualNumbersInput.value = "";
-        }
+  const filePreview = document.getElementById("customFilePreview");
+  if (filePreview) {
+    filePreview.innerHTML = "<span style='color: #718096; font-size: 13px;'>Tidak ada file terpilih</span>";
+  }
 
-        await scheduleRender.renderScheduleTable();
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } else {
+  const clearAllBtn = document.getElementById("clearAllFilesBtn");
+  if (clearAllBtn) {
+    clearAllBtn.style.display = "none";
+  }
+  
+  // ✅ STEP 6: EXPLICITLY clear manual numbers input (CRITICAL!)
+  const manualNumbersInput = document.getElementById("manualNumbers");
+  if (manualNumbersInput) {
+    manualNumbersInput.value = ""; // Force clear
+    console.log('✅ Manual numbers input cleared:', manualNumbersInput.value);
+  } else {
+    console.warn('⚠️ Manual numbers input not found!');
+  }
+
+  // ✅ STEP 7: Clear message textarea
+  const messageTextarea = document.getElementById("message");
+  if (messageTextarea) {
+    messageTextarea.value = "";
+    console.log('✅ Message textarea cleared');
+  }
+
+  // ✅ STEP 8: Clear datetime input
+  const datetimeInput = document.getElementById("datetime");
+  if (datetimeInput) {
+    datetimeInput.value = "";
+    console.log('✅ Datetime input cleared');
+  }
+
+  await scheduleRender.renderScheduleTable();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  
+  console.log('✅✅✅ ALL FORM DATA CLEARED SUCCESSFULLY ✅✅✅');
+} else {
         Swal.fire({
           icon: "error",
           title: "❌ Gagal",
@@ -415,7 +567,6 @@ export function initReminderForm() {
     }
   });
 }
-
 /**
  * Initializes meeting form
  */
@@ -423,7 +574,7 @@ export function initMeetingForm() {
   const meetingForm = document.getElementById("addMeetingForm");
   if (!meetingForm) return;
 
-  // ✅ FIXED: Select All / Deselect All untuk Meeting Contacts dengan Filter Support
+  // Select All / Deselect All buttons (keep existing code)
   const selectAllMeetingContactsBtn = document.getElementById("selectAllMeetingContactsBtn");
   const deselectAllMeetingContactsBtn = document.getElementById("deselectAllMeetingContactsBtn");
 
@@ -431,8 +582,6 @@ export function initMeetingForm() {
     selectAllMeetingContactsBtn.addEventListener("click", async function() {
       const contactManager = await import('../contacts/contact-manager.js');
       const contactUI = await import('../contacts/contact-ui.js');
-      
-      // ✅ AMBIL KONTAK YANG TERFILTER (sesuai pencarian)
       const filteredContacts = contactUI.getFilteredMeetingContacts() || [];
       
       filteredContacts.forEach(contact => {
@@ -449,8 +598,6 @@ export function initMeetingForm() {
     deselectAllMeetingContactsBtn.addEventListener("click", async function() {
       const contactManager = await import('../contacts/contact-manager.js');
       const contactUI = await import('../contacts/contact-ui.js');
-      
-      // ✅ HAPUS HANYA KONTAK YANG TERFILTER (sesuai pencarian)
       const filteredContacts = contactUI.getFilteredMeetingContacts() || [];
       
       filteredContacts.forEach(contact => {
@@ -479,30 +626,56 @@ export function initMeetingForm() {
     const endTime = document.getElementById("meetingEndTime").value;
     const manualInput = document.getElementById("meetingNumbers").value;
 
-    // 🔍 DEBUG: Log data yang akan dikirim
-    console.log('📋 Meeting Form Data:', {
-      title,
-      room,
-      startTime,
-      endTime,
-      manualInput
-    });
-
+    console.log('📋 Submitting meeting form...');
+    
+    let allNumbers = [];
+    let groupInfoForBackend = [];
+    
+    // ✅ FIXED: COMBINE groups AND individual contacts
+    
+    // 1. Get numbers from selected GROUPS
+    const selectedMeetingGroupsInfo = contactGroups.getSelectedGroups(true); // true = meeting
+    
+    if (selectedMeetingGroupsInfo.length > 0) {
+      selectedMeetingGroupsInfo.forEach(group => {
+        groupInfoForBackend.push({
+          id: group.id,
+          name: group.name,
+          members: group.members || []
+        });
+        
+        allNumbers.push(...(group.members || []));
+      });
+      
+      console.log(`✅ ${groupInfoForBackend.length} meeting groups selected`);
+    }
+    
+    // 2. Get INDIVIDUAL contacts (yang tidak termasuk dalam grup)
     const selectedContactNumbers = Array.from(contactManager.selectedMeetingNumbers);
-    const groupNumbers = contactGroups.getNumbersFromSelectedGroups(true);
+    
+    if (selectedContactNumbers.length > 0) {
+      const groupMemberSet = new Set(allNumbers);
+      const individualContacts = selectedContactNumbers.filter(num => !groupMemberSet.has(num));
+      
+      allNumbers.push(...individualContacts);
+      
+      console.log(`✅ ${individualContacts.length} individual meeting contacts`);
+    }
+    
+    // 3. Get MANUAL numbers
     const manualNumbers = manualInput.split(",").map((num) => num.trim()).filter((num) => num);
     
-    const allNumbers = [...new Set([...selectedContactNumbers, ...groupNumbers, ...manualNumbers])];
+    if (manualNumbers.length > 0) {
+      allNumbers.push(...manualNumbers);
+      console.log(`✅ ${manualNumbers.length} manual numbers`);
+    }
+    
+    // Remove duplicates
+    allNumbers = [...new Set(allNumbers)];
+    
+    console.log(`📊 Total meeting participants: ${allNumbers.length}`);
 
-    // 🔍 DEBUG: Log nomor yang terkumpul
-    console.log('📞 Collected Numbers:', {
-      selectedContacts: selectedContactNumbers.length,
-      groupNumbers: groupNumbers.length,
-      manualNumbers: manualNumbers.length,
-      total: allNumbers.length,
-      numbers: allNumbers
-    });
-
+    // Validate required fields
     if (!title || allNumbers.length === 0 || !room || !startTime || !endTime) {
       Swal.fire({
         icon: "error",
@@ -515,13 +688,6 @@ export function initMeetingForm() {
 
     const startDateTime = new Date(startTime);
     const endDateTime = new Date(endTime);
-    
-    // 🔍 DEBUG: Validasi waktu
-    console.log('⏰ Time Validation:', {
-      startDateTime: startDateTime.toISOString(),
-      endDateTime: endDateTime.toISOString(),
-      isValid: endDateTime > startDateTime
-    });
 
     if (endDateTime <= startDateTime) {
       Swal.fire({
@@ -543,25 +709,19 @@ export function initMeetingForm() {
     formData.append("endTime", endTime);
     formData.append("numbers", JSON.stringify(allNumbers));
 
+    // ✅ ATTACH GROUP INFO
+    if (groupInfoForBackend.length > 0) {
+      formData.append("groupInfo", JSON.stringify(groupInfoForBackend));
+      console.log('✅ Sending meeting groupInfo:', groupInfoForBackend.map(g => g.name).join(', '));
+    }
+
     const currentFiles = scheduleManager.getSelectedMeetingFiles() || [];
     for (const file of currentFiles) {
       formData.append("files", file);
     }
 
-    // 🔍 DEBUG: Log FormData
-    console.log('📦 FormData Contents:');
-    for (let pair of formData.entries()) {
-      if (pair[0] === 'files') {
-        console.log(`  ${pair[0]}:`, pair[1].name, `(${Math.round(pair[1].size / 1024)} KB)`);
-      } else {
-        console.log(`  ${pair[0]}:`, pair[1]);
-      }
-    }
-
     let url = isEditing ? `/edit-meeting/${editId}` : "/add-meeting";
     let method = isEditing ? "PUT" : "POST";
-
-    console.log(`🚀 Sending ${method} request to ${url}`);
 
     try {
       if (submitButton) {
@@ -582,68 +742,129 @@ export function initMeetingForm() {
         body: formData,
       });
 
-      // 🔍 DEBUG: Log response
-      console.log('📥 Server Response:', {
-        status: res.status,
-        statusText: res.statusText,
-        ok: res.ok
-      });
-
       const result = await res.json();
-      console.log('📄 Response Data:', result);
       
       Swal.close();
 
       if (res.ok && result.success) {
-        await Swal.fire({
-          icon: "success",
-          title: isEditing ? "✅ Jadwal Rapat Diupdate!" : "✅ Jadwal Rapat Terbuat!",
-          html: `
-            <div style="text-align: left; padding: 10px;">
-              <p><strong>👥 Jumlah Peserta:</strong> <span class="badge badge-primary">${allNumbers.length} nomor</span></p>
-              <p><strong>📋 Judul:</strong> ${title}</p>
-              <p><strong>🏢 Ruangan:</strong> ${room}</p>
-              <p><strong>🕐 Waktu:</strong> ${startDateTime.toLocaleString("id-ID")} - ${endDateTime.toLocaleString("id-ID", { timeStyle: "short" })}</p>
-            </div>
-          `,
-          confirmButtonColor: "#48bb78",
-          confirmButtonText: '<i class="fa-solid fa-check"></i> OK'
-        });
+  // Build detailed message
+  let recipientDetails = [];
+  
+  if (groupInfoForBackend.length > 0) {
+    recipientDetails.push(`<div style="margin-top: 8px;">
+      <i class="fa-solid fa-users" style="color: #4299e1;"></i> 
+      <strong>${groupInfoForBackend.length} Grup:</strong>
+      <ul style="margin: 4px 0 0 24px; padding: 0; list-style: none;">
+        ${groupInfoForBackend.map(g => `<li>• ${g.name}</li>`).join('')}
+      </ul>
+    </div>`);
+  }
+  
+  const individualCount = selectedContactNumbers.length;
+  if (individualCount > 0) {
+    recipientDetails.push(`<div style="margin-top: 8px;">
+      <i class="fa-solid fa-user" style="color: #48bb78;"></i> 
+      <strong>${individualCount} Kontak Individual</strong>
+    </div>`);
+  }
 
-        this.reset();
-        if (submitButton) {
-          delete submitButton.dataset.editId;
-          submitButton.innerHTML = '<i class="fa-solid fa-calendar-check"></i> Jadwalkan Rapat';
-        }
-        contactManager.selectedMeetingNumbers.clear();
-        contactGroups.clearSelectedMeetingGroups();
-        
-        const contactUI = await import('../contacts/contact-ui.js');
-        contactUI.renderMeetingContactList();
-        contactGroups.renderMeetingGroupSelectionList();
-        
-        scheduleManager.setSelectedMeetingFiles([]);
-        const meetingFileInputEl = document.getElementById("meetingFileUpload");
-        if (meetingFileInputEl) meetingFileInputEl.value = "";
+  await Swal.fire({
+    icon: "success",
+    title: isEditing ? "✅ Jadwal Rapat Diupdate!" : "✅ Jadwal Rapat Terbuat!",
+    html: `
+      <div style="text-align: left; padding: 10px;">
+        <p><strong>👥 Total Peserta:</strong> <span class="badge badge-primary">${allNumbers.length} nomor</span></p>
+        ${recipientDetails.join('')}
+        <p style="margin-top: 12px;"><strong>📋 Judul:</strong> ${title}</p>
+        <p><strong>🏢 Ruangan:</strong> ${room}</p>
+        <p><strong>🕐 Waktu:</strong> ${startDateTime.toLocaleString("id-ID")} - ${endDateTime.toLocaleString("id-ID", { timeStyle: "short" })}</p>
+      </div>
+    `,
+    confirmButtonColor: "#48bb78",
+    confirmButtonText: '<i class="fa-solid fa-check"></i> OK'
+  });
 
-        const meetingFilePreview = document.getElementById("meetingFileNames");
-        if (meetingFilePreview) {
-          meetingFilePreview.innerHTML = "<span style='color: #718096; font-size: 13px;'>Belum ada file terpilih</span>";
-        }
+  // ✅ STEP 1: Reset form
+  this.reset();
+  console.log('✅ Meeting form reset called');
+  
+  // ✅ STEP 2: Clear submit button edit state
+  if (submitButton) {
+    delete submitButton.dataset.editId;
+    submitButton.innerHTML = '<i class="fa-solid fa-calendar-check"></i> Jadwalkan Rapat';
+  }
+  
+  // ✅ STEP 3: Clear selected meeting contacts
+  contactManager.selectedMeetingNumbers.clear();
+  console.log('✅ Selected meeting contacts cleared');
+  
+  // ✅ STEP 4: Clear selected meeting groups
+  contactGroups.clearSelectedMeetingGroups();
+  console.log('✅ Selected meeting groups cleared');
+  
+  // ✅ STEP 5: Re-render lists
+  const contactUI = await import('../contacts/contact-ui.js');
+  contactUI.renderMeetingContactList();
+  contactGroups.renderMeetingGroupSelectionList();
+  console.log('✅ Meeting contact and group lists re-rendered');
+  
+  // ✅ STEP 6: Clear meeting files
+  scheduleManager.setSelectedMeetingFiles([]);
+  const meetingFileInputEl = document.getElementById("meetingFileUpload");
+  if (meetingFileInputEl) {
+    meetingFileInputEl.value = "";
+    console.log('✅ Meeting file input cleared');
+  }
 
-        const meetingClearAllBtn = document.getElementById("clearAllMeetingFilesBtn");
-        if (meetingClearAllBtn) {
-          meetingClearAllBtn.style.display = "none";
-        }
+  const meetingFilePreview = document.getElementById("meetingFileNames");
+  if (meetingFilePreview) {
+    meetingFilePreview.innerHTML = "<span style='color: #718096; font-size: 13px;'>Belum ada file terpilih</span>";
+  }
 
-        // ✅ CRITICAL FIX: Render schedule table untuk tampilkan meeting baru
-        console.log('📊 Rendering schedule table after meeting creation...');
-        await scheduleRender.renderScheduleTable();
-        
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } else {
-        // 🔍 DEBUG: Show detailed error
-        console.error('❌ Server Error:', result);
+  const meetingClearAllBtn = document.getElementById("clearAllMeetingFilesBtn");
+  if (meetingClearAllBtn) {
+    meetingClearAllBtn.style.display = "none";
+  }
+  
+  // ✅ STEP 7: EXPLICITLY clear manual numbers for MEETING (CRITICAL!)
+  const meetingNumbersInput = document.getElementById("meetingNumbers");
+  if (meetingNumbersInput) {
+    meetingNumbersInput.value = ""; // Force clear
+    console.log('✅ Meeting manual numbers input cleared:', meetingNumbersInput.value);
+  } else {
+    console.warn('⚠️ Meeting manual numbers input not found!');
+  }
+
+  // ✅ STEP 8: Clear all meeting form fields explicitly
+  const meetingTitleInput = document.getElementById("meetingTitle");
+  if (meetingTitleInput) {
+    meetingTitleInput.value = "";
+    console.log('✅ Meeting title cleared');
+  }
+
+  const meetingRoomSelect = document.getElementById("meetingRoom");
+  if (meetingRoomSelect) {
+    meetingRoomSelect.selectedIndex = 0;
+    console.log('✅ Meeting room reset');
+  }
+
+  const meetingStartTimeInput = document.getElementById("meetingStartTime");
+  if (meetingStartTimeInput) {
+    meetingStartTimeInput.value = "";
+    console.log('✅ Meeting start time cleared');
+  }
+
+  const meetingEndTimeInput = document.getElementById("meetingEndTime");
+  if (meetingEndTimeInput) {
+    meetingEndTimeInput.value = "";
+    console.log('✅ Meeting end time cleared');
+  }
+
+  await scheduleRender.renderScheduleTable();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  
+  console.log('✅✅✅ ALL MEETING FORM DATA CLEARED SUCCESSFULLY ✅✅✅');
+} else {
         Swal.fire({
           icon: "error",
           title: "❌ Gagal",
@@ -675,6 +896,7 @@ export function initMeetingForm() {
     }
   });
 }
+
 
 /**
  * Initializes file upload label click handlers
@@ -768,30 +990,134 @@ export function initSmoothAnimations() {
   }
 }
 
+export async function renderScheduleTable(forceRefresh = false) {
+  if (!schedulesContainer) return;
+
+  try {
+    //  CRITICAL: Add cache busting when force refresh
+    const cacheParam = forceRefresh ? `?_t=${Date.now()}` : '';
+    const res = await fetch(`/get-all-schedules${cacheParam}`);
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Server error: ${res.status} - ${errorText}`);
+    }
+
+    const allSchedulesData = await res.json();
+    if (!Array.isArray(allSchedulesData)) {
+      throw new Error("Data yang diterima dari server bukan array");
+    }
+
+    //  IMPORTANT: Log untuk debug
+    if (forceRefresh) {
+      console.log(' FORCE REFRESH - Fresh data from database:', {
+        totalSchedules: allSchedulesData.length,
+        sampledGroupInfo: allSchedulesData.slice(0, 2).map(s => ({
+          id: s.id,
+          type: s.type,
+          hasGroupInfo: !!s.groupInfo,
+          groupInfo: s.groupInfo
+        }))
+      });
+    }
+
+    setSchedules(allSchedulesData);
+    
+    // ... (rest of the function tetap sama)
+    const schedules = getSchedules();
+    const currentFilter = getCurrentFilter();
+
+    let filteredSchedules;
+    if (currentFilter === "all") {
+      filteredSchedules = schedules;
+    } else if (currentFilter === "meeting") {
+      filteredSchedules = schedules.filter((s) => s.type === "meeting" || s.meetingRoom);
+    } else {
+      filteredSchedules = schedules.filter((s) => s.status === currentFilter);
+    }
+
+    // Sort schedules
+    filteredSchedules.sort((a, b) => {
+      const isActiveMeeting = (schedule) => {
+        const isMeeting = schedule.type === "meeting" || !!schedule.meetingRoom;
+        return isMeeting && (schedule.status === "terjadwal" || schedule.status === "terkirim");
+      };
+
+      const aIsActiveMeeting = isActiveMeeting(a);
+      const bIsActiveMeeting = isActiveMeeting(b);
+
+      if (aIsActiveMeeting && !bIsActiveMeeting) return -1;
+      if (!aIsActiveMeeting && bIsActiveMeeting) return 1;
+
+      if (aIsActiveMeeting && bIsActiveMeeting) {
+        const getStatusRank = (status) => (status === "terjadwal" ? 1 : 2);
+        const rankA = getStatusRank(a.status);
+        const rankB = getStatusRank(b.status);
+
+        if (rankA !== rankB) return rankA - rankB;
+        if (rankA === 1) {
+          return new Date(a.scheduledTime) - new Date(b.scheduledTime);
+        } else {
+          const endTimeA = a.meetingEndTime || a.scheduledTime;
+          const endTimeB = b.meetingEndTime || b.scheduledTime;
+          return new Date(endTimeA) - new Date(endTimeB);
+        }
+      } else {
+        return new Date(b.scheduledTime) - new Date(a.scheduledTime);
+      }
+    });
+
+    schedulesContainer.innerHTML = "";
+
+    if (filteredSchedules.length === 0) {
+      schedulesContainer.innerHTML = '<tr><td colspan="6" class="text-center">Belum ada jadwal untuk filter ini.</td></tr>';
+    } else {
+      const rowPromises = filteredSchedules.map(async (schedule) => {
+        const newRow = document.createElement("tr");
+        newRow.dataset.id = schedule.id;
+        newRow.innerHTML = await createScheduleRowHtml(schedule);
+        return newRow;
+      });
+      
+      const rows = await Promise.all(rowPromises);
+      rows.forEach(row => schedulesContainer.appendChild(row));
+    }
+
+    updateCountdownTimers();
+    attachScheduleActionListeners();
+    
+    if (forceRefresh) {
+      console.log(' Force refresh complete - Table updated with fresh data');
+    }
+  } catch (error) {
+    console.error("Error rendering schedule table:", error);
+    schedulesContainer.innerHTML = `<tr><td colspan="6" class="text-center error-message">${error.message}</td></tr>`;
+  }
+}
 /**
  * Initializes realtime schedule updates
  */
 export async function initRealtimeScheduleUpdates() {
-  console.log("🔌 Connecting to real-time schedule updates...");
+  console.log("Connecting to real-time schedule updates...");
   
   const socket = io();
   const scheduleRender = await import('../schedule/schedule-render.js');
 
   socket.on('connect', () => {
-    console.log("✅ Real-time connection established - Socket ID:", socket.id);
+    console.log(" Real-time connection established - Socket ID:", socket.id);
   });
 
   socket.on('disconnect', () => {
-    console.log("⚠️ Real-time connection lost");
+    console.log(" Real-time connection lost");
   });
 
   socket.on('connect_error', (error) => {
-    console.error("❌ Connection error:", error);
+    console.error(" Connection error:", error);
   });
 
   // Event: schedule status berubah (untuk pesan)
-  socket.on('schedule-status-updated', (data) => {
-    console.log('📡 RECEIVED: schedule-status-updated', data);
+  socket.on('schedule-status-updated', async (data) => {
+    console.log(' RECEIVED: schedule-status-updated', data);
     
     const { scheduleId, newStatus, message } = data;
     
@@ -800,17 +1126,17 @@ export async function initRealtimeScheduleUpdates() {
     }
     
     if (newStatus === 'terkirim') {
-      showNotification('✅ Pesan Terkirim', message || `Jadwal #${scheduleId} telah terkirim`, 'success');
-      scheduleRender.renderScheduleTable();
+      showNotification(' Pesan Terkirim', message || `Jadwal #${scheduleId} telah terkirim`, 'success');
+      await scheduleRender.renderScheduleTable(true); //  FORCE REFRESH
     } else if (newStatus === 'gagal') {
-      showNotification('❌ Pesan Gagal', message || `Jadwal #${scheduleId} gagal terkirim`, 'error');
-      scheduleRender.renderScheduleTable();
+      showNotification(' Pesan Gagal', message || `Jadwal #${scheduleId} gagal terkirim`, 'error');
+      await scheduleRender.renderScheduleTable(true); //  FORCE REFRESH
     }
   });
 
   // Event: meeting status berubah
   socket.on('meeting-status-updated', async (data) => {
-    console.log('📡 RECEIVED: meeting-status-updated', data);
+    console.log(' RECEIVED: meeting-status-updated', data);
     
     const { scheduleId, newStatus, message } = data;
     
@@ -818,106 +1144,96 @@ export async function initRealtimeScheduleUpdates() {
       window.updateScheduleStatusInTable(scheduleId, newStatus);
     }
     
-    // ✅ CRITICAL FIX: Refresh table untuk semua perubahan status meeting
+    //  CRITICAL FIX: Force refresh untuk semua perubahan status meeting
     if (newStatus === 'terkirim') {
-      showNotification('📨 Pengingat Rapat Terkirim', message || `Pengingat rapat #${scheduleId} telah terkirim`, 'success');
-      console.log('🔄 Auto-refreshing table after meeting reminder sent...');
-      await scheduleRender.renderScheduleTable();
+      showNotification('¨ Pengingat Rapat Terkirim', message || `Pengingat rapat #${scheduleId} telah terkirim`, 'success');
+      console.log(' Auto-refreshing table after meeting reminder sent...');
+      await scheduleRender.renderScheduleTable(true); //  FORCE REFRESH
     } else if (newStatus === 'selesai') {
-      showNotification('✅ Rapat Selesai', message || `Rapat #${scheduleId} telah selesai`, 'success');
-      await scheduleRender.renderScheduleTable();
+      showNotification(' Rapat Selesai', message || `Rapat #${scheduleId} telah selesai`, 'success');
+      await scheduleRender.renderScheduleTable(true); //  FORCE REFRESH
     } else if (newStatus === 'dibatalkan') {
-      showNotification('⚠️ Rapat Dibatalkan', message || `Rapat #${scheduleId} dibatalkan`, 'warning');
-      await scheduleRender.renderScheduleTable();
+      showNotification('¸ Rapat Dibatalkan', message || `Rapat #${scheduleId} dibatalkan`, 'warning');
+      await scheduleRender.renderScheduleTable(true); //  FORCE REFRESH
     } else {
-      // Refresh untuk status lainnya juga
-      console.log(`🔄 Refreshing table for meeting status: ${newStatus}`);
-      await scheduleRender.renderScheduleTable();
+      console.log(` Refreshing table for meeting status: ${newStatus}`);
+      await scheduleRender.renderScheduleTable(true); //  FORCE REFRESH
     }
   });
 
   // Event: schedule baru dibuat
   socket.on('schedule-created', async (data) => {
-    console.log('📡 RECEIVED: schedule-created', data);
-    console.log('🔄 Auto-refreshing schedule table for new schedule...');
-    await scheduleRender.renderScheduleTable();
+    console.log(' RECEIVED: schedule-created', data);
+    console.log(' Auto-refreshing schedule table for new schedule...');
+    await scheduleRender.renderScheduleTable(true); //  FORCE REFRESH
   });
 
-  // ✅ PERBAIKAN: Event ketika schedule/meeting di-update (re-render penuh)
+  //  CRITICAL FIX: Event ketika schedule/meeting di-update
   socket.on('schedule-updated', async (data) => {
-    console.log('📡 RECEIVED: schedule-updated', data);
-    const hasFileChanges = data.filesChanged || (data.filesData && data.filesData.length > 0);
-    const message = hasFileChanges 
+    console.log(' RECEIVED: schedule-updated', data);
+    console.log(' Data received:', {
+      scheduleId: data.scheduleId,
+      filesChanged: data.filesChanged,
+      hasGroupInfo: !!data.groupInfo,
+      forceRefresh: data.forceRefresh
+    });
+    
+    const message = data.filesChanged 
       ? `Jadwal #${data.scheduleId} dan file telah diupdate` 
       : `Jadwal #${data.scheduleId} telah diupdate`;
-    showNotification('📝 Jadwal Diperbarui', message, 'info');
     
-    // ✅ CRITICAL: Langsung refresh tanpa delay untuk file changes
-    if (hasFileChanges || data.forceRefresh) {
-      console.log('🔄 FORCE REFRESH - File changes detected!');
-      // Immediate refresh
-      await scheduleRender.renderScheduleTable();
-      
-      // Double refresh setelah delay untuk ensure data loaded
-      setTimeout(async () => {
-        console.log('🔄 Secondary refresh for file data...');
-        await scheduleRender.renderScheduleTable();
-      }, 1000);
-    } else {
-      // Normal refresh
-      await scheduleRender.renderScheduleTable();
-    }
+    showNotification(' Jadwal Diperbarui', message, 'info');
+    
+    //  CRITICAL: ALWAYS force refresh untuk edit
+    console.log(' FORCE REFRESH - Fetching fresh data from database...');
+    
+    // First refresh
+    await scheduleRender.renderScheduleTable(true);
+    
+    //  DOUBLE REFRESH: Ensure data fully loaded (especially for groupInfo changes)
+    setTimeout(async () => {
+      console.log(' Secondary force refresh to ensure groupInfo updated...');
+      await scheduleRender.renderScheduleTable(true);
+    }, 800);
   });
 
   socket.on('meeting-updated', async (data) => {
-    console.log('📡 RECEIVED: meeting-updated', data);
-    const hasFileChanges = data.filesChanged || (data.filesData && data.filesData.length > 0);
-    const message = hasFileChanges 
+    console.log(' RECEIVED: meeting-updated', data);
+    console.log(' Data received:', {
+      scheduleId: data.scheduleId,
+      filesChanged: data.filesChanged,
+      hasGroupInfo: !!data.groupInfo,
+      forceRefresh: data.forceRefresh
+    });
+    
+    const message = data.filesChanged 
       ? `Rapat #${data.scheduleId} dan file telah diupdate` 
       : `Rapat #${data.scheduleId} telah diupdate`;
-    showNotification('📝 Rapat Diperbarui', message, 'info');
     
-    // ✅ CRITICAL: Langsung refresh tanpa delay untuk file changes
-    if (hasFileChanges || data.forceRefresh) {
-      console.log('🔄 FORCE REFRESH - File changes detected!');
-      // Immediate refresh
-      await scheduleRender.renderScheduleTable();
-      
-      // Double refresh setelah delay untuk ensure data loaded
-      setTimeout(async () => {
-        console.log('🔄 Secondary refresh for file data...');
-        await scheduleRender.renderScheduleTable();
-      }, 1000);
-    } else {
-      // Normal refresh
-      await scheduleRender.renderScheduleTable();
-    }
+    showNotification(' Rapat Diperbarui', message, 'info');
+    
+    //  CRITICAL: ALWAYS force refresh untuk edit
+    console.log(' FORCE REFRESH - Fetching fresh data from database...');
+    
+    // First refresh
+    await scheduleRender.renderScheduleTable(true);
+    
+    //  DOUBLE REFRESH: Ensure data fully loaded (especially for groupInfo changes)
+    setTimeout(async () => {
+      console.log(' Secondary force refresh to ensure groupInfo updated...');
+      await scheduleRender.renderScheduleTable(true);
+    }, 800);
   });
 
   // Event: schedule dihapus
-  socket.on('schedule-deleted', (data) => {
-    console.log('📡 RECEIVED: schedule-deleted', data);
+  socket.on('schedule-deleted', async (data) => {
+    console.log(' RECEIVED: schedule-deleted', data);
     const { scheduleId } = data;
     if (window.removeScheduleFromTable) {
       window.removeScheduleFromTable(scheduleId);
     }
-  });
-
-  // ✅ NEW: Event khusus untuk perubahan file tanpa perubahan status
-  socket.on('schedule-files-updated', (data) => {
-    console.log('📡 RECEIVED: schedule-files-updated', data);
-    const { scheduleId } = data;
-    showNotification('📎 File Diperbarui', `File untuk jadwal #${scheduleId} telah diupdate`, 'info');
-    // Render ulang untuk menampilkan file terbaru
-    scheduleRender.renderScheduleTable();
-  });
-
-  socket.on('meeting-files-updated', (data) => {
-    console.log('📡 RECEIVED: meeting-files-updated', data);
-    const { scheduleId } = data;
-    showNotification('📎 File Diperbarui', `File untuk rapat #${scheduleId} telah diupdate`, 'info');
-    // Render ulang untuk menampilkan file terbaru
-    scheduleRender.renderScheduleTable();
+    // Force refresh juga untuk memastikan
+    await scheduleRender.renderScheduleTable(true);
   });
 
   window.scheduleSocket = socket;

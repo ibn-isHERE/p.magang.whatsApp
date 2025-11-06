@@ -1,27 +1,14 @@
-// dbOperations.js - Database Operations for Meetings
-// ✅ FIXED: Emit socket events untuk auto update status
-
 let db = null;
 
-/**
- * Set database instance dari luar
- */
 function setDatabase(database) {
     db = database;
     console.log("✅ Meetings database operations initialized");
 }
 
-/**
- * Get database instance
- */
 function getDatabase() {
     return db;
 }
 
-/**
- * Update meeting status
- * ✅ IMPROVED: Emit socket event setelah update
- */
 function updateMeetingStatus(meetingId, status, message = null) {
     if (!db) {
         console.error("Database not available");
@@ -37,7 +24,6 @@ function updateMeetingStatus(meetingId, status, message = null) {
             } else {
                 console.log(`Status meeting ${meetingId} diupdate ke '${status}'`);
                 
-                // ✅ EMIT SOCKET EVENT
                 if (global.emitMeetingStatusUpdate) {
                     global.emitMeetingStatusUpdate(
                         meetingId, 
@@ -50,16 +36,9 @@ function updateMeetingStatus(meetingId, status, message = null) {
     );
 }
 
-/**
- * Update expired meetings
- * ✅ FIXED: Emit socket event untuk setiap meeting yang berubah status
- */
 function updateExpiredMeetings() {
     return new Promise((resolve) => {
         if (!db) return resolve();
-        
-        const { dateTimeToEpoch } = require('./helpers');
-        const { deleteFilesFromData } = require('./fileHandler');
         
         const now = new Date().getTime();
         db.all(
@@ -72,10 +51,9 @@ function updateExpiredMeetings() {
                 let updatedCount = 0;
                 
                 rows.forEach((meeting) => {
-                    const endEpoch = meeting.end_epoch || dateTimeToEpoch(meeting.date, meeting.endTime);
+                    const endEpoch = meeting.end_epoch;
                     
                     if (now > endEpoch) {
-                        // ✅ Meeting sudah expired, update status
                         db.run(
                             `UPDATE meetings SET status = 'selesai' WHERE id = ?`, 
                             [meeting.id], 
@@ -84,18 +62,12 @@ function updateExpiredMeetings() {
                                     updatedCount++;
                                     console.log(`✅ Auto-finished meeting: ${meeting.id} - ${meeting.meetingTitle}`);
                                     
-                                    // ✅ EMIT SOCKET EVENT - INI YANG PENTING!
                                     if (global.emitMeetingStatusUpdate) {
                                         global.emitMeetingStatusUpdate(
                                             meeting.id, 
                                             'selesai', 
                                             `Rapat "${meeting.meetingTitle}" telah selesai secara otomatis`
                                         );
-                                    }
-                                    
-                                    // Delete files when meeting is finished
-                                    if (meeting.filesData) {
-                                        deleteFilesFromData(meeting.filesData);
                                     }
                                 }
                                 
@@ -108,7 +80,6 @@ function updateExpiredMeetings() {
                             }
                         );
                     } else {
-                        // Meeting belum expired
                         if (++completed === rows.length) {
                             resolve();
                         }
@@ -119,9 +90,6 @@ function updateExpiredMeetings() {
     });
 }
 
-/**
- * Get meeting by ID
- */
 function getMeetingById(id) {
     return new Promise((resolve, reject) => {
         if (!db) {
@@ -131,6 +99,7 @@ function getMeetingById(id) {
 
         db.get("SELECT * FROM meetings WHERE id = ?", [id], (err, row) => {
             if (err) {
+                console.error("Error getting meeting:", err.message);
                 reject(err);
             } else {
                 resolve(row);
@@ -141,6 +110,7 @@ function getMeetingById(id) {
 
 /**
  * Insert new meeting
+ * ✅ FIXED: Include selectedGroups AND groupInfo
  */
 function insertMeeting(meetingData) {
     return new Promise((resolve, reject) => {
@@ -149,25 +119,73 @@ function insertMeeting(meetingData) {
             return;
         }
 
-        const { id, meetingTitle, numbers, meetingRoom, date, startTime, endTime, start_epoch, end_epoch, filesData } = meetingData;
+        const { 
+            id, 
+            meetingTitle, 
+            numbers, 
+            meetingRoom, 
+            date, 
+            startTime, 
+            endTime, 
+            start_epoch, 
+            end_epoch, 
+            filesData, 
+            selectedGroups,  // ✅ Nama grup yang dipilih
+            groupInfo        // ✅ Detail grup dengan members
+        } = meetingData;
 
-        db.run(
-            `INSERT INTO meetings (id, meetingTitle, numbers, meetingRoom, date, startTime, endTime, start_epoch, end_epoch, status, filesData, createdAt, updatedAt)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-            [id, meetingTitle, numbers, meetingRoom, date, startTime, endTime, start_epoch, end_epoch, "terjadwal", filesData],
-            function (err) {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(this);
-                }
+        console.log("📝 Inserting meeting:", {
+            id,
+            meetingTitle,
+            numbersCount: numbers ? JSON.parse(numbers).length : 0,
+            hasSelectedGroups: !!selectedGroups,
+            hasGroupInfo: !!groupInfo,
+            hasFiles: !!filesData
+        });
+
+        // ✅ Query dengan selectedGroups DAN groupInfo
+        const query = `
+            INSERT INTO meetings (
+                id, meetingTitle, numbers, meetingRoom, date, startTime, endTime, 
+                start_epoch, end_epoch, status, filesData, selectedGroups, groupInfo,
+                createdAt, updatedAt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        `;
+
+        const params = [
+            id, 
+            meetingTitle, 
+            numbers, 
+            meetingRoom, 
+            date, 
+            startTime, 
+            endTime, 
+            start_epoch, 
+            end_epoch, 
+            "terjadwal", 
+            filesData || null,
+            selectedGroups || null,  // ✅ Bisa null atau JSON string
+            groupInfo || null         // ✅ Bisa null atau JSON string
+        ];
+
+        db.run(query, params, function (err) {
+            if (err) {
+                console.error("❌ Error inserting meeting:", err.message);
+                console.error("   Query:", query);
+                console.error("   Params:", params.map((p, i) => `${i}: ${typeof p === 'string' && p.length > 50 ? p.substring(0, 50) + '...' : p}`));
+                reject(err);
+            } else {
+                console.log(`✅ Meeting ${id} inserted successfully`);
+                console.log(`   Rows affected: ${this.changes}`);
+                resolve(this);
             }
-        );
+        });
     });
 }
 
 /**
  * Update meeting
+ * ✅ FIXED: Include selectedGroups AND groupInfo
  */
 function updateMeeting(id, meetingData) {
     return new Promise((resolve, reject) => {
@@ -176,29 +194,75 @@ function updateMeeting(id, meetingData) {
             return;
         }
 
-        const { meetingTitle, numbers, meetingRoom, date, startTime, endTime, start_epoch, end_epoch, filesData } = meetingData;
+        const { 
+            meetingTitle, 
+            numbers, 
+            meetingRoom, 
+            date, 
+            startTime, 
+            endTime, 
+            start_epoch, 
+            end_epoch, 
+            filesData, 
+            selectedGroups,  // ✅ Preserve selectedGroups
+            groupInfo        // ✅ Preserve groupInfo
+        } = meetingData;
 
+        console.log("📝 Updating meeting:", {
+            id,
+            meetingTitle,
+            hasSelectedGroups: !!selectedGroups,
+            hasGroupInfo: !!groupInfo,
+            hasFiles: !!filesData
+        });
+
+        // ✅ Query dengan selectedGroups DAN groupInfo
         const query = `
             UPDATE meetings SET 
-                meetingTitle = ?, numbers = ?, meetingRoom = ?, date = ?, startTime = ?, endTime = ?, 
-                start_epoch = ?, end_epoch = ?, filesData = ?, updatedAt = CURRENT_TIMESTAMP, status = 'terjadwal' 
-            WHERE id = ?`;
+                meetingTitle = ?, 
+                numbers = ?, 
+                meetingRoom = ?, 
+                date = ?, 
+                startTime = ?, 
+                endTime = ?, 
+                start_epoch = ?, 
+                end_epoch = ?, 
+                filesData = ?, 
+                selectedGroups = ?,
+                groupInfo = ?,
+                updatedAt = CURRENT_TIMESTAMP, 
+                status = 'terjadwal' 
+            WHERE id = ?
+        `;
         
-        const params = [meetingTitle, numbers, meetingRoom, date, startTime, endTime, start_epoch, end_epoch, filesData, id];
+        const params = [
+            meetingTitle, 
+            numbers, 
+            meetingRoom, 
+            date, 
+            startTime, 
+            endTime, 
+            start_epoch, 
+            end_epoch, 
+            filesData || null,
+            selectedGroups || null,  // ✅ Bisa null atau JSON string
+            groupInfo || null,        // ✅ Bisa null atau JSON string
+            id
+        ];
 
         db.run(query, params, function(err) {
             if (err) {
+                console.error("❌ Error updating meeting:", err.message);
                 reject(err);
             } else {
+                console.log(`✅ Meeting ${id} updated successfully`);
+                console.log(`   Rows affected: ${this.changes}`);
                 resolve(this);
             }
         });
     });
 }
 
-/**
- * Delete meeting
- */
 function deleteMeeting(id) {
     return new Promise((resolve, reject) => {
         if (!db) {
@@ -208,17 +272,16 @@ function deleteMeeting(id) {
 
         db.run("DELETE FROM meetings WHERE id = ?", [id], function (err) {
             if (err) {
+                console.error("Error deleting meeting:", err.message);
                 reject(err);
             } else {
+                console.log(`✅ Meeting ${id} deleted successfully`);
                 resolve(this);
             }
         });
     });
 }
 
-/**
- * Get all meetings
- */
 function getAllMeetings(whereClause = '', params = []) {
     return new Promise((resolve, reject) => {
         if (!db) {
@@ -230,9 +293,10 @@ function getAllMeetings(whereClause = '', params = []) {
         
         db.all(query, params, (err, rows) => {
             if (err) {
+                console.error("Error getting all meetings:", err.message);
                 reject(err);
             } else {
-                resolve(rows);
+                resolve(rows || []);
             }
         });
     });

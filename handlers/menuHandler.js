@@ -26,7 +26,7 @@ class MenuHandler {
     async handleMenuChoice(message, fromNumber, choice, userState, registrationHandler) {
         const menuChoice = choice.trim();
 
-        // BARU: Handle menu 5 - Panduan Registrasi
+        // Handle menu 5 - Panduan Registrasi
         if (menuChoice === '5') {
             const contact = await registrationHandler.checkRegistration(fromNumber);
             
@@ -57,14 +57,16 @@ class MenuHandler {
 
         // Pilihan 4: Chat dengan admin
         if (menuChoice === '4') {
-            userState[fromNumber] = 'CHATTING';
+            // PERBAIKAN: Set state ke CHATTING_WAITING (menunggu admin reply)
+            userState[fromNumber] = 'CHATTING_WAITING';
             await this.client.sendMessage(message.from, templates.chatWithAdmin);
             
             // Simpan pesan ke database
             await this.saveMessageFunction(message);
             
-            // Set timer inaktivitas
-            this.setInactivityTimer(fromNumber);
+            // PERBAIKAN: JANGAN set timer di sini! 
+            // Timer akan diset ketika admin reply pertama kali
+            console.log(`💬 User ${fromNumber} masuk mode CHATTING_WAITING (menunggu admin)`);
 
             return { valid: true, action: 'start_chat' };
         }
@@ -79,8 +81,11 @@ class MenuHandler {
      * Handle pesan dari user yang sedang dalam mode CHATTING
      */
     async handleChatMessage(message, fromNumber) {
-        // Reset timer inaktivitas
-        this.setInactivityTimer(fromNumber);
+        // PERBAIKAN: Hanya reset timer jika sudah dalam mode CHATTING_ACTIVE
+        if (this.userState && this.userState[fromNumber] === 'CHATTING_ACTIVE') {
+            this.setInactivityTimer(fromNumber);
+            console.log(`🔄 Timer reset untuk ${fromNumber} (user mengirim pesan)`);
+        }
 
         // Cek apakah chat di history
         return new Promise((resolve, reject) => {
@@ -120,6 +125,21 @@ class MenuHandler {
                 }
             );
         });
+    }
+
+    /**
+     * BARU: Dipanggil ketika admin mengirim reply pertama kali
+     * Ini akan mengubah state dari CHATTING_WAITING ke CHATTING_ACTIVE
+     * dan memulai timer inaktivitas
+     */
+    activateChatSession(fromNumber) {
+        if (this.userState && this.userState[fromNumber] === 'CHATTING_WAITING') {
+            this.userState[fromNumber] = 'CHATTING_ACTIVE';
+            this.setInactivityTimer(fromNumber);
+            console.log(`✅ Chat session activated untuk ${fromNumber} - Timer dimulai!`);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -170,11 +190,13 @@ class MenuHandler {
                 // Timer 2: Akhiri sesi 5 menit setelah peringatan
                 this.inactivityTimers[fromNumber].end = setTimeout(() => {
                     this.endChatSession(fromNumber);
-                },  60 * 1000); // 5 menit
+                }, 1 * 60 * 1000); // 5 menit
 
-            },  60 * 1000), // 10 menit
+            }, 1 * 60 * 1000), // 10 menit
             end: null
         };
+        
+        console.log(`⏱️ Timer inaktivitas diset untuk ${fromNumber} (10 menit + 5 menit)`);
     }
 
     /**
@@ -219,7 +241,7 @@ class MenuHandler {
             console.log(`✅ Pesan akhir sesi untuk ${fromNumber} berhasil disimpan.`);
         });
 
-        // PENTING: Hapus state dan timer
+        // Hapus state dan timer
         if (this.userState) {
             delete this.userState[fromNumber];
             console.log(`🔄 State cleared untuk ${fromNumber}`);

@@ -1,3 +1,5 @@
+// schedules.js - FIXED: Save groupInfo to database
+
 const express = require("express");
 const multer = require("multer");
 const router = express.Router();
@@ -40,7 +42,7 @@ setDatabase(db);
 // ===== ROUTES =====
 
 /**
- * Endpoint untuk menambah pesan terjadwal
+ * ✅ FIXED: Endpoint untuk menambah pesan terjadwal - SAVE groupInfo
  */
 router.post("/add-reminder", (req, res) => {
   upload(req, res, async (err) => {
@@ -64,7 +66,7 @@ router.post("/add-reminder", (req, res) => {
       }
     }
 
-    let { numbers, message, datetime } = req.body;
+    let { numbers, message, datetime, groupInfo } = req.body;
     const uploadedFiles = req.files;
 
     try {
@@ -98,11 +100,22 @@ router.post("/add-reminder", (req, res) => {
       // Persiapkan data file
       const filesData = prepareFilesData(uploadedFiles);
 
+      // ✅ PARSE groupInfo dari frontend
+      let groupInfoData = null;
+      if (groupInfo) {
+        try {
+          groupInfoData = typeof groupInfo === 'string' ? groupInfo : JSON.stringify(groupInfo);
+          console.log('📋 Group info received:', groupInfoData);
+        } catch (e) {
+          console.warn('Failed to parse groupInfo:', e);
+        }
+      }
+
       const scheduleId = generateScheduleId();
 
-      // Simpan ke database
+      // ✅ FIXED: Simpan ke database DENGAN groupInfo
       db.run(
-        `INSERT INTO schedules (id, numbers, message, filesData, scheduledTime, status) VALUES (?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO schedules (id, numbers, message, filesData, scheduledTime, status, groupInfo) VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           scheduleId,
           JSON.stringify(parsedNumbers.validNumbers),
@@ -110,6 +123,7 @@ router.post("/add-reminder", (req, res) => {
           filesData,
           datetime,
           "terjadwal",
+          groupInfoData
         ],
         function (insertErr) {
           if (insertErr) {
@@ -120,7 +134,10 @@ router.post("/add-reminder", (req, res) => {
               .json({ error: "Gagal menyimpan jadwal pesan ke database." });
           }
 
-          console.log(`Jadwal pesan baru disimpan dengan ID: ${scheduleId}`);
+          console.log(`✅ Jadwal pesan baru disimpan dengan ID: ${scheduleId}`);
+          if (groupInfoData) {
+            console.log(`✅ Group info saved:`, groupInfoData);
+          }
 
           // Jadwalkan pesan
           scheduleMessage({
@@ -130,6 +147,7 @@ router.post("/add-reminder", (req, res) => {
             filesData,
             scheduledTime: datetime,
             status: "terjadwal",
+            groupInfo: groupInfoData
           });
 
           // ✅ EMIT SOCKET EVENT - Schedule Created
@@ -140,6 +158,7 @@ router.post("/add-reminder", (req, res) => {
               message: message,
               scheduledTime: datetime,
               filesData: filesData ? JSON.parse(filesData) : [],
+              groupInfo: groupInfoData ? JSON.parse(groupInfoData) : null,
               status: 'terjadwal'
             });
           }
@@ -162,7 +181,7 @@ router.post("/add-reminder", (req, res) => {
 });
 
 /**
- * Endpoint untuk mendapatkan jadwal pesan
+ * ✅ FIXED: Endpoint untuk mendapatkan jadwal pesan - INCLUDE groupInfo
  */
 router.get("/get-schedules", (req, res) => {
   const { status } = req.query;
@@ -193,6 +212,12 @@ router.get("/get-schedules", (req, res) => {
           filesMetadata = [filesMetadata];
         }
 
+        // ✅ INCLUDE groupInfo
+        let groupInfoParsed = null;
+        if (row.groupInfo) {
+          groupInfoParsed = safeJsonParse(row.groupInfo, null);
+        }
+
         return {
           id: row.id,
           numbers: numbersArray,
@@ -200,6 +225,7 @@ router.get("/get-schedules", (req, res) => {
           filesData: filesMetadata,
           scheduledTime: row.scheduledTime,
           status: row.status,
+          groupInfo: groupInfoParsed,
           type: "message",
         };
       });
@@ -343,7 +369,7 @@ router.delete("/delete-history/:id", (req, res) => {
 });
 
 /**
- * Endpoint untuk edit jadwal pesan
+ * ✅ FIXED: Endpoint untuk edit jadwal pesan - PRESERVE groupInfo
  */
 router.put("/edit-schedule/:id", (req, res) => {
   upload(req, res, async (err) => {
@@ -363,9 +389,9 @@ router.put("/edit-schedule/:id", (req, res) => {
       return res.status(400).send(`Tipe file tidak didukung: ${err.message}`);
     }
 
-    let { numbers, message, datetime, deletedFiles, keepExistingFiles } = req.body;
+    let { numbers, message, datetime, deletedFiles, keepExistingFiles, groupInfo } = req.body;
 
-    // ✅ FIXED: Parse dengan validasi untuk undefined/null
+    // Parse dengan validasi untuk undefined/null
     let deletedNames = [];
     if (deletedFiles && deletedFiles !== 'undefined' && deletedFiles !== 'null') {
       deletedNames = safeJsonParse(deletedFiles, []);
@@ -374,7 +400,6 @@ router.put("/edit-schedule/:id", (req, res) => {
       deletedNames = [];
     }
 
-    // ✅ FIXED: Parse dengan validasi untuk undefined/null
     let keepExistingNames = [];
     if (keepExistingFiles && keepExistingFiles !== 'undefined' && keepExistingFiles !== 'null') {
       keepExistingNames = safeJsonParse(keepExistingFiles, []);
@@ -387,7 +412,8 @@ router.put("/edit-schedule/:id", (req, res) => {
       hasNewFiles: newFiles && newFiles.length > 0,
       newFilesCount: newFiles ? newFiles.length : 0,
       keepExistingCount: keepExistingNames.length,
-      deletedCount: deletedNames.length
+      deletedCount: deletedNames.length,
+      receivedGroupInfo: groupInfo
     });
 
     // Validasi nomor
@@ -421,7 +447,7 @@ router.put("/edit-schedule/:id", (req, res) => {
       }
       datetime = timeValidation.adjustedTime;
 
-      // ✅ FIXED: Proper null/undefined handling untuk filesData
+      // File handling logic (unchanged)
       let oldFilesDataParsed = [];
       if (oldSchedule.filesData && 
           oldSchedule.filesData !== 'undefined' && 
@@ -429,41 +455,27 @@ router.put("/edit-schedule/:id", (req, res) => {
         oldFilesDataParsed = safeJsonParse(oldSchedule.filesData, []);
       }
       
-      // Ensure it's always an array
       if (!Array.isArray(oldFilesDataParsed)) {
         oldFilesDataParsed = [];
       }
-      
-      console.log(`📦 Old files in database:`, oldFilesDataParsed.length);
 
-      // ✅ FIXED: Gabungkan file lama yang di-keep dengan file baru
       let finalFilesArray = [];
 
-      // 1. Tambahkan file existing yang masih di-keep (JIKA ADA)
       if (keepExistingNames.length > 0) {
         const keptFiles = oldFilesDataParsed.filter((f) => {
           const name = f.name || f.filename || f;
           return keepExistingNames.includes(name);
         });
         finalFilesArray.push(...keptFiles);
-        console.log(
-          `✅ Kept ${keptFiles.length} existing files:`,
-          keptFiles.map((f) => f.name)
-        );
       } 
-      // ✅ CRITICAL FIX: Jika tidak ada keepExistingFiles DAN tidak ada deletedFiles
-      // DAN tidak ada file baru, berarti user tidak mengubah file sama sekali
-      // Maka pertahankan semua file lama
       else if (
         deletedNames.length === 0 && 
         (!newFiles || newFiles.length === 0) &&
         oldFilesDataParsed.length > 0
       ) {
         finalFilesArray.push(...oldFilesDataParsed);
-        console.log(`✅ No file changes, keeping all ${oldFilesDataParsed.length} existing files`);
       }
 
-      // 2. Tambahkan file baru yang diupload
       if (newFiles && newFiles.length > 0) {
         const newFilesData = newFiles.map((file) => ({
           path: file.path,
@@ -472,13 +484,8 @@ router.put("/edit-schedule/:id", (req, res) => {
           size: file.size,
         }));
         finalFilesArray.push(...newFilesData);
-        console.log(
-          `✅ Added ${newFiles.length} new files:`,
-          newFilesData.map((f) => f.name)
-        );
       }
 
-      // 3. Hapus file yang diminta dihapus user
       if (deletedNames.length > 0) {
         const toDelete = oldFilesDataParsed.filter((f) => {
           const name = f.name || f.filename || f;
@@ -486,11 +493,9 @@ router.put("/edit-schedule/:id", (req, res) => {
         });
         toDelete.forEach((file) => {
           deleteFileIfExists(file.path);
-          console.log(`🗑️ Deleted file: ${file.name || file.filename}`);
         });
       }
 
-      // 4. Hapus file lama yang TIDAK di-keep (hanya jika ada keepExistingNames)
       if (keepExistingNames.length > 0) {
         const filesToDelete = oldFilesDataParsed.filter((f) => {
           const name = f.name || f.filename || f;
@@ -500,19 +505,13 @@ router.put("/edit-schedule/:id", (req, res) => {
         });
         filesToDelete.forEach((file) => {
           deleteFileIfExists(file.path);
-          console.log(
-            `🗑️ Deleted old file not kept: ${file.name || file.filename}`
-          );
         });
       }
 
-      // 5. Convert array ke JSON atau null
       const finalFilesData =
         finalFilesArray.length > 0 ? JSON.stringify(finalFilesArray) : null;
 
-      console.log(`📊 Final files count: ${finalFilesArray.length}`);
-
-      // ✅ FIXED: Validasi pesan atau file (keduanya boleh kosong jika salah satu ada)
+      // Validasi pesan atau file
       const hasMessage = message && message.trim() !== "";
       const hasFiles = finalFilesArray.length > 0;
       
@@ -525,18 +524,61 @@ router.put("/edit-schedule/:id", (req, res) => {
           );
       }
 
+      // ✅ CRITICAL FIX: Properly handle groupInfo
+      const finalGroupInfo = (() => {
+        // Check if groupInfo was sent from frontend
+        if (groupInfo !== undefined && groupInfo !== null && groupInfo !== 'undefined' && groupInfo !== 'null') {
+          try {
+            // Parse groupInfo
+            const parsed = typeof groupInfo === 'string' ? JSON.parse(groupInfo) : groupInfo;
+            
+            // If it's an empty array, user wants to CLEAR all groups
+            if (Array.isArray(parsed) && parsed.length === 0) {
+              console.log('🗑️ Clearing all groups (received empty array)');
+              return null; // Set to null to clear groups
+            }
+            
+            // If it's a valid non-empty array, update with new groups
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              console.log(`✅ Updating with ${parsed.length} groups`);
+              return JSON.stringify(parsed);
+            }
+            
+            // If it's not an array or invalid, set to null
+            console.warn('⚠️ Invalid groupInfo format, clearing groups');
+            return null;
+          } catch (e) {
+            console.warn('⚠️ Failed to parse groupInfo, clearing groups:', e);
+            return null;
+          }
+        }
+        
+        // If groupInfo was not sent at all, preserve old value
+        // This should rarely happen with the frontend fix
+        console.warn('⚠️ groupInfo not sent, preserving old value');
+        return oldSchedule.groupInfo || null;
+      })();
+
+      console.log('🔄 Group info update:', {
+        received: groupInfo,
+        old: oldSchedule.groupInfo,
+        final: finalGroupInfo,
+        action: finalGroupInfo === null ? 'CLEARED/NULL' : 'UPDATED'
+      });
+
       // Batalkan job lama
       cancelScheduleJob(id);
 
-      // ✅ FIXED: Update database dengan validasi yang benar
+      // ✅ Update database DENGAN groupInfo yang sudah di-fix
       db.run(
-        `UPDATE schedules SET numbers = ?, message = ?, filesData = ?, scheduledTime = ?, status = ? WHERE id = ?`,
+        `UPDATE schedules SET numbers = ?, message = ?, filesData = ?, scheduledTime = ?, status = ?, groupInfo = ? WHERE id = ?`,
         [
           JSON.stringify(parsedNumbers),
-          hasMessage ? message : null, // Set null jika tidak ada pesan
+          hasMessage ? message : null,
           finalFilesData,
           datetime,
           "terjadwal",
+          finalGroupInfo, // This will be null if groups were cleared
           id,
         ],
         function (updateErr) {
@@ -559,6 +601,7 @@ router.put("/edit-schedule/:id", (req, res) => {
             filesData: finalFilesData,
             scheduledTime: datetime,
             status: "terjadwal",
+            groupInfo: finalGroupInfo
           });
           
           // ✅ EMIT SOCKET EVENT dengan info file changes
@@ -572,7 +615,8 @@ router.put("/edit-schedule/:id", (req, res) => {
               scheduleId: id,
               filesChanged: hasFileChanges,
               filesData: finalFilesArray,
-              forceRefresh: hasFileChanges
+              groupInfo: finalGroupInfo,
+              forceRefresh: true 
             });
           }
           
@@ -584,6 +628,7 @@ router.put("/edit-schedule/:id", (req, res) => {
     });
   });
 });
+
 
 // Export module
 module.exports = {

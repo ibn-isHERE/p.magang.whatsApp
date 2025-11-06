@@ -81,9 +81,10 @@ class MessageHandler {
             }
 
             // ========================================
-            // PRIORITAS 3: CEK APAKAH SEDANG DALAM MODE CHATTING
+            // PRIORITAS 3: CEK APAKAH SEDANG DALAM MODE CHATTING (WAITING atau ACTIVE)
             // ========================================
-            if (this.userState[fromNumber] === 'CHATTING') {
+            if (this.userState[fromNumber] === 'CHATTING_WAITING' || 
+                this.userState[fromNumber] === 'CHATTING_ACTIVE') {
                 await this.menuHandler.handleChatMessage(message, fromNumber);
                 return;
             }
@@ -283,6 +284,14 @@ class MessageHandler {
      */
     getActiveStates() {
         return { ...this.userState };
+    }
+
+    /**
+     * BARU: Method untuk mengaktifkan chat session
+     * Dipanggil ketika admin mengirim reply pertama kali
+     */
+    activateChatSessionForNumber(fromNumber) {
+        return this.menuHandler.activateChatSession(fromNumber);
     }
 }
 

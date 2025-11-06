@@ -296,9 +296,11 @@ io.on('connection', (socket) => {
 app.get("/get-all-schedules", (req, res) => {
   const { status } = req.query;
 
+  // Query untuk schedules (message reminders)
   let scheduleQuery = `SELECT *, 'message' as type FROM schedules`;
   let scheduleParams = [];
   
+  // Query untuk meetings
   let meetingQuery = `SELECT
     id,
     numbers,
@@ -310,12 +312,15 @@ app.get("/get-all-schedules", (req, res) => {
     date,
     startTime,
     endTime,
-    datetime(end_epoch / 1000, 'unixepoch', 'localtime') as meetingEndTime, 
+    datetime(end_epoch / 1000, 'unixepoch', 'localtime') as meetingEndTime,
+    selectedGroups,
+    groupInfo,
     'meeting' as type
   FROM meetings`;
   
   let meetingParams = [];
 
+  // Filter berdasarkan status jika diperlukan
   if (status && status !== "all") {
     scheduleQuery += ` WHERE status = ?`;
     meetingQuery += ` WHERE status = ?`;
@@ -323,12 +328,14 @@ app.get("/get-all-schedules", (req, res) => {
     meetingParams.push(status);
   }
 
+  // Ambil data schedules
   db.all(scheduleQuery, scheduleParams, (err, scheduleRows) => {
     if (err) {
       console.error("Gagal mengambil data schedules:", err.message);
       return res.status(500).json({ error: "Gagal mengambil data schedules." });
     }
 
+    // Ambil data meetings
     db.all(meetingQuery, meetingParams, (errMeeting, meetingRows) => {
       if (errMeeting) {
         console.error("Gagal mengambil data meetings:", errMeeting.message);
@@ -336,18 +343,23 @@ app.get("/get-all-schedules", (req, res) => {
       }
 
       try {
+        // ✅ Process schedules dengan groupInfo
         const processedSchedules = scheduleRows.map((row) => {
           return {
             id: row.id,
             numbers: JSON.parse(row.numbers || '[]'),
+            originalNumbers: JSON.parse(row.numbers || '[]'),
             message: row.message,
             filesData: JSON.parse(row.filesData || '[]'),
             scheduledTime: row.scheduledTime,
             status: row.status,
             type: "message",
+            selectedGroups: row.selectedGroups ? JSON.parse(row.selectedGroups) : null,  // ✅ Add groupInfo
+            groupInfo: row.groupInfo ? JSON.parse(row.groupInfo) : null                   // ✅ Add groupInfo
           };
         });
 
+        // ✅ Process meetings dengan groupInfo
         const processedMeetings = meetingRows.map((row) => {
           return {
             id: row.id,
@@ -364,16 +376,21 @@ app.get("/get-all-schedules", (req, res) => {
             date: row.date,
             startTime: row.startTime,
             endTime: row.endTime,
+            selectedGroups: row.selectedGroups ? JSON.parse(row.selectedGroups) : null,  // ✅ Add groupInfo
+            groupInfo: row.groupInfo ? JSON.parse(row.groupInfo) : null                   // ✅ Add groupInfo
           };
         });
 
+        // Gabungkan dan sort
         const allSchedules = [...processedSchedules, ...processedMeetings];
         
         allSchedules.sort((a, b) => {
           const isActiveA = a.status === "terjadwal" || a.status === "terkirim";
           const isActiveB = b.status === "terjadwal" || b.status === "terkirim";
+          
           if (isActiveA && !isActiveB) return -1;
           if (!isActiveA && isActiveB) return 1;
+          
           if (isActiveA && isActiveB) {
             return new Date(a.scheduledTime) - new Date(b.scheduledTime);
           } else {
@@ -381,7 +398,9 @@ app.get("/get-all-schedules", (req, res) => {
           }
         });
 
+        console.log(`✅ Returned ${allSchedules.length} schedules (${processedSchedules.length} messages, ${processedMeetings.length} meetings)`);
         res.json(allSchedules);
+        
       } catch (error) {
         console.error("Error processing combined schedule data:", error);
         res.status(500).json({ error: "Error processing combined schedule data" });
@@ -389,7 +408,6 @@ app.get("/get-all-schedules", (req, res) => {
     });
   });
 });
-
 app.get("/system-stats", (req, res) => {
   db.get(
     `SELECT COUNT(*) as totalMessages FROM schedules`,
@@ -872,6 +890,21 @@ function emitScheduleCreated(scheduleData) {
   }
 }
 
+function emitScheduleUpdated(updateData) {
+  if (io) {
+    io.emit('schedule-updated', {
+      ...updateData,
+      timestamp: new Date().toISOString(),
+      forceRefresh: true // Always force refresh untuk edit
+    });
+    console.log(`ðŸ"¡ Emitted schedule-updated: ${updateData.scheduleId}`, {
+      hasGroupInfo: !!updateData.groupInfo,
+      forceRefresh: true
+    });
+  }
+}
+
+
 /**
  * Helper function untuk emit schedule deleted
  */
@@ -889,6 +922,7 @@ function emitScheduleDeleted(scheduleId) {
 global.emitScheduleStatusUpdate = emitScheduleStatusUpdate;
 global.emitMeetingStatusUpdate = emitMeetingStatusUpdate;
 global.emitScheduleCreated = emitScheduleCreated;
+global.emitScheduleUpdated = emitScheduleUpdated;
 global.emitScheduleDeleted = emitScheduleDeleted;
 
 // Juga set io ke global untuk akses mudah

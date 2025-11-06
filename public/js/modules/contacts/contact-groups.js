@@ -1,5 +1,5 @@
 // contact-groups.js - Contact Group Selection Logic Module
-// FIXED: Proper getter functions untuk selectedContactGroups dan selectedEditContactGroups
+// ✅ FIXED: Added dynamic update trigger for manual numbers
 
 export let selectedGroups = new Set();
 export let selectedMeetingGroups = new Set();
@@ -21,7 +21,37 @@ export function getGroups() {
 }
 
 /**
- * FIXED: Get reference to selectedContactGroups dari contact-manager
+ * ✅ Get selected groups with full data
+ * @param {boolean} isMeeting - true for meeting groups, false for message groups
+ * @returns {Array} Array of selected group objects with id, name, and members
+ */
+export function getSelectedGroups(isMeeting = false) {
+  const groupSet = isMeeting ? selectedMeetingGroups : selectedGroups;
+  
+  return Array.from(groupSet).map(groupId => {
+    const group = groups.find(g => g.id === groupId);
+    if (!group) return null;
+    
+    let members = [];
+    try {
+      members = typeof group.members === 'string' 
+        ? JSON.parse(group.members) 
+        : group.members || [];
+    } catch (e) {
+      console.error("Error parsing group members:", e);
+      members = [];
+    }
+    
+    return {
+      id: group.id,
+      name: group.name,
+      members: members
+    };
+  }).filter(Boolean); // Remove null values
+}
+
+/**
+ * Get reference to selectedContactGroups dari contact-manager
  */
 function getSelectedContactGroups() {
   try {
@@ -35,7 +65,7 @@ function getSelectedContactGroups() {
 }
 
 /**
- * FIXED: Get reference to selectedEditContactGroups dari contact-manager
+ * Get reference to selectedEditContactGroups dari contact-manager
  */
 function getSelectedEditContactGroups() {
   try {
@@ -46,6 +76,18 @@ function getSelectedEditContactGroups() {
     console.warn("selectedEditContactGroups tidak tersedia:", e);
   }
   return new Set();
+}
+
+/**
+ * ✅ NEW: Helper function to trigger dynamic numbers update
+ */
+function triggerDynamicNumbersUpdate(formType) {
+  // Trigger custom event yang akan di-catch oleh schedule-edit.js
+  const event = new CustomEvent('editFormNumbersChanged', { 
+    detail: { formType } 
+  });
+  document.dispatchEvent(event);
+  console.log(`🔔 Triggered dynamic numbers update for ${formType}`);
 }
 
 /**
@@ -118,6 +160,226 @@ export function renderContactCrudGroupList(searchQuery = "") {
     });
 
   updateContactCrudGroupInfo();
+}
+
+/**
+ * ✅ Renders group selection list untuk EDIT MESSAGE form
+ */
+export function renderGroupSelectionListForEdit(searchQuery = "") {
+  const list = document.getElementById("edit-groupSelectionList");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  if (groups.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state" style="padding: 40px 20px;">
+        <i class="fa-solid fa-users" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
+        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Belum ada grup tersedia</p>
+      </div>
+    `;
+    return;
+  }
+
+  const filteredGroups = searchQuery
+    ? groups.filter((g) =>
+        g.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : groups;
+
+  if (filteredGroups.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state" style="padding: 40px 20px;">
+        <i class="fa-solid fa-search" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
+        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada grup ditemukan dengan kata kunci "${searchQuery}"</p>
+      </div>
+    `;
+    return;
+  }
+
+  filteredGroups.forEach((group) => {
+    const label = document.createElement("label");
+    const isChecked = selectedGroups.has(group.id) ? "checked" : "";
+
+    let memberCount = 0;
+    try {
+      const members = JSON.parse(group.members || "[]");
+      memberCount = members.length;
+    } catch (e) {
+      console.error("Error parsing group members:", e);
+    }
+
+    label.innerHTML = `
+      <input type="checkbox" class="edit-group-selection-checkbox" value="${group.id}" data-group-name="${group.name}" ${isChecked} />
+      <strong>${group.name}</strong> <small>${memberCount} anggota</small>
+    `;
+    list.appendChild(label);
+  });
+
+  document.querySelectorAll(".edit-group-selection-checkbox").forEach((checkbox) => {
+    checkbox.addEventListener("change", function () {
+      if (this.checked) {
+        selectedGroups.add(parseInt(this.value));
+      } else {
+        selectedGroups.delete(parseInt(this.value));
+      }
+      updateEditGroupSelectionInfo();
+      
+      // ✅ Trigger dynamic update for manual numbers
+      triggerDynamicNumbersUpdate('edit');
+    });
+  });
+
+  updateEditGroupSelectionInfo();
+}
+
+/**
+ * ✅ Renders group selection list untuk EDIT MEETING form
+ */
+export function renderMeetingGroupSelectionListForEdit(searchQuery = "") {
+  const list = document.getElementById("edit-meetingGroupSelectionList");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  if (groups.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state" style="padding: 40px 20px;">
+        <i class="fa-solid fa-users" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
+        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Belum ada grup tersedia</p>
+      </div>
+    `;
+    return;
+  }
+
+  const filteredGroups = searchQuery
+    ? groups.filter((g) =>
+        g.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : groups;
+
+  if (filteredGroups.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state" style="padding: 40px 20px;">
+        <i class="fa-solid fa-search" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
+        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada grup ditemukan dengan kata kunci "${searchQuery}"</p>
+      </div>
+    `;
+    return;
+  }
+
+  filteredGroups.forEach((group) => {
+    const label = document.createElement("label");
+    const isChecked = selectedMeetingGroups.has(group.id) ? "checked" : "";
+
+    let memberCount = 0;
+    try {
+      const members = JSON.parse(group.members || "[]");
+      memberCount = members.length;
+    } catch (e) {
+      console.error("Error parsing group members:", e);
+    }
+
+    label.innerHTML = `
+      <input type="checkbox" class="edit-meeting-group-selection-checkbox" value="${group.id}" data-group-name="${group.name}" ${isChecked} />
+      <strong>${group.name}</strong> <small>${memberCount} anggota</small>
+    `;
+    list.appendChild(label);
+  });
+
+  document
+    .querySelectorAll(".edit-meeting-group-selection-checkbox")
+    .forEach((checkbox) => {
+      checkbox.addEventListener("change", function () {
+        if (this.checked) {
+          selectedMeetingGroups.add(parseInt(this.value));
+        } else {
+          selectedMeetingGroups.delete(parseInt(this.value));
+        }
+        updateEditMeetingGroupSelectionInfo();
+        
+        // ✅ Trigger dynamic update for manual numbers
+        triggerDynamicNumbersUpdate('meeting');
+      });
+    });
+
+  updateEditMeetingGroupSelectionInfo();
+}
+
+/**
+ * Update info grup yang dipilih untuk EDIT MESSAGE form
+ */
+function updateEditGroupSelectionInfo() {
+  const infoDiv = document.getElementById("editGroupSelectionInfo");
+  if (!infoDiv) return;
+
+  if (selectedGroups.size === 0) {
+    infoDiv.innerHTML = "<small>Belum ada grup dipilih</small>";
+    return;
+  }
+
+  const selectedGroupNames = Array.from(selectedGroups)
+    .map((id) => {
+      const group = groups.find((g) => g.id === id);
+      return group ? group.name : "";
+    })
+    .filter((name) => name);
+
+  let totalMembers = 0;
+  selectedGroups.forEach((id) => {
+    const group = groups.find((g) => g.id === id);
+    if (group && group.members) {
+      try {
+        const members = JSON.parse(group.members);
+        totalMembers += members.length;
+      } catch (e) {}
+    }
+  });
+
+  infoDiv.innerHTML = `
+    <small>
+      <strong>${selectedGroups.size} grup dipilih</strong> (${totalMembers} anggota)<br>
+      ${selectedGroupNames.join(", ")}
+    </small>
+  `;
+}
+
+/**
+ * Update info grup yang dipilih untuk EDIT MEETING form
+ */
+function updateEditMeetingGroupSelectionInfo() {
+  const infoDiv = document.getElementById("editMeetingGroupSelectionInfo");
+  if (!infoDiv) return;
+
+  if (selectedMeetingGroups.size === 0) {
+    infoDiv.innerHTML = "<small>Belum ada grup dipilih</small>";
+    return;
+  }
+
+  const selectedGroupNames = Array.from(selectedMeetingGroups)
+    .map((id) => {
+      const group = groups.find((g) => g.id === id);
+      return group ? group.name : "";
+    })
+    .filter((name) => name);
+
+  let totalMembers = 0;
+  selectedMeetingGroups.forEach((id) => {
+    const group = groups.find((g) => g.id === id);
+    if (group && group.members) {
+      try {
+        const members = JSON.parse(group.members);
+        totalMembers += members.length;
+      } catch (e) {}
+    }
+  });
+
+  infoDiv.innerHTML = `
+    <small>
+      <strong>${selectedMeetingGroups.size} grup dipilih</strong> (${totalMembers} anggota)<br>
+      ${selectedGroupNames.join(", ")}
+    </small>
+  `;
 }
 
 /**
@@ -592,4 +854,3 @@ export function initMeetingGroupSelectionListeners() {
     });
   }
 }
-
