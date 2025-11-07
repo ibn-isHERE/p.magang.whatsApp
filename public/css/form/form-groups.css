@@ -512,6 +512,87 @@
   user-select: none;
 }
 
+#edit-groupSelectionList,
+#edit-meetingGroupSelectionList {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 2px solid #bee3f8;
+  border-radius: 8px;
+  padding: 8px;
+  margin-top: 0;
+  background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+  box-sizing: border-box;
+}
+
+#edit-groupSelectionList::-webkit-scrollbar,
+#edit-meetingGroupSelectionList::-webkit-scrollbar {
+  width: 6px;
+}
+
+#edit-groupSelectionList::-webkit-scrollbar-track,
+#edit-meetingGroupSelectionList::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+#edit-groupSelectionList::-webkit-scrollbar-thumb,
+#edit-meetingGroupSelectionList::-webkit-scrollbar-thumb {
+  background: #bee3f8;
+  border-radius: 10px;
+}
+
+#edit-groupSelectionList::-webkit-scrollbar-thumb:hover,
+#edit-meetingGroupSelectionList::-webkit-scrollbar-thumb:hover {
+  background: #90cdf4;
+}
+
+#edit-groupSelectionList label,
+#edit-meetingGroupSelectionList label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: #2d3748;
+  transition: all 0.15s ease;
+  padding: 10px 12px;
+  border-radius: 6px;
+  user-select: none;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+}
+
+#edit-groupSelectionList label:last-child,
+#edit-meetingGroupSelectionList label:last-child {
+  margin-bottom: 0;
+}
+
+#edit-groupSelectionList label:hover,
+#edit-meetingGroupSelectionList label:hover {
+  background-color: #ebf8ff;
+  border-color: #bee3f8;
+  transform: translateX(2px);
+  box-shadow: 0 2px 4px rgba(66, 153, 225, 0.15);
+}
+
+#edit-groupSelectionList label strong,
+#edit-meetingGroupSelectionList label strong {
+  color: #2c5282;
+  font-weight: 600;
+  flex: 1;
+}
+
+#edit-groupSelectionList label small,
+#edit-meetingGroupSelectionList label small {
+  color: #718096;
+  font-size: 11px;
+  background: #edf2f7;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
 @media (max-width: 768px) {
   .group-detail-header {
     flex-direction: column;

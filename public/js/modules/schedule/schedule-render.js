@@ -8,6 +8,7 @@ import {
   createMeetingEditFormHtml,
   populateMessageEditForm,
   populateMeetingEditForm,
+  initEditMessageContactListeners,
   initEditMeetingContactListeners,
   handleReminderFormSubmit,
   handleMeetingFormSubmit
@@ -72,7 +73,7 @@ async function formatRecipientsDisplay(numbersArray, groupInfo) {
   });
   
   return {
-    html: displayItems.join(', '),
+    html: displayItems.join('<br>'),
     totalRecipients: numbersArray.length,
     groupCount: groupInfoArray.length,
     individualCount: displayItems.length - groupInfoArray.length
@@ -591,6 +592,7 @@ async function attachScheduleActionListeners() {
         window.showEditModal("Edit Jadwal Pesan");
         modalBody.innerHTML = createMessageEditFormHtml(scheduleToEdit);
         populateMessageEditForm(scheduleToEdit);
+        await initEditMessageContactListeners();
 
         const editForm = document.getElementById("editReminderForm");
         if (editForm) {

@@ -16,7 +16,6 @@ let selectedEditMeetingFiles = [];
  */
 export function createMessageEditFormHtml(schedule) {
   return `
-    <h2>Edit Jadwal Pesan</h2>
     <form id="editReminderForm" enctype="multipart/form-data">
       <input type="hidden" id="edit-id" name="id" value="${schedule.id}">
       
@@ -72,7 +71,7 @@ export function createMessageEditFormHtml(schedule) {
           
           <div id="edit-groupSelectionList" class="contact-checklist-box"></div>
           
-          <div id="editGroupSelectionInfo">
+          <div id="editGroupSelectionInfo" class="selection-info">
             <small>Belum ada grup dipilih</small>
           </div>
         </div>
@@ -124,7 +123,6 @@ export function createMessageEditFormHtml(schedule) {
  */
 export function createMeetingEditFormHtml(schedule) {
   return `
-    <h2>Edit Jadwal Rapat</h2>
     <form id="editMeetingForm" enctype="multipart/form-data">
       <input type="hidden" name="id" value="${schedule.id}">
       
@@ -185,7 +183,7 @@ export function createMeetingEditFormHtml(schedule) {
           
           <div id="edit-meetingGroupSelectionList" class="contact-checklist-box"></div>
           
-          <div id="editMeetingGroupSelectionInfo">
+          <div id="editMeetingGroupSelectionInfo" class="selection-info">
             <small>Belum ada grup dipilih</small>
           </div>
         </div>
@@ -843,22 +841,10 @@ function renderEditMeetingFilePreview() {
   if (clearBtn) clearBtn.style.display = "inline-block";
 }
 
-/**
- * Initializes edit meeting contact listeners
- * ✅ WITH GROUP SEARCH & SELECT ALL/DESELECT ALL + Dynamic number update
- */
-export async function initEditMeetingContactListeners() {
+export async function initEditMessageContactListeners() {
   const contactGroups = await import('../contacts/contact-groups.js');
   
-  // Contact search
-  const searchInput = document.getElementById("edit-meetingContactSearch");
-  if (searchInput) {
-    searchInput.addEventListener("input", async () => {
-      const contactUI = await import('../contacts/contact-ui.js');
-      contactUI.renderMeetingContactListForEdit();
-    });
-  }
-
+  // Contact search untuk edit message form
   const editContactSearch = document.getElementById("edit-contactSearch");
   if (editContactSearch) {
     editContactSearch.addEventListener("input", async () => {
@@ -867,7 +853,7 @@ export async function initEditMeetingContactListeners() {
     });
   }
 
-  // ✅ Group search for edit message form
+  // ✅ Group search untuk edit message form
   const editGroupSearch = document.getElementById("edit-groupSearch");
   if (editGroupSearch) {
     editGroupSearch.addEventListener("input", function() {
@@ -875,15 +861,7 @@ export async function initEditMeetingContactListeners() {
     });
   }
 
-  // ✅ Group search for edit meeting form
-  const editMeetingGroupSearch = document.getElementById("edit-meetingGroupSearch");
-  if (editMeetingGroupSearch) {
-    editMeetingGroupSearch.addEventListener("input", function() {
-      contactGroups.renderMeetingGroupSelectionListForEdit(this.value);
-    });
-  }
-
-  // ✅ Select All / Deselect All for Edit Contact Lists
+  // ✅ Select All / Deselect All untuk Edit Contact Lists (Message)
   const selectAllEditContactsBtn = document.getElementById("selectAllEditContactsBtn");
   if (selectAllEditContactsBtn) {
     selectAllEditContactsBtn.addEventListener("click", async function() {
@@ -918,42 +896,7 @@ export async function initEditMeetingContactListeners() {
     });
   }
 
-  // ✅ Select All / Deselect All for Edit Meeting Contact Lists
-  const selectAllEditMeetingContactsBtn = document.getElementById("selectAllEditMeetingContactsBtn");
-  if (selectAllEditMeetingContactsBtn) {
-    selectAllEditMeetingContactsBtn.addEventListener("click", async function() {
-      const contactManager = await import('../contacts/contact-manager.js');
-      const contactUI = await import('../contacts/contact-ui.js');
-      const contacts = contactUI.getFilteredMeetingContactsForEdit() || [];
-      
-      contacts.forEach(contact => {
-        contactManager.selectedMeetingNumbers.add(contact.number);
-      });
-      
-      contactUI.renderMeetingContactListForEdit();
-      this.classList.add("active");
-      setTimeout(() => this.classList.remove("active"), 300);
-    });
-  }
-
-  const deselectAllEditMeetingContactsBtn = document.getElementById("deselectAllEditMeetingContactsBtn");
-  if (deselectAllEditMeetingContactsBtn) {
-    deselectAllEditMeetingContactsBtn.addEventListener("click", async function() {
-      const contactManager = await import('../contacts/contact-manager.js');
-      const contactUI = await import('../contacts/contact-ui.js');
-      const contacts = contactUI.getFilteredMeetingContactsForEdit() || [];
-      
-      contacts.forEach(contact => {
-        contactManager.selectedMeetingNumbers.delete(contact.number);
-      });
-      
-      contactUI.renderMeetingContactListForEdit();
-      this.classList.add("active");
-      setTimeout(() => this.classList.remove("active"), 300);
-    });
-  }
-
-  // ✅ Select All / Deselect All for Edit Groups (Message)
+  // ✅ Select All / Deselect All untuk Edit Groups (Message)
   const selectAllEditGroupsBtn = document.getElementById("selectAllEditGroupsBtn");
   if (selectAllEditGroupsBtn) {
     selectAllEditGroupsBtn.addEventListener("click", function() {
@@ -985,6 +928,66 @@ export async function initEditMeetingContactListeners() {
       
       filteredGroups.forEach((group) => contactGroups.selectedGroups.delete(group.id));
       contactGroups.renderGroupSelectionListForEdit(searchQuery);
+      this.classList.add("active");
+      setTimeout(() => this.classList.remove("active"), 300);
+    });
+  }
+}
+
+/**
+ * Initializes edit meeting contact listeners
+ * ✅ WITH GROUP SEARCH & SELECT ALL/DESELECT ALL + Dynamic number update
+ */
+export async function initEditMeetingContactListeners() {
+  const contactGroups = await import('../contacts/contact-groups.js');
+  
+  // Contact search
+  const searchInput = document.getElementById("edit-meetingContactSearch");
+  if (searchInput) {
+    searchInput.addEventListener("input", async () => {
+      const contactUI = await import('../contacts/contact-ui.js');
+      contactUI.renderMeetingContactListForEdit();
+    });
+  }
+
+  // ✅ Group search for edit meeting form
+  const editMeetingGroupSearch = document.getElementById("edit-meetingGroupSearch");
+  if (editMeetingGroupSearch) {
+    editMeetingGroupSearch.addEventListener("input", function() {
+      contactGroups.renderMeetingGroupSelectionListForEdit(this.value);
+    });
+  }
+
+  // ✅ Select All / Deselect All for Edit Meeting Contact Lists
+  const selectAllEditMeetingContactsBtn = document.getElementById("selectAllEditMeetingContactsBtn");
+  if (selectAllEditMeetingContactsBtn) {
+    selectAllEditMeetingContactsBtn.addEventListener("click", async function() {
+      const contactManager = await import('../contacts/contact-manager.js');
+      const contactUI = await import('../contacts/contact-ui.js');
+      const contacts = contactUI.getFilteredMeetingContactsForEdit() || [];
+      
+      contacts.forEach(contact => {
+        contactManager.selectedMeetingNumbers.add(contact.number);
+      });
+      
+      contactUI.renderMeetingContactListForEdit();
+      this.classList.add("active");
+      setTimeout(() => this.classList.remove("active"), 300);
+    });
+  }
+
+  const deselectAllEditMeetingContactsBtn = document.getElementById("deselectAllEditMeetingContactsBtn");
+  if (deselectAllEditMeetingContactsBtn) {
+    deselectAllEditMeetingContactsBtn.addEventListener("click", async function() {
+      const contactManager = await import('../contacts/contact-manager.js');
+      const contactUI = await import('../contacts/contact-ui.js');
+      const contacts = contactUI.getFilteredMeetingContactsForEdit() || [];
+      
+      contacts.forEach(contact => {
+        contactManager.selectedMeetingNumbers.delete(contact.number);
+      });
+      
+      contactUI.renderMeetingContactListForEdit();
       this.classList.add("active");
       setTimeout(() => this.classList.remove("active"), 300);
     });
