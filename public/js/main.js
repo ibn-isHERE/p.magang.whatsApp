@@ -79,6 +79,61 @@ async function showForm(formId) {
       // Load conversations when chat tab is shown
     }
   }
+  if (formId === "settings") {
+    const instansiManager = await import('./modules/settings/instansi-manager.js');
+    const jabatanManager = await import('./modules/settings/jabatan-manager.js');
+    
+    // Show settings containers
+    const instansiContainer = document.getElementById("instansiMainContainer");
+    const jabatanContainer = document.getElementById("jabatanMainContainer");
+    const contactMainContainer = document.getElementById("contactMainContainer");
+    const groupMainContainer = document.getElementById("groupMainContainer");
+    
+    if (contactMainContainer) contactMainContainer.style.display = "none";
+    if (groupMainContainer) groupMainContainer.style.display = "none";
+    
+    // Load initial data
+    await instansiManager.fetchInstansi();
+    await jabatanManager.fetchJabatan();
+    
+    // Show instansi by default
+    if (instansiContainer) instansiContainer.style.display = "flex";
+    if (jabatanContainer) jabatanContainer.style.display = "none";
+    
+    // Initialize settings tabs
+    initSettingsTabs();
+  }
+}
+
+function initSettingsTabs() {
+  const tabs = document.querySelectorAll('.settings-tab-button');
+  const instansiPanel = document.getElementById('instansiPanel');
+  const jabatanPanel = document.getElementById('jabatanPanel');
+  const instansiContainer = document.getElementById('instansiMainContainer');
+  const jabatanContainer = document.getElementById('jabatanMainContainer');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', async function() {
+      const targetTab = this.dataset.tab;
+
+      // Update active tab
+      tabs.forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+
+      // Show/hide panels
+      if (targetTab === 'instansi') {
+        if (instansiPanel) instansiPanel.style.display = 'block';
+        if (jabatanPanel) jabatanPanel.style.display = 'none';
+        if (instansiContainer) instansiContainer.style.display = 'flex';
+        if (jabatanContainer) jabatanContainer.style.display = 'none';
+      } else if (targetTab === 'jabatan') {
+        if (instansiPanel) instansiPanel.style.display = 'none';
+        if (jabatanPanel) jabatanPanel.style.display = 'block';
+        if (instansiContainer) instansiContainer.style.display = 'none';
+        if (jabatanContainer) jabatanContainer.style.display = 'flex';
+      }
+    });
+  });
 }
 
 /**
@@ -95,8 +150,26 @@ async function initApp() {
     const scheduleManager = await import('./modules/schedule/schedule-manager.js');
     const scheduleRender = await import('./modules/schedule/schedule-render.js');
     const chatClient = await import('./modules/chat/chat-client.js');
+    const instansiManager = await import('./modules/settings/instansi-manager.js');
+    const jabatanManager = await import('./modules/settings/jabatan-manager.js');
 
     // Export modules to window for onclick handlers
+    window.instansiModule = {
+      fetchInstansi: instansiManager.fetchInstansi,
+      editInstansi: instansiManager.editInstansi,
+      showEditInstansiModal: instansiManager.showEditInstansiModal,
+      deleteInstansi: instansiManager.deleteInstansi,
+      restoreInstansi: instansiManager.restoreInstansi
+    };
+
+    window.jabatanModule = {
+      fetchJabatan: jabatanManager.fetchJabatan,
+      editJabatan: jabatanManager.editJabatan,
+      showEditJabatanModal: jabatanManager.showEditJabatanModal,
+      deleteJabatan: jabatanManager.deleteJabatan,
+      restoreJabatan: jabatanManager.restoreJabatan
+    };
+
     window.groupModule = {
       fetchAndRenderGroups: groupManager.fetchAndRenderGroups,
       showGroupDetail: groupDetail.showGroupDetail,
@@ -126,6 +199,9 @@ async function initApp() {
 
     // Initialize contact management
     await contactManager.initContactListeners();
+    instansiManager.initInstansiListeners();
+    jabatanManager.initJabatanListeners();
+
     
     // Initialize file uploads
     initFileUploadListener();
@@ -150,6 +226,11 @@ async function initApp() {
       contactForm.addEventListener("submit", async (e) => {
         await contactManager.handleContactFormSubmit(e);
         await contactManager.fetchGroupsForDropdown();
+        
+        // ✅ Update instansi & jabatan dropdowns
+        await instansiManager.fetchInstansi();
+        await jabatanManager.fetchJabatan();
+        
         window.groupModule.renderGroupContactChecklist(); 
       });
     }
@@ -180,6 +261,8 @@ async function initApp() {
     await groupManager.fetchAndRenderGroups();
     await contactManager.fetchGroupsForDropdown();
     await contactManager.fetchAndRenderContacts();
+    await instansiManager.fetchInstansi();
+    await jabatanManager.fetchJabatan();
     
     // Wait for DOM rendering
     await new Promise(resolve => setTimeout(resolve, 200));

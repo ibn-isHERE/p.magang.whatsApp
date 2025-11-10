@@ -303,6 +303,106 @@ db.serialize(() => {
         }
     });
 
+    // ==========================================
+    // 7. INSTANSI TABLE (Master Data)
+    // ==========================================
+    db.run(
+        `CREATE TABLE IF NOT EXISTS instansi (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nama TEXT NOT NULL UNIQUE,
+            keterangan TEXT,
+            aktif INTEGER DEFAULT 1,
+            createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+            updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+        )`,
+        (err) => {
+            if (err) {
+                console.error("❌ Gagal membuat tabel 'instansi':", err.message);
+            } else {
+                console.log("✅ Tabel 'instansi' siap digunakan.");
+                
+                // Insert data default jika tabel kosong
+                db.get("SELECT COUNT(*) as count FROM instansi", (countErr, row) => {
+                    if (!countErr && row.count === 0) {
+                        const defaultInstansi = [
+                            'Tim ZI',
+                            'Tim Umum',
+                            'Tim Statistik Sosial',
+                            'Tim Statistik Distribusi',
+                            'Tim Neraca Wilayah dan Analisis Statistik',
+                            'Tim Statistik Produksi',
+                            'Tim IPDS (TI)',
+                            'Tim IPDS (DLS)',
+                            'Tim Administrasi',
+                            'Tim Humas dan UKK',
+                            'Tim Statistik Sektoral',
+                            'Tim Manajemen dan Tata Kelola'
+                        ];
+                        
+                        const stmt = db.prepare("INSERT INTO instansi (nama, aktif) VALUES (?, 1)");
+                        defaultInstansi.forEach(nama => {
+                            stmt.run(nama);
+                        });
+                        stmt.finalize();
+                        
+                        console.log("✅ Data default instansi berhasil ditambahkan.");
+                    }
+                });
+            }
+        }
+    );
+
+    // ==========================================
+    // 8. JABATAN TABLE (Master Data)
+    // ==========================================
+    db.run(
+        `CREATE TABLE IF NOT EXISTS jabatan (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nama TEXT NOT NULL UNIQUE,
+            keterangan TEXT,
+            aktif INTEGER DEFAULT 1,
+            createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+            updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+        )`,
+        (err) => {
+            if (err) {
+                console.error("❌ Gagal membuat tabel 'jabatan':", err.message);
+            } else {
+                console.log("✅ Tabel 'jabatan' siap digunakan.");
+                
+                // Insert data default jika tabel kosong
+                db.get("SELECT COUNT(*) as count FROM jabatan", (countErr, row) => {
+                    if (!countErr && row.count === 0) {
+                        const defaultJabatan = [
+                            'Kepala Bagian Umum',
+                            'Pegawai',
+                            'Supervisor',
+                            'Manager',
+                            'Staff'
+                        ];
+                        
+                        const stmt = db.prepare("INSERT INTO jabatan (nama, aktif) VALUES (?, 1)");
+                        defaultJabatan.forEach(nama => {
+                            stmt.run(nama);
+                        });
+                        stmt.finalize();
+                        
+                        console.log("✅ Data default jabatan berhasil ditambahkan.");
+                    }
+                });
+            }
+        }
+    );
+
+    // Create indexes for performance
+    db.run("CREATE INDEX IF NOT EXISTS idx_instansi_aktif ON instansi(aktif)", (err) => {
+        if (!err) console.log("✅ Index pada instansi.aktif siap digunakan.");
+    });
+
+    db.run("CREATE INDEX IF NOT EXISTS idx_jabatan_aktif ON jabatan(aktif)", (err) => {
+        if (!err) console.log("✅ Index pada jabatan.aktif siap digunakan.");
+    });
+
     console.log("\n🎉 Database initialization complete!\n");
 });
 

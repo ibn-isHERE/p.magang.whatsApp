@@ -3,6 +3,9 @@
 /**
  * Shows a specific form/tab and hides others
  */
+/**
+ * Shows a specific form/tab and hides others
+ */
 export function showForm(formId) {
   document.querySelectorAll(".form-content").forEach((form) => {
     form.style.display = "none";
@@ -17,11 +20,15 @@ export function showForm(formId) {
   const chatMainContainer = document.getElementById("chatMainContainer");
   const contactMainContainer = document.getElementById("contactMainContainer");
   const groupMainContainer = document.getElementById("groupMainContainer");
+  const instansiMainContainer = document.getElementById("instansiMainContainer");
+  const jabatanMainContainer = document.getElementById("jabatanMainContainer");
 
   if (scheduleContainer) scheduleContainer.style.display = "none";
   if (chatMainContainer) chatMainContainer.style.display = "none";
   if (contactMainContainer) contactMainContainer.style.display = "none";
   if (groupMainContainer) groupMainContainer.style.display = "none";
+  if (instansiMainContainer) instansiMainContainer.style.display = "none";
+  if (jabatanMainContainer) jabatanMainContainer.style.display = "none";
 
   if (formId === "message") {
     const messageForm = document.getElementById("messageFormContainer");
@@ -63,11 +70,23 @@ export function showForm(formId) {
     }
     if (chatMainContainer) chatMainContainer.style.display = "flex";
   }
+  else if (formId === "settings") {
+    const settingsForm = document.getElementById("settingsFormContainer");
+    if (settingsForm) {
+      settingsForm.style.display = "block";
+      settingsForm.classList.add("active");
+    }
+    // Show instansi by default
+    if (instansiMainContainer) instansiMainContainer.style.display = "flex";
+    if (jabatanMainContainer) jabatanMainContainer.style.display = "none";
+  }
 
   const selectedTab = document.querySelector(`[onclick="showForm('${formId}')"]`);
   if (selectedTab) {
     selectedTab.classList.add("active");
   }
+  
+  console.log(`Showing form: ${formId}`);
 }
 
 /**

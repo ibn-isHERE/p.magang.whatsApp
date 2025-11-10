@@ -22,7 +22,7 @@
     />
     <script src="/socket.io/socket.io.js"></script>
     <script src="./js/phone-validator.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>   
   </head>
 
   <body>
@@ -66,10 +66,15 @@
                   >0</span
                 >
               </button>
+              <button class="tab-button" onclick="showForm('settings')">
+  <i class="fa-solid fa-cog"></i> Master Data
+</button>
             </div>
+
             <button id="edit-tab" class="tab-button" style="display: none">
               <i class="fa-solid fa-pencil"></i> Edit Jadwal
             </button>
+            
           </div>
 
           <!-- IMPROVED MESSAGE FORM dengan Tab System -->
@@ -705,6 +710,105 @@
 
             <div class="chat-list" id="chatList"></div>
           </div>
+          <!-- MASTER DATA SETTINGS FORM -->
+<div id="settingsFormContainer" class="form-content hidden">
+  <h2>Pengaturan Master Data</h2>
+  
+  <!-- SUB-TABS untuk Instansi dan Jabatan -->
+  <div class="settings-tabs" style="margin-bottom: 24px;">
+    <button class="settings-tab-button active" data-tab="instansi">
+      <i class="fa-solid fa-building"></i> Kelola Instansi
+    </button>
+    <button class="settings-tab-button" data-tab="jabatan">
+      <i class="fa-solid fa-briefcase"></i> Kelola Jabatan
+    </button>
+  </div>
+
+  <!-- ============ INSTANSI PANEL ============ -->
+  <div id="instansiPanel" class="settings-panel active">
+    <form id="instansi-crud-form">
+      <h3>Tambah / Edit Instansi</h3>
+      <input type="hidden" id="instansi-crud-id" />
+
+      <label for="instansi-crud-nama">
+        <i class="fa-solid fa-building"></i> Nama Instansi:
+      </label>
+      <input
+        type="text"
+        id="instansi-crud-nama"
+        placeholder="Contoh: Tim Marketing"
+        required
+      />
+
+      <label for="instansi-crud-keterangan" style="margin-top: 12px">
+        <i class="fa-solid fa-comment"></i> Keterangan (opsional):
+      </label>
+      <textarea
+        id="instansi-crud-keterangan"
+        placeholder="Deskripsi instansi..."
+        rows="3"
+      ></textarea>
+
+      <button type="submit" id="instansi-crud-submit">
+        <i class="fa-solid fa-plus"></i> Tambah Instansi
+      </button>
+      <button
+        type="button"
+        id="instansi-crud-cancel"
+        style="
+          display: none;
+          background-color: #6c757d;
+          margin-top: 10px;
+        "
+      >
+        <i class="fa-solid fa-times"></i> Batal
+      </button>
+    </form>
+  </div>
+
+  <!-- ============ JABATAN PANEL ============ -->
+  <div id="jabatanPanel" class="settings-panel" style="display: none;">
+    <form id="jabatan-crud-form">
+      <h3>Tambah / Edit Jabatan</h3>
+      <input type="hidden" id="jabatan-crud-id" />
+
+      <label for="jabatan-crud-nama">
+        <i class="fa-solid fa-briefcase"></i> Nama Jabatan:
+      </label>
+      <input
+        type="text"
+        id="jabatan-crud-nama"
+        placeholder="Contoh: Manager"
+        required
+      />
+
+      <label for="jabatan-crud-keterangan" style="margin-top: 12px">
+        <i class="fa-solid fa-comment"></i> Keterangan (opsional):
+      </label>
+      <textarea
+        id="jabatan-crud-keterangan"
+        placeholder="Deskripsi jabatan..."
+        rows="3"
+      ></textarea>
+
+      <button type="submit" id="jabatan-crud-submit">
+        <i class="fa-solid fa-plus"></i> Tambah Jabatan
+      </button>
+      <button
+        type="button"
+        id="jabatan-crud-cancel"
+        style="
+          display: none;
+          background-color: #6c757d;
+          margin-top: 10px;
+        "
+      >
+        <i class="fa-solid fa-times"></i> Batal
+      </button>
+    </form>
+  </div>
+</div>
+
         </section>
 
         <section class="content-area">
@@ -949,6 +1053,61 @@
               </table>
             </div>
           </div>
+          <div id="instansiMainContainer" class="contact-main-container" style="display: none;">
+  <div class="schedule-header">
+    <h3>Daftar Instansi</h3>
+  </div>
+
+  <div class="table-wrapper">
+    <table id="instansi-management-table">
+      <thead>
+        <tr>
+          <th style="width: 60px;">ID</th>
+          <th>Nama Instansi</th>
+          <th>Keterangan</th>
+          <th style="width: 200px;">Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="instansi-management-tbody">
+        <tr>
+          <td colspan="4" style="text-align: center; padding: 40px;">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #cbd5e0;"></i>
+            <p style="color: #a0aec0; margin-top: 12px;">Memuat data...</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- JABATAN TABLE CONTAINER -->
+<div id="jabatanMainContainer" class="contact-main-container" style="display: none;">
+  <div class="schedule-header">
+    <h3>Daftar Jabatan</h3>
+  </div>
+
+  <div class="table-wrapper">
+    <table id="jabatan-management-table">
+      <thead>
+        <tr>
+          <th style="width: 60px;">ID</th>
+          <th>Nama Jabatan</th>
+          <th>Keterangan</th>
+          <th style="width: 200px;">Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="jabatan-management-tbody">
+        <tr>
+          <td colspan="4" style="text-align: center; padding: 40px;">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #cbd5e0;"></i>
+            <p style="color: #a0aec0; margin-top: 12px;">Memuat data...</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
         </section>
       </div>
     </main>

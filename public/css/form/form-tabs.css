@@ -121,3 +121,49 @@
     transform: translateY(0);
   }
 }
+/* ========================================
+   SETTINGS TABS (Master Data)
+   ======================================== */
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 20px;
+}
+
+.settings-tab-button {
+  flex: 1;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  color: #718096;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  position: relative;
+  bottom: -2px;
+  border-radius: 6px 6px 0 0;
+}
+
+.settings-tab-button:hover {
+  color: #2d3748;
+  background: #f8fafc;
+}
+
+.settings-tab-button.active {
+  color: #2b6cb0;
+  background: #ebf8ff;
+  border-bottom-color: #2b6cb0;
+}
+
+.settings-tab-button i {
+  margin-right: 6px;
+  font-size: 13px;
+}
+
+/* Settings Panel */
+.settings-panel {
+  animation: fadeInPanel 0.3s ease;
+}

@@ -164,6 +164,8 @@ const meetingsModule = require("./routes/meetings");
 const createContactsRouter = require("./routes/contacts");
 const createChatsRouter = require("./routes/chats");
 const createGroupsRouter = require('./routes/groups');
+const createInstansiRouter = require('./routes/instansi');
+const createJabatanRouter = require('./routes/jabatan');
 
 // Setup routers
 app.use("/", schedulesModule.router);
@@ -171,6 +173,8 @@ app.use("/", meetingsModule.router);
 app.use("/api/contacts", createContactsRouter(db));
 app.use("/api/chats", createChatsRouter(db, client, io));
 app.use('/api/groups', createGroupsRouter(db));
+app.use('/api/instansi', createInstansiRouter(db));
+app.use('/api/jabatan', createJabatanRouter(db));
 
 // Endpoint untuk mengirim media
 app.post('/api/chats/send-media', uploadChatMedia.single('media'), async (req, res) => {
