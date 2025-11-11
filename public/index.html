@@ -4,11 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Pesan Pengingat</title>
-    <link
-      rel="icon"
-      type="image/x-icon"
-      href="./asset/result_bps.png"
-    />
+    <link rel="icon" type="image/x-icon" href="./asset/result_bps.png" />
     <link rel="stylesheet" href="css/chat_style.css" />
     <link rel="stylesheet" href="css/main.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -22,7 +18,7 @@
     />
     <script src="/socket.io/socket.io.js"></script>
     <script src="./js/phone-validator.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>   
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   </head>
 
   <body>
@@ -67,14 +63,13 @@
                 >
               </button>
               <button class="tab-button" onclick="showForm('settings')">
-  <i class="fa-solid fa-cog"></i> Master Data
-</button>
+                <i class="fa-solid fa-cog"></i> Master Data
+              </button>
             </div>
 
             <button id="edit-tab" class="tab-button" style="display: none">
               <i class="fa-solid fa-pencil"></i> Edit Jadwal
             </button>
-            
           </div>
 
           <!-- IMPROVED MESSAGE FORM dengan Tab System -->
@@ -555,14 +550,10 @@
               </div>
               <div
                 id="contactCrudGroupInfo"
-                style="
-                  margin-bottom: 16px;
-                  padding: 8px;
-                  background: #f7fafc;
-                  border-radius: 4px;
-                "
+                style="margin-bottom: 16px; padding: 8px"
+                class="selection-info"
               >
-                <small style="color: #a0aec0">Belum ada grup dipilih</small>
+                <small>Belum ada grup dipilih</small>
               </div>
 
               <button type="submit" id="contact-crud-submit">
@@ -582,70 +573,85 @@
             </form>
 
             <form
-  id="import-form"
-  action="/api/import"
-  method="post"
-  enctype="multipart/form-data"
-  style="margin-top: 30px"
->
-  <h3>Import Kontak dari File</h3>
-  
-  <!-- Help Section -->
-  <div class="import-help-banner">
-    <div class="import-help-content">
-      <div class="import-help-text">
-        <strong class="import-help-title">
-          <i class="fa-solid fa-info-circle"></i> Format yang Didukung
-        </strong>
-        <small class="import-help-subtitle">
-          CSV (.csv), Excel (.xlsx, .xls), JSON (.json) • Max 5MB
-        </small>
-      </div>
-      <button type="button" onclick="window.showImportHelp()" class="import-help-btn">
-        <i class="fa-solid fa-question-circle"></i> Bantuan
-      </button>
-    </div>
-  </div>
+              id="import-form"
+              action="/api/import"
+              method="post"
+              enctype="multipart/form-data"
+              style="margin-top: 30px"
+            >
+              <h3>Import Kontak dari File</h3>
 
-  <!-- Template Downloads -->
-  <div class="import-template-buttons">
-    <button type="button" id="downloadCSVTemplate" class="import-template-btn csv-btn">
-      <i class="fa-solid fa-download"></i> Download Template CSV
-    </button>
-    <button type="button" id="showExcelGuide" class="import-template-btn excel-btn">
-      <i class="fa-solid fa-file-excel"></i> Format Excel
-    </button>
-  </div>
+              <!-- Help Section -->
+              <div class="import-help-banner">
+                <div class="import-help-content">
+                  <div class="import-help-text">
+                    <strong class="import-help-title">
+                      <i class="fa-solid fa-info-circle"></i> Format yang
+                      Didukung
+                    </strong>
+                    <small class="import-help-subtitle">
+                      CSV (.csv), Excel (.xlsx, .xls), JSON (.json) • Max 5MB
+                    </small>
+                  </div>
+                  <button
+                    type="button"
+                    onclick="window.showImportHelp()"
+                    class="import-help-btn"
+                  >
+                    <i class="fa-solid fa-question-circle"></i> Bantuan
+                  </button>
+                </div>
+              </div>
 
-  <!-- File Input -->
-  <div class="import-file-wrapper">
-    <label for="contactFileInput" class="import-file-label">
-      <div class="import-file-dropzone">
-        <i class="fa-solid fa-cloud-upload import-file-icon"></i>
-        <strong class="import-file-title">Pilih File untuk Import</strong>
-        <small class="import-file-subtitle">
-          Klik di sini atau drag & drop file
-        </small>
-      </div>
-    </label>
-    <input
-      type="file"
-      id="contactFileInput"
-      name="contactFile"
-      accept=".csv, .json, .xlsx, .xls"
-      required
-      class="import-file-input"
-    />
-  </div>
+              <!-- Template Downloads -->
+              <div class="import-template-buttons">
+                <button
+                  type="button"
+                  id="downloadCSVTemplate"
+                  class="import-template-btn csv-btn"
+                >
+                  <i class="fa-solid fa-download"></i> Download Template CSV
+                </button>
+                <button
+                  type="button"
+                  id="showExcelGuide"
+                  class="import-template-btn excel-btn"
+                >
+                  <i class="fa-solid fa-file-excel"></i> Format Excel
+                </button>
+              </div>
 
-  <!-- File preview will be inserted here by JavaScript -->
-  <!-- The .import-file-info div will be dynamically added -->
+              <!-- File Input -->
+              <div class="import-file-wrapper">
+                <label for="contactFileInput" class="import-file-label">
+                  <div class="import-file-dropzone">
+                    <i class="fa-solid fa-cloud-upload import-file-icon"></i>
+                    <strong class="import-file-title"
+                      >Pilih File untuk Import</strong
+                    >
+                    <small class="import-file-subtitle">
+                      Klik di sini atau drag & drop file
+                    </small>
+                  </div>
+                </label>
+                <input
+                  type="file"
+                  id="contactFileInput"
+                  name="contactFile"
+                  accept=".csv, .json, .xlsx, .xls"
+                  required
+                  class="import-file-input"
+                />
+              </div>
 
-  <!-- Submit Button -->
-  <button type="submit" class="import-submit-btn">
-    <i class="fa-solid fa-file-import"></i> Import Kontak
-  </button>
-</form>
+              <!-- File preview will be inserted here by JavaScript -->
+              <!-- The .import-file-info div will be dynamically added -->
+
+              <!-- Submit Button -->
+              <button type="submit" class="import-submit-btn">
+                <i class="fa-solid fa-file-import"></i> Import Kontak
+              </button>
+            </form>
           </div>
 
           <div id="groupsFormContainer" class="form-content hidden">
@@ -711,104 +717,103 @@
             <div class="chat-list" id="chatList"></div>
           </div>
           <!-- MASTER DATA SETTINGS FORM -->
-<div id="settingsFormContainer" class="form-content hidden">
-  <h2>Pengaturan Master Data</h2>
-  
-  <!-- SUB-TABS untuk Instansi dan Jabatan -->
-  <div class="settings-tabs" style="margin-bottom: 24px;">
-    <button class="settings-tab-button active" data-tab="instansi">
-      <i class="fa-solid fa-building"></i> Kelola Instansi
-    </button>
-    <button class="settings-tab-button" data-tab="jabatan">
-      <i class="fa-solid fa-briefcase"></i> Kelola Jabatan
-    </button>
-  </div>
+          <div id="settingsFormContainer" class="form-content hidden">
+            <h2>Pengaturan Master Data</h2>
 
-  <!-- ============ INSTANSI PANEL ============ -->
-  <div id="instansiPanel" class="settings-panel active">
-    <form id="instansi-crud-form">
-      <h3>Tambah / Edit Instansi</h3>
-      <input type="hidden" id="instansi-crud-id" />
+            <!-- SUB-TABS untuk Instansi dan Jabatan -->
+            <div class="settings-tabs" style="margin-bottom: 24px">
+              <button class="settings-tab-button active" data-tab="instansi">
+                <i class="fa-solid fa-building"></i> Kelola Instansi
+              </button>
+              <button class="settings-tab-button" data-tab="jabatan">
+                <i class="fa-solid fa-briefcase"></i> Kelola Jabatan
+              </button>
+            </div>
 
-      <label for="instansi-crud-nama">
-        <i class="fa-solid fa-building"></i> Nama Instansi:
-      </label>
-      <input
-        type="text"
-        id="instansi-crud-nama"
-        placeholder="Contoh: Tim Marketing"
-        required
-      />
+            <!-- ============ INSTANSI PANEL ============ -->
+            <div id="instansiPanel" class="settings-panel active">
+              <form id="instansi-crud-form">
+                <h3>Tambah / Edit Instansi</h3>
+                <input type="hidden" id="instansi-crud-id" />
 
-      <label for="instansi-crud-keterangan" style="margin-top: 12px">
-        <i class="fa-solid fa-comment"></i> Keterangan (opsional):
-      </label>
-      <textarea
-        id="instansi-crud-keterangan"
-        placeholder="Deskripsi instansi..."
-        rows="3"
-      ></textarea>
+                <label for="instansi-crud-nama">
+                  <i class="fa-solid fa-building"></i> Nama Instansi:
+                </label>
+                <input
+                  type="text"
+                  id="instansi-crud-nama"
+                  placeholder="Contoh: Tim Marketing"
+                  required
+                />
 
-      <button type="submit" id="instansi-crud-submit">
-        <i class="fa-solid fa-plus"></i> Tambah Instansi
-      </button>
-      <button
-        type="button"
-        id="instansi-crud-cancel"
-        style="
-          display: none;
-          background-color: #6c757d;
-          margin-top: 10px;
-        "
-      >
-        <i class="fa-solid fa-times"></i> Batal
-      </button>
-    </form>
-  </div>
+                <label for="instansi-crud-keterangan" style="margin-top: 12px">
+                  <i class="fa-solid fa-comment"></i> Keterangan (opsional):
+                </label>
+                <textarea
+                  id="instansi-crud-keterangan"
+                  placeholder="Deskripsi instansi..."
+                  rows="3"
+                ></textarea>
 
-  <!-- ============ JABATAN PANEL ============ -->
-  <div id="jabatanPanel" class="settings-panel" style="display: none;">
-    <form id="jabatan-crud-form">
-      <h3>Tambah / Edit Jabatan</h3>
-      <input type="hidden" id="jabatan-crud-id" />
+                <button type="submit" id="instansi-crud-submit">
+                  <i class="fa-solid fa-plus"></i> Tambah Instansi
+                </button>
+                <button
+                  type="button"
+                  id="instansi-crud-cancel"
+                  style="
+                    display: none;
+                    background-color: #6c757d;
+                    margin-top: 10px;
+                  "
+                >
+                  <i class="fa-solid fa-times"></i> Batal
+                </button>
+              </form>
+            </div>
 
-      <label for="jabatan-crud-nama">
-        <i class="fa-solid fa-briefcase"></i> Nama Jabatan:
-      </label>
-      <input
-        type="text"
-        id="jabatan-crud-nama"
-        placeholder="Contoh: Manager"
-        required
-      />
+            <!-- ============ JABATAN PANEL ============ -->
+            <div id="jabatanPanel" class="settings-panel" style="display: none">
+              <form id="jabatan-crud-form">
+                <h3>Tambah / Edit Jabatan</h3>
+                <input type="hidden" id="jabatan-crud-id" />
 
-      <label for="jabatan-crud-keterangan" style="margin-top: 12px">
-        <i class="fa-solid fa-comment"></i> Keterangan (opsional):
-      </label>
-      <textarea
-        id="jabatan-crud-keterangan"
-        placeholder="Deskripsi jabatan..."
-        rows="3"
-      ></textarea>
+                <label for="jabatan-crud-nama">
+                  <i class="fa-solid fa-briefcase"></i> Nama Jabatan:
+                </label>
+                <input
+                  type="text"
+                  id="jabatan-crud-nama"
+                  placeholder="Contoh: Manager"
+                  required
+                />
 
-      <button type="submit" id="jabatan-crud-submit">
-        <i class="fa-solid fa-plus"></i> Tambah Jabatan
-      </button>
-      <button
-        type="button"
-        id="jabatan-crud-cancel"
-        style="
-          display: none;
-          background-color: #6c757d;
-          margin-top: 10px;
-        "
-      >
-        <i class="fa-solid fa-times"></i> Batal
-      </button>
-    </form>
-  </div>
-</div>
+                <label for="jabatan-crud-keterangan" style="margin-top: 12px">
+                  <i class="fa-solid fa-comment"></i> Keterangan (opsional):
+                </label>
+                <textarea
+                  id="jabatan-crud-keterangan"
+                  placeholder="Deskripsi jabatan..."
+                  rows="3"
+                ></textarea>
 
+                <button type="submit" id="jabatan-crud-submit">
+                  <i class="fa-solid fa-plus"></i> Tambah Jabatan
+                </button>
+                <button
+                  type="button"
+                  id="jabatan-crud-cancel"
+                  style="
+                    display: none;
+                    background-color: #6c757d;
+                    margin-top: 10px;
+                  "
+                >
+                  <i class="fa-solid fa-times"></i> Batal
+                </button>
+              </form>
+            </div>
+          </div>
         </section>
 
         <section class="content-area">
@@ -908,132 +913,161 @@
             </div>
           </div>
 
-
-
-<!-- ========================================
+          <!-- ========================================
      GANTI bagian contactMainContainer di index.html
      ======================================== -->
 
-<div id="contactMainContainer" class="contact-main-container">
-  <div class="schedule-header">
-    <h3>Daftar Kontak Tersimpan</h3>
-  </div>
+          <div id="contactMainContainer" class="contact-main-container">
+            <div class="schedule-header">
+              <h3>Daftar Kontak Tersimpan</h3>
+            </div>
 
-  <!-- 🔍 Advanced Filter untuk Kontak -->
-  <div class="member-filter-container" style="margin-bottom: 20px;">
-    <div class="filter-header">
-      <h4><i class="fa-solid fa-filter"></i> Filter Kontak</h4>
-      <button id="clearAllContactFilters" class="clear-all-filters-btn" style="display: none;">
-        <i class="fa-solid fa-times"></i> Reset Semua Filter
-      </button>
-    </div>
-    
-    <div class="filter-grid">
-      <div class="filter-item">
-        <label><i class="fa-solid fa-user"></i> Nama</label>
-        <input 
-          type="text" 
-          id="filterContactName" 
-          placeholder="Cari nama..." 
-          class="filter-input"
-          autocomplete="off"
-        />
-      </div>
-      
-      <div class="filter-item">
-        <label><i class="fa-solid fa-phone"></i> Nomor</label>
-        <input 
-          type="text" 
-          id="filterContactNumber" 
-          placeholder="Cari nomor..." 
-          class="filter-input"
-          autocomplete="off"
-        />
-      </div>
-      
-      <div class="filter-item">
-        <label><i class="fa-solid fa-building"></i> Instansi</label>
-        <input 
-          type="text" 
-          id="filterContactInstansi" 
-          placeholder="Cari instansi..." 
-          class="filter-input"
-          autocomplete="off"
-        />
-      </div>
-      
-      <div class="filter-item">
-        <label><i class="fa-solid fa-briefcase"></i> Jabatan</label>
-        <input 
-          type="text" 
-          id="filterContactJabatan" 
-          placeholder="Cari jabatan..." 
-          class="filter-input"
-          autocomplete="off"
-        />
-      </div>
-    </div>
-    
-    <div id="filterContactResultInfo" class="filter-result-info"></div>
-  </div>
+            <!-- 🔍 Advanced Filter untuk Kontak -->
+            <div class="member-filter-container" style="margin-bottom: 20px">
+              <div class="filter-header">
+                <h4><i class="fa-solid fa-filter"></i> Filter Kontak</h4>
+                <button
+                  id="clearAllContactFilters"
+                  class="clear-all-filters-btn"
+                  style="display: none"
+                >
+                  <i class="fa-solid fa-times"></i> Reset Semua Filter
+                </button>
+              </div>
 
-  <!-- ✅ NEW: Bulk Actions Bar -->
-  <div class="bulk-actions-bar" style="margin-bottom: 16px; padding: 10px 12px; background: #f7fafc; border-radius: 8px; border: 2px solid #e2e8f0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-  <div style="display: ruby;">
-    <button 
-      type="button"
-      id="selectAllContactsDelete" 
-      class="quick-action-btn select-all"
-      style="padding: 6px 10px; font-size: 12px; margin: 0;"
-    >
-      <i class="fa-solid fa-check-double"></i> Pilih Semua
-    </button>
-    
-    <button 
-      type="button"
-      id="deselectAllContactsDelete" 
-      class="quick-action-btn deselect-all"
-      style="padding: 6px 10px; font-size: 12px; margin: 0;"
-    >
-      <i class="fa-solid fa-times"></i> Batalkan Semua
-    </button>
-  </div>
-  
-  
-<button 
-  id="bulkDeleteContactBtn" 
-  class="btn-remove-members" 
-  style="display: none; margin-left: auto; padding: 7px 12px; font-size: 12px;"
-  disabled
->
-  <i class="fa-solid fa-trash"></i> Hapus <span id="bulkDeleteCount">0</span> Kontak
-</button>
-</div>
+              <div class="filter-grid">
+                <div class="filter-item">
+                  <label><i class="fa-solid fa-user"></i> Nama</label>
+                  <input
+                    type="text"
+                    id="filterContactName"
+                    placeholder="Cari nama..."
+                    class="filter-input"
+                    autocomplete="off"
+                  />
+                </div>
 
+                <div class="filter-item">
+                  <label><i class="fa-solid fa-phone"></i> Nomor</label>
+                  <input
+                    type="text"
+                    id="filterContactNumber"
+                    placeholder="Cari nomor..."
+                    class="filter-input"
+                    autocomplete="off"
+                  />
+                </div>
 
-  <div class="table-wrapper">
-    <table id="contact-management-table">
-      <thead>
-        <tr>
-          <th style="width: 40px; text-align: center;">
-            <i class="fa-solid fa-check-square" style="color: #4299e1;"></i>
-          </th>
-          <th>Nama</th>
-          <th>Nomor</th>
-          <th>Instansi</th>
-          <th>Jabatan</th>
-          <th>Grup</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody id="contact-management-tbody"></tbody>
-    </table>
-    <div id="noContactResults" class="no-search-results" style="display: none;">
-      <i class="fa-solid fa-search"></i>
-      <p>Tidak ada kontak yang cocok dengan pencarian</p>
-    </div>
-  </div>
-</div>
+                <div class="filter-item">
+                  <label><i class="fa-solid fa-building"></i> Instansi</label>
+                  <input
+                    type="text"
+                    id="filterContactInstansi"
+                    placeholder="Cari instansi..."
+                    class="filter-input"
+                    autocomplete="off"
+                  />
+                </div>
+
+                <div class="filter-item">
+                  <label><i class="fa-solid fa-briefcase"></i> Jabatan</label>
+                  <input
+                    type="text"
+                    id="filterContactJabatan"
+                    placeholder="Cari jabatan..."
+                    class="filter-input"
+                    autocomplete="off"
+                  />
+                </div>
+              </div>
+
+              <div
+                id="filterContactResultInfo"
+                class="filter-result-info"
+              ></div>
+            </div>
+
+            <!-- ✅ NEW: Bulk Actions Bar -->
+            <div
+              class="bulk-actions-bar"
+              style="
+                margin-bottom: 16px;
+                padding: 10px 12px;
+                background: #f7fafc;
+                border-radius: 8px;
+                border: 2px solid #e2e8f0;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+              "
+            >
+              <div style="display: ruby">
+                <button
+                  type="button"
+                  id="selectAllContactsDelete"
+                  class="quick-action-btn select-all"
+                  style="padding: 6px 10px; font-size: 12px; margin: 0"
+                >
+                  <i class="fa-solid fa-check-double"></i> Pilih Semua
+                </button>
+
+                <button
+                  type="button"
+                  id="deselectAllContactsDelete"
+                  class="quick-action-btn deselect-all"
+                  style="padding: 6px 10px; font-size: 12px; margin: 0"
+                >
+                  <i class="fa-solid fa-times"></i> Batalkan Semua
+                </button>
+              </div>
+
+              <button
+                id="bulkDeleteContactBtn"
+                class="btn-remove-members"
+                style="
+                  display: none;
+                  margin-left: auto;
+                  padding: 7px 12px;
+                  font-size: 12px;
+                "
+                disabled
+              >
+                <i class="fa-solid fa-trash"></i> Hapus
+                <span id="bulkDeleteCount">0</span> Kontak
+              </button>
+            </div>
+
+            <div class="table-wrapper">
+              <table id="contact-management-table">
+                <thead>
+                  <tr>
+                    <th style="width: 40px; text-align: center">
+                      <i
+                        class="fa-solid fa-check-square"
+                        style="color: #4299e1"
+                      ></i>
+                    </th>
+                    <th>Nama</th>
+                    <th>Nomor</th>
+                    <th>Instansi</th>
+                    <th>Jabatan</th>
+                    <th>Grup</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="contact-management-tbody"></tbody>
+              </table>
+              <div
+                id="noContactResults"
+                class="no-search-results"
+                style="display: none"
+              >
+                <i class="fa-solid fa-search"></i>
+                <p>Tidak ada kontak yang cocok dengan pencarian</p>
+              </div>
+            </div>
+          </div>
 
           <div id="groupMainContainer" class="contact-main-container">
             <div class="schedule-header">
@@ -1053,61 +1087,78 @@
               </table>
             </div>
           </div>
-          <div id="instansiMainContainer" class="contact-main-container" style="display: none;">
-  <div class="schedule-header">
-    <h3>Daftar Instansi</h3>
-  </div>
+          <div
+            id="instansiMainContainer"
+            class="contact-main-container"
+            style="display: none"
+          >
+            <div class="schedule-header">
+              <h3>Daftar Instansi</h3>
+            </div>
 
-  <div class="table-wrapper">
-    <table id="instansi-management-table">
-      <thead>
-        <tr>
-          <th style="width: 60px;">ID</th>
-          <th>Nama Instansi</th>
-          <th>Keterangan</th>
-          <th style="width: 200px;">Aksi</th>
-        </tr>
-      </thead>
-      <tbody id="instansi-management-tbody">
-        <tr>
-          <td colspan="4" style="text-align: center; padding: 40px;">
-            <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #cbd5e0;"></i>
-            <p style="color: #a0aec0; margin-top: 12px;">Memuat data...</p>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+            <div class="table-wrapper">
+              <table id="instansi-management-table">
+                <thead>
+                  <tr>
+                    <th style="width: 60px">ID</th>
+                    <th>Nama Instansi</th>
+                    <th>Keterangan</th>
+                    <th style="width: 200px">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="instansi-management-tbody">
+                  <tr>
+                    <td colspan="4" style="text-align: center; padding: 40px">
+                      <i
+                        class="fa-solid fa-spinner fa-spin"
+                        style="font-size: 32px; color: #cbd5e0"
+                      ></i>
+                      <p style="color: #a0aec0; margin-top: 12px">
+                        Memuat data...
+                      </p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
 
-<!-- JABATAN TABLE CONTAINER -->
-<div id="jabatanMainContainer" class="contact-main-container" style="display: none;">
-  <div class="schedule-header">
-    <h3>Daftar Jabatan</h3>
-  </div>
+          <!-- JABATAN TABLE CONTAINER -->
+          <div
+            id="jabatanMainContainer"
+            class="contact-main-container"
+            style="display: none"
+          >
+            <div class="schedule-header">
+              <h3>Daftar Jabatan</h3>
+            </div>
 
-  <div class="table-wrapper">
-    <table id="jabatan-management-table">
-      <thead>
-        <tr>
-          <th style="width: 60px;">ID</th>
-          <th>Nama Jabatan</th>
-          <th>Keterangan</th>
-          <th style="width: 200px;">Aksi</th>
-        </tr>
-      </thead>
-      <tbody id="jabatan-management-tbody">
-        <tr>
-          <td colspan="4" style="text-align: center; padding: 40px;">
-            <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #cbd5e0;"></i>
-            <p style="color: #a0aec0; margin-top: 12px;">Memuat data...</p>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
+            <div class="table-wrapper">
+              <table id="jabatan-management-table">
+                <thead>
+                  <tr>
+                    <th style="width: 60px">ID</th>
+                    <th>Nama Jabatan</th>
+                    <th>Keterangan</th>
+                    <th style="width: 200px">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="jabatan-management-tbody">
+                  <tr>
+                    <td colspan="4" style="text-align: center; padding: 40px">
+                      <i
+                        class="fa-solid fa-spinner fa-spin"
+                        style="font-size: 32px; color: #cbd5e0"
+                      ></i>
+                      <p style="color: #a0aec0; margin-top: 12px">
+                        Memuat data...
+                      </p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </section>
       </div>
     </main>
@@ -1165,60 +1216,71 @@
     </div>
 
     <div id="detailGroupModal" class="edit-modal">
-  <div class="edit-modal-content" style="max-width: 900px;">
-    <div class="edit-modal-header">
-      <h2 id="detailGroupModalTitle">Detail Grup</h2>
-      <button class="edit-modal-close" onclick="closeDetailGroupModal()">
-        &times;
-      </button>
+      <div class="edit-modal-content" style="max-width: 900px">
+        <div class="edit-modal-header">
+          <h2 id="detailGroupModalTitle">Detail Grup</h2>
+          <button class="edit-modal-close" onclick="closeDetailGroupModal()">
+            &times;
+          </button>
+        </div>
+        <div id="detailGroupModalBody" style="padding: 20px">
+          <!-- Content akan diisi oleh JavaScript -->
+        </div>
+      </div>
     </div>
-    <div id="detailGroupModalBody" style="padding: 20px;">
-      <!-- Content akan diisi oleh JavaScript -->
-    </div>
-  </div>
-</div>
 
-<!-- Modal Tambah Anggota -->
-<div id="addMembersModal" class="edit-modal">
-  <div class="edit-modal-content" style="max-width: 600px;">
-    <div class="edit-modal-header">
-      <h2>Tambah Anggota ke Grup</h2>
-      <button class="edit-modal-close" onclick="closeAddMembersModal()">
-        &times;
-      </button>
-    </div>
-    <div id="addMembersModalBody" style="padding: 20px;">
-      <div class="search-box-wrapper" style="margin-bottom: 16px;">
-        <i class="fa-solid fa-search"></i>
-        <input
-          type="text"
-          id="addMemberSearch"
-          placeholder="Cari kontak..."
-          autocomplete="off"
-        />
-      </div>
-      
-      <div class="select-all-container" style="margin-bottom: 12px;">
-        <label for="selectAllAddMembers">Pilih Semua</label>
-        <input type="checkbox" id="selectAllAddMembers" />
-      </div>
-      
-      <div id="addMembersList" class="contact-checklist-box" style="max-height: 400px; overflow-y: auto;">
-        <p style="text-align: center; color: #a0aec0;">Memuat kontak...</p>
-      </div>
-      
-      <div style="margin-top: 20px; display: flex; gap: 10px;">
-        <button id="confirmAddMembersBtn" class="btn-primary" style="flex: 1;">
-          <i class="fa-solid fa-user-plus"></i> Tambahkan
-        </button>
-        <button onclick="closeAddMembersModal()" class="btn-secondary" style="flex: 1;">
-          <i class="fa-solid fa-times"></i> Batal
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+    <!-- Modal Tambah Anggota -->
+    <div id="addMembersModal" class="edit-modal">
+      <div class="edit-modal-content" style="max-width: 600px">
+        <div class="edit-modal-header">
+          <h2>Tambah Anggota ke Grup</h2>
+          <button class="edit-modal-close" onclick="closeAddMembersModal()">
+            &times;
+          </button>
+        </div>
+        <div id="addMembersModalBody" style="padding: 20px">
+          <div class="search-box-wrapper" style="margin-bottom: 16px">
+            <i class="fa-solid fa-search"></i>
+            <input
+              type="text"
+              id="addMemberSearch"
+              placeholder="Cari kontak..."
+              autocomplete="off"
+            />
+          </div>
 
+          <div class="select-all-container" style="margin-bottom: 12px">
+            <label for="selectAllAddMembers">Pilih Semua</label>
+            <input type="checkbox" id="selectAllAddMembers" />
+          </div>
+
+          <div
+            id="addMembersList"
+            class="contact-checklist-box"
+            style="max-height: 400px; overflow-y: auto"
+          >
+            <p style="text-align: center; color: #a0aec0">Memuat kontak...</p>
+          </div>
+
+          <div style="margin-top: 20px; display: flex; gap: 10px">
+            <button
+              id="confirmAddMembersBtn"
+              class="btn-primary"
+              style="flex: 1"
+            >
+              <i class="fa-solid fa-user-plus"></i> Tambahkan
+            </button>
+            <button
+              onclick="closeAddMembersModal()"
+              class="btn-secondary"
+              style="flex: 1"
+            >
+              <i class="fa-solid fa-times"></i> Batal
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="./js/main.js"></script>
   </body>

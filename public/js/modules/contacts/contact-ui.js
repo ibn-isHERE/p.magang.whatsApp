@@ -8,7 +8,7 @@ let selectedContactsToDelete = new Set();
 /**
  * Get fresh references before rendering
  */
-function getContactsRef() {
+export function getContactsRef() {
   if (window.contactManagerModule) {
     return window.contactManagerModule.contacts || [];
   }
