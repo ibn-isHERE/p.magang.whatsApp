@@ -102,9 +102,9 @@ export function renderContactCrudGroupList(searchQuery = "") {
 
   if (groups.length === 0) {
     list.innerHTML = `
-      <div class="empty-state" style="padding: 20px;">
-        <i class="fa-solid fa-users" style="font-size: 32px; color: #cbd5e0; margin-bottom: 8px;"></i>
-        <p style="color: #a0aec0; margin: 0; font-size: 13px;">Belum ada grup tersedia</p>
+      <div class="empty-state" style="padding: 40px 20px;">
+        <i class="fa-solid fa-users" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
+        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Belum ada grup tersedia</p>
       </div>
     `;
     return;
@@ -112,15 +112,15 @@ export function renderContactCrudGroupList(searchQuery = "") {
 
   const filteredGroups = searchQuery
     ? groups.filter((g) =>
-        g.name.toLowerCase().includes(searchQuery.toLowerCase())
+        g.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
       )
     : groups;
 
   if (filteredGroups.length === 0) {
     list.innerHTML = `
-      <div class="empty-state" style="padding: 20px;">
-        <i class="fa-solid fa-search" style="font-size: 32px; color: #cbd5e0; margin-bottom: 8px;"></i>
-        <p style="color: #a0aec0; margin: 0; font-size: 13px;">Tidak ada grup ditemukan</p>
+      <div class="empty-state" style="padding: 40px 20px;">
+        <i class="fa-solid fa-search" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
+        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada grup ditemukan dengan kata kunci "${searchQuery}"</p>
       </div>
     `;
     return;
@@ -183,7 +183,7 @@ export function renderGroupSelectionListForEdit(searchQuery = "") {
 
   const filteredGroups = searchQuery
     ? groups.filter((g) =>
-        g.name.toLowerCase().includes(searchQuery.toLowerCase())
+        g.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
       )
     : groups;
 
@@ -254,7 +254,7 @@ export function renderMeetingGroupSelectionListForEdit(searchQuery = "") {
 
   const filteredGroups = searchQuery
     ? groups.filter((g) =>
-        g.name.toLowerCase().includes(searchQuery.toLowerCase())
+        g.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
       )
     : groups;
 
@@ -427,15 +427,15 @@ export function renderEditContactGroupList(searchQuery = "") {
 
   const filteredGroups = searchQuery
     ? groups.filter((g) =>
-        g.name.toLowerCase().includes(searchQuery.toLowerCase())
+        g.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
       )
     : groups;
 
   if (filteredGroups.length === 0) {
     list.innerHTML = `
-      <div class="empty-state" style="padding: 20px;">
-        <i class="fa-solid fa-search" style="font-size: 32px; color: #cbd5e0; margin-bottom: 8px;"></i>
-        <p style="color: #a0aec0; margin: 0; font-size: 13px;">Tidak ada grup ditemukan</p>
+      <div class="empty-state" style="padding: 40px 20px;">
+        <i class="fa-solid fa-search" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
+        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada grup ditemukan dengan kata kunci "${searchQuery}"</p>
       </div>
     `;
     return;
@@ -523,7 +523,7 @@ export function renderGroupSelectionList(searchQuery = "") {
 
   const filteredGroups = searchQuery
     ? groups.filter((g) =>
-        g.name.toLowerCase().includes(searchQuery.toLowerCase())
+        g.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
       )
     : groups;
 
@@ -591,7 +591,7 @@ export function renderMeetingGroupSelectionList(searchQuery = "") {
 
   const filteredGroups = searchQuery
     ? groups.filter((g) =>
-        g.name.toLowerCase().includes(searchQuery.toLowerCase())
+        g.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
       )
     : groups;
 

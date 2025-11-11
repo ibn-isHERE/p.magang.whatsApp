@@ -245,7 +245,7 @@ function renderChatConversations() {
   chatList.innerHTML = "";
 
   if (chatConversations.length === 0) {
-    chatList.innerHTML = '<div class="no-conversations">Tidak ada percakapan.</div>';
+    chatList.innerHTML = '<div class="no-chat-selected" style="margin: 40px;"><i class="fa-solid fa-comments"></i><p>Tidak ada percakapan</p></div>';
     return;
   }
 

@@ -404,7 +404,7 @@ export async function renderScheduleTable() {
     schedulesContainer.innerHTML = "";
 
     if (filteredSchedules.length === 0) {
-      schedulesContainer.innerHTML = '<tr><td colspan="6" class="text-center">Belum ada jadwal untuk filter ini.</td></tr>';
+      schedulesContainer.innerHTML = '<tr><td colspan="6" class="text-center"><div class="empty-state" style="padding: 40px 20px;"><i class="fa-solid fa-calendar-check" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i><p style="color: #a0aec0; margin: 0; font-size: 14px;">Belum ada jadwal untuk filter ini.</p></div></td></tr>';
     } else {
       const rowPromises = filteredSchedules.map(async (schedule) => {
         const newRow = document.createElement("tr");

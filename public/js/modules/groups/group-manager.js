@@ -1,4 +1,5 @@
 // group-manager.js - Group Management Module (UPDATED dengan Auto-Sync)
+import { getContactsRef } from '../contacts/contact-ui.js';
 
 let groups = [];
 export let selectedGroupMembers = new Set();
@@ -77,14 +78,16 @@ function renderGroupTable() {
  */
 export function renderGroupContactChecklist(searchTerm = "") {
   const list = document.getElementById("groupContactList");
+  const contacts = getContactsRef();
+  const currentSearch = document.getElementById("groupContactSearch")?.value.toLowerCase().trim() || "";
+  const filtered = contacts.filter(
+    (c) =>
+      c.name.toLowerCase().includes(currentSearch) ||
+      c.number.includes(currentSearch)
+  );
   
   if (!list) {
     console.warn("groupContactList element not found");
-    return;
-  }
-
-  if (!groups || groups.length === 0) {
-    list.innerHTML = "<p>Tidak ada grup tersedia. Muat halaman grup terlebih dahulu.</p>";
     return;
   }
 
@@ -95,10 +98,24 @@ export function renderGroupContactChecklist(searchTerm = "") {
   };
 
   getContacts().then(contacts => {
-    if (!contacts || contacts.length === 0) {
-      list.innerHTML = "<p>Tidak ada kontak yang tersedia. Pastikan kontak sudah dimuat.</p>";
-      return;
+    if (filtered.length === 0) {
+    if (currentSearch) {
+      list.innerHTML = `
+        <div class="empty-state" style="padding: 40px 20px;">
+          <i class="fa-solid fa-search" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
+          <p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada kontak ditemukan dengan kata kunci "${currentSearch}"</p>
+        </div>
+      `;
+    } else {
+      list.innerHTML = `
+        <div class="empty-state" style="padding: 40px 20px;">
+          <i class="fa-solid fa-address-book" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
+          <p style="color: #a0aec0; margin: 0; font-size: 14px;">Belum ada kontak tersedia</p>
+        </div>
+      `;
     }
+    return;
+  }
 
     list.innerHTML = "";
     const lowerSearchTerm = searchTerm.toLowerCase().trim();
