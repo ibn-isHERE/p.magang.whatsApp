@@ -123,7 +123,7 @@
                   <div id="contactList" class="contact-checklist-box"></div>
 
                   <div class="selection-info" id="contactSelectionInfo">
-                    <small>Belum ada kontak dipilih</small>
+                    <small>Tidak ada kontak dipilih</small>
                   </div>
                 </div>
 
@@ -161,8 +161,8 @@
                     class="contact-checklist-box"
                   ></div>
 
-                  <div id="groupSelectionInfo">
-                    <small>Belum ada grup dipilih</small>
+                  <div id="groupSelectionInfo" class="selection-info">
+                    <small>Tidak ada grup dipilih</small>
                   </div>
                 </div>
               </div>
@@ -313,7 +313,7 @@
                   ></div>
 
                   <div class="selection-info" id="meetingContactSelectionInfo">
-                    <small>Belum ada kontak dipilih</small>
+                    <small>Tidak ada kontak dipilih</small>
                   </div>
                 </div>
 
@@ -351,8 +351,8 @@
                     class="contact-checklist-box"
                   ></div>
 
-                  <div id="meetingGroupSelectionInfo">
-                    <small>Belum ada grup dipilih</small>
+                  <div id="meetingGroupSelectionInfo" class="selection-info">
+                    <small>Tidak ada grup dipilih</small>
                   </div>
                 </div>
               </div>
@@ -399,7 +399,7 @@
                     file
                   </span>
                   <div id="meetingFileNames" class="customFilePreview">
-                    Belum ada file terpilih
+                    Tidak ada file terpilih
                   </div>
                 </div>
                 <button
@@ -490,17 +490,17 @@
                 <i class="fa-solid fa-building"></i> Instansi:
               </label>
               <select id="contact-crud-instansi" required>
-  <option value="">-- Pilih Instansi --</option>
-  <!-- ✅ Akan diisi oleh JavaScript -->
-</select>
+                <option value="">-- Pilih Instansi --</option>
+                <!-- ✅ Akan diisi oleh JavaScript -->
+              </select>
 
               <label for="contact-crud-jabatan" style="margin-top: 12px">
                 <i class="fa-solid fa-briefcase"></i> Jabatan:
               </label>
               <select id="contact-crud-jabatan" required>
-  <option value="">-- Pilih Jabatan --</option>
-  <!-- ✅ Akan diisi oleh JavaScript -->
-</select>
+                <option value="">-- Pilih Jabatan --</option>
+                <!-- ✅ Akan diisi oleh JavaScript -->
+              </select>
 
               <!-- ✅ NEW: Group Checkbox Selection -->
               <label for="contactCrudGroupSearch" style="margin-top: 16px">
@@ -529,7 +529,7 @@
                 style="margin-bottom: 16px; padding: 8px"
                 class="selection-info"
               >
-                <small>Belum ada grup dipilih</small>
+                <small>Tidak ada grup dipilih</small>
               </div>
 
               <button type="submit" id="contact-crud-submit">
@@ -650,12 +650,37 @@
                 placeholder="Cari kontak..."
                 autocomplete="off"
               />
-              <div class="select-all-container">
-                <label for="selectAllGroupContacts">Pilih Semua Anggota</label>
-                <input type="checkbox" id="selectAllGroupContacts" />
+
+              <div
+                class="quick-actions"
+                style="margin-top: 12px; margin-bottom: 12px"
+              >
+                <button
+                  type="button"
+                  class="quick-action-btn select-all"
+                  id="selectAllGroupContacts"
+                >
+                  <i class="fa-solid fa-check-double"></i> Pilih Semua
+                </button>
+                <button
+                  type="button"
+                  class="quick-action-btn deselect-all"
+                  id="deselectAllGroupContacts"
+                >
+                  <i class="fa-solid fa-times"></i> Batal Semua
+                </button>
               </div>
+
               <div id="groupContactList" class="contact-checklist-box">
                 <p style="text-align: center">Memuat daftar kontak...</p>
+              </div>
+
+              <div
+                id="groupMemberCount"
+                style="margin-bottom: 8px; color: #4a5568"
+                class="selection-info"
+              >
+                <small><strong>Tidak ada kontak dipilih</strong></small>
               </div>
 
               <input type="hidden" id="group-crud-members" value="" />

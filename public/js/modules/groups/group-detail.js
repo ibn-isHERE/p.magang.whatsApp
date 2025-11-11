@@ -42,7 +42,7 @@ export async function showGroupDetail(id) {
     membersTableHTML = `
       <div class="no-members">
         <i class="fa-solid fa-users-slash"></i>
-        <p>Belum ada anggota dalam grup ini</p>
+        <p>Tidak ada anggota dalam grup ini</p>
       </div>
     `;
   } else {

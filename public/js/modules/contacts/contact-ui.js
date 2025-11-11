@@ -50,7 +50,9 @@ export function renderContactList() {
   const filteredContacts = getFilteredContacts();
 
   if (filteredContacts.length === 0) {
-    const hasSearchQuery = document.getElementById("contactSearch")?.value.trim();
+    const hasSearchQuery = document
+      .getElementById("contactSearch")
+      ?.value.trim();
     if (hasSearchQuery) {
       list.innerHTML = `
         <div class="empty-state" style="padding: 40px 20px;">
@@ -62,7 +64,7 @@ export function renderContactList() {
       list.innerHTML = `
         <div class="empty-state" style="padding: 40px 20px;">
           <i class="fa-solid fa-address-book" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
-          <p style="color: #a0aec0; margin: 0; font-size: 14px;">Belum ada kontak tersedia</p>
+          <p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada kontak yang tersedia</p>
         </div>
       `;
     }
@@ -100,17 +102,17 @@ export function renderContactList() {
 export function getFilteredContactsForEdit() {
   const contacts = getContactsRef();
   const searchInput = document.getElementById("edit-contactSearch");
-  
+
   if (!searchInput) {
     return contacts;
   }
-  
+
   const query = searchInput.value.toLowerCase().trim();
-  
+
   if (!query) {
     return contacts;
   }
-  
+
   return contacts.filter(
     (c) => c.name.toLowerCase().includes(query) || c.number.includes(query)
   );
@@ -122,17 +124,17 @@ export function getFilteredContactsForEdit() {
 export function getFilteredMeetingContactsForEdit() {
   const contacts = getContactsRef();
   const searchInput = document.getElementById("edit-meetingContactSearch");
-  
+
   if (!searchInput) {
     return contacts;
   }
-  
+
   const query = searchInput.value.toLowerCase().trim();
-  
+
   if (!query) {
     return contacts;
   }
-  
+
   return contacts.filter(
     (c) => c.name.toLowerCase().includes(query) || c.number.includes(query)
   );
@@ -145,10 +147,14 @@ export function renderMeetingContactList() {
   if (!list) return;
 
   list.innerHTML = "";
-  
+
   const contacts = getContactsRef();
   const selectedMeetingNumbers = getSelectedMeetingNumbersRef();
-  const currentSearch = document.getElementById("meetingContactSearch")?.value.toLowerCase().trim() || "";
+  const currentSearch =
+    document
+      .getElementById("meetingContactSearch")
+      ?.value.toLowerCase()
+      .trim() || "";
 
   const filtered = contacts.filter(
     (c) =>
@@ -168,7 +174,7 @@ export function renderMeetingContactList() {
       list.innerHTML = `
         <div class="empty-state" style="padding: 40px 20px;">
           <i class="fa-solid fa-address-book" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
-          <p style="color: #a0aec0; margin: 0; font-size: 14px;">Belum ada kontak tersedia</p>
+          <p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada kontak yang tersedia</p>
         </div>
       `;
     }
@@ -179,7 +185,9 @@ export function renderMeetingContactList() {
     const label = document.createElement("label");
     const isChecked = selectedMeetingNumbers.has(contact.number);
     label.innerHTML = `
-      <input type="checkbox" class="meeting-contact-checkbox" value="${contact.number}" ${isChecked ? "checked" : ""} />
+      <input type="checkbox" class="meeting-contact-checkbox" value="${
+        contact.number
+      }" ${isChecked ? "checked" : ""} />
       <strong>${contact.name}</strong> – ${contact.number}
     `;
     list.appendChild(label);
@@ -211,7 +219,7 @@ function updateContactSelectionInfo() {
   const selectedNumbers = getSelectedNumbersRef();
 
   if (selectedNumbers.size === 0) {
-    infoDiv.innerHTML = "<small>Belum ada kontak dipilih</small>";
+    infoDiv.innerHTML = "<small>Tidak ada kontak dipilih</small>";
     infoDiv.classList.add("empty");
     return;
   }
@@ -225,7 +233,9 @@ function updateContactSelectionInfo() {
 
   let infoText = `<strong>${selectedNumbers.size} kontak dipilih</strong>`;
   if (selectedNames.length > 0) {
-    infoText += `<br><small>${selectedNames.join(", ")}${selectedNumbers.size > 3 ? ", ..." : ""}</small>`;
+    infoText += `<br><small>${selectedNames.join(", ")}${
+      selectedNumbers.size > 3 ? ", ..." : ""
+    }</small>`;
   }
 
   infoDiv.innerHTML = infoText;
@@ -243,7 +253,7 @@ function updateMeetingContactSelectionInfo() {
   const selectedMeetingNumbers = getSelectedMeetingNumbersRef();
 
   if (selectedMeetingNumbers.size === 0) {
-    infoDiv.innerHTML = "<small>Belum ada kontak dipilih</small>";
+    infoDiv.innerHTML = "<small>Tidak ada kontak dipilih</small>";
     infoDiv.classList.add("empty");
     return;
   }
@@ -257,7 +267,9 @@ function updateMeetingContactSelectionInfo() {
 
   let infoText = `<strong>${selectedMeetingNumbers.size} kontak dipilih</strong>`;
   if (selectedNames.length > 0) {
-    infoText += `<br><small>${selectedNames.join(", ")}${selectedMeetingNumbers.size > 3 ? ", ..." : ""}</small>`;
+    infoText += `<br><small>${selectedNames.join(", ")}${
+      selectedMeetingNumbers.size > 3 ? ", ..." : ""
+    }</small>`;
   }
 
   infoDiv.innerHTML = infoText;
@@ -271,17 +283,17 @@ function updateMeetingContactSelectionInfo() {
 export function getFilteredContacts() {
   const contacts = getContactsRef();
   const searchInput = document.getElementById("contactSearch");
-  
+
   if (!searchInput) {
     return contacts;
   }
-  
+
   const query = searchInput.value.toLowerCase().trim();
-  
+
   if (!query) {
     return contacts;
   }
-  
+
   return contacts.filter(
     (c) => c.name.toLowerCase().includes(query) || c.number.includes(query)
   );
@@ -294,17 +306,17 @@ export function getFilteredContacts() {
 export function getFilteredMeetingContacts() {
   const contacts = getContactsRef();
   const searchInput = document.getElementById("meetingContactSearch");
-  
+
   if (!searchInput) {
     return contacts;
   }
-  
+
   const query = searchInput.value.toLowerCase().trim();
-  
+
   if (!query) {
     return contacts;
   }
-  
+
   return contacts.filter(
     (c) => c.name.toLowerCase().includes(query) || c.number.includes(query)
   );
@@ -317,12 +329,12 @@ export function getFilteredMeetingContacts() {
 export function getFilteredContactsForManagement() {
   const tbody = document.getElementById("contact-management-tbody");
   if (!tbody) return [];
-  
+
   const contacts = getContactsRef();
   const visibleContactIds = [];
-  
+
   const rows = tbody.querySelectorAll("tr");
-  rows.forEach(row => {
+  rows.forEach((row) => {
     // Hanya ambil row yang visible (tidak di-hide oleh filter)
     if (row.style.display !== "none" && row.cells.length > 1) {
       const checkbox = row.querySelector(".contact-delete-checkbox");
@@ -331,8 +343,8 @@ export function getFilteredContactsForManagement() {
       }
     }
   });
-  
-  return contacts.filter(c => visibleContactIds.includes(c.id));
+
+  return contacts.filter((c) => visibleContactIds.includes(c.id));
 }
 
 /**
@@ -341,39 +353,40 @@ export function getFilteredContactsForManagement() {
 export function renderContactListForEdit() {
   const list = document.getElementById("edit-contactList");
   if (!list) return;
-  
+
   const contacts = getContactsRef();
   const selectedNumbers = getSelectedNumbersRef();
-  
+
   const searchInput = document.getElementById("edit-contactSearch");
   const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : "";
-  
+
   const filteredContacts = searchQuery
-    ? contacts.filter(c => 
-        c.name.toLowerCase().includes(searchQuery) || 
-        c.number.includes(searchQuery)
+    ? contacts.filter(
+        (c) =>
+          c.name.toLowerCase().includes(searchQuery) ||
+          c.number.includes(searchQuery)
       )
     : contacts;
-  
+
   list.innerHTML = "";
-  
+
   if (filteredContacts.length === 0) {
     list.innerHTML = "<p>Tidak ada kontak ditemukan.</p>";
     return;
   }
-  
+
   filteredContacts.forEach((contact) => {
     const label = document.createElement("label");
     // ✅ PERBAIKAN: Pastikan cek dari selectedNumbers yang benar
     const isChecked = selectedNumbers.has(contact.number) ? "checked" : "";
-    
+
     label.innerHTML = `
       <input type="checkbox" class="contact-checkbox-edit" value="${contact.number}" ${isChecked}> 
       <strong>${contact.name}</strong> – ${contact.number}
     `;
     list.appendChild(label);
   });
-  
+
   document.querySelectorAll(".contact-checkbox-edit").forEach((checkbox) => {
     checkbox.addEventListener("change", function () {
       const selectedNumbers = getSelectedNumbersRef();
@@ -382,12 +395,12 @@ export function renderContactListForEdit() {
       } else {
         selectedNumbers.delete(this.value);
       }
-      
+
       // ✅ Update info display
       updateContactSelectionInfoForEdit();
     });
   });
-  
+
   updateContactSelectionInfoForEdit();
 }
 
@@ -399,7 +412,8 @@ function updateContactSelectionInfoForEdit() {
   const selectedNumbers = getSelectedNumbersRef();
 
   if (selectedNumbers.size === 0) {
-    infoDiv.innerHTML = "<small>Belum ada kontak dipilih</small>";
+    infoDiv.innerHTML = "<small>Tidak ada kontak dipilih</small>";
+    infoDiv.classList.add("empty");
     return;
   }
 
@@ -412,12 +426,14 @@ function updateContactSelectionInfoForEdit() {
 
   let infoText = `<strong>${selectedNumbers.size} kontak dipilih</strong>`;
   if (selectedNames.length > 0) {
-    infoText += `<br><small>${selectedNames.join(", ")}${selectedNumbers.size > 3 ? ", ..." : ""}</small>`;
+    infoText += `<br><small>${selectedNames.join(", ")}${
+      selectedNumbers.size > 3 ? ", ..." : ""
+    }</small>`;
   }
 
   infoDiv.innerHTML = infoText;
+  infoDiv.classList.remove("empty");
 }
-
 
 /**
  * Renders meeting contact list for edit form
@@ -448,8 +464,10 @@ export function renderMeetingContactListForEdit() {
   filteredContacts.forEach((contact) => {
     const label = document.createElement("label");
     // ✅ PERBAIKAN: Pastikan cek dari selectedMeetingNumbers yang benar
-    const isChecked = selectedMeetingNumbers.has(contact.number) ? "checked" : "";
-    
+    const isChecked = selectedMeetingNumbers.has(contact.number)
+      ? "checked"
+      : "";
+
     label.innerHTML = `
       <input type="checkbox" class="meeting-contact-checkbox-edit" value="${contact.number}" ${isChecked}> 
       <strong>${contact.name}</strong> – ${contact.number}
@@ -457,20 +475,22 @@ export function renderMeetingContactListForEdit() {
     list.appendChild(label);
   });
 
-  document.querySelectorAll(".meeting-contact-checkbox-edit").forEach((checkbox) => {
-    checkbox.addEventListener("change", function () {
-      const selectedMeetingNumbers = getSelectedMeetingNumbersRef();
-      if (this.checked) {
-        selectedMeetingNumbers.add(this.value);
-      } else {
-        selectedMeetingNumbers.delete(this.value);
-      }
-      
-      // ✅ Update info display
-      updateMeetingContactSelectionInfoForEdit();
+  document
+    .querySelectorAll(".meeting-contact-checkbox-edit")
+    .forEach((checkbox) => {
+      checkbox.addEventListener("change", function () {
+        const selectedMeetingNumbers = getSelectedMeetingNumbersRef();
+        if (this.checked) {
+          selectedMeetingNumbers.add(this.value);
+        } else {
+          selectedMeetingNumbers.delete(this.value);
+        }
+
+        // ✅ Update info display
+        updateMeetingContactSelectionInfoForEdit();
+      });
     });
-  });
-  
+
   updateMeetingContactSelectionInfoForEdit();
 }
 
@@ -482,7 +502,8 @@ function updateMeetingContactSelectionInfoForEdit() {
   const selectedMeetingNumbers = getSelectedMeetingNumbersRef();
 
   if (selectedMeetingNumbers.size === 0) {
-    infoDiv.innerHTML = "<small>Belum ada kontak dipilih</small>";
+    infoDiv.innerHTML = "<small>Tidak ada kontak dipilih</small>";
+    infoDiv.classList.add("empty");
     return;
   }
 
@@ -495,24 +516,30 @@ function updateMeetingContactSelectionInfoForEdit() {
 
   let infoText = `<strong>${selectedMeetingNumbers.size} kontak dipilih</strong>`;
   if (selectedNames.length > 0) {
-    infoText += `<br><small>${selectedNames.join(", ")}${selectedMeetingNumbers.size > 3 ? ", ..." : ""}</small>`;
+    infoText += `<br><small>${selectedNames.join(", ")}${
+      selectedMeetingNumbers.size > 3 ? ", ..." : ""
+    }</small>`;
   }
 
   infoDiv.innerHTML = infoText;
+  infoDiv.classList.remove("empty");
 }
-
 
 /**
  * Renders contact management table
  */
-export function renderContactManagementTable(contactsData, selectedContactsToDeleteRef) {
+export function renderContactManagementTable(
+  contactsData,
+  selectedContactsToDeleteRef
+) {
   const tbody = document.getElementById("contact-management-tbody");
   if (!tbody) return;
 
   tbody.innerHTML = "";
 
   if (contactsData.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Belum ada kontak</td></tr>';
+    tbody.innerHTML =
+      '<tr><td colspan="7" style="text-align: center;"><div class="empty-state" style="padding: 40px 20px;"><i class="fa-solid fa-address-book" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i><p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada kontak yang tersedia</p></div></td></tr>';
     updateBulkDeleteButton(selectedContactsToDeleteRef);
     return;
   }
@@ -532,11 +559,13 @@ export function renderContactManagementTable(contactsData, selectedContactsToDel
       groupDisplay = contact.grup || "-";
     }
 
-    const isChecked = selectedContactsToDeleteRef.has(contact.id) ? "checked" : "";
+    const isChecked = selectedContactsToDeleteRef.has(contact.id)
+      ? "checked"
+      : "";
 
-row.setAttribute("data-contact-id", contact.id);
-    
-row.innerHTML = `
+    row.setAttribute("data-contact-id", contact.id);
+
+    row.innerHTML = `
   <td style="text-align: center; width: 40px;">
     <input 
       type="checkbox" 
@@ -561,12 +590,12 @@ row.innerHTML = `
     </button>
   </td>
 `;
-tbody.appendChild(row);
+    tbody.appendChild(row);
   });
 
   attachDeleteCheckboxListeners(selectedContactsToDeleteRef);
   updateBulkDeleteButton(selectedContactsToDeleteRef);
-  
+
   // ✅ Re-initialize bulk delete listeners setiap kali tabel di-render
   setTimeout(() => {
     initContactManagementFilter();
@@ -579,8 +608,8 @@ tbody.appendChild(row);
  */
 function attachDeleteCheckboxListeners(selectedContactsToDeleteRef) {
   const checkboxes = document.querySelectorAll(".contact-delete-checkbox");
-  checkboxes.forEach(cb => {
-    cb.addEventListener("change", function() {
+  checkboxes.forEach((cb) => {
+    cb.addEventListener("change", function () {
       const contactId = parseInt(this.value);
       if (this.checked) {
         selectedContactsToDeleteRef.add(contactId);
@@ -598,12 +627,12 @@ function attachDeleteCheckboxListeners(selectedContactsToDeleteRef) {
 function updateBulkDeleteButton(selectedContactsToDeleteRef) {
   const bulkDeleteBtn = document.getElementById("bulkDeleteContactBtn");
   const countSpan = document.getElementById("bulkDeleteCount");
-  
+
   if (bulkDeleteBtn && countSpan) {
     const count = selectedContactsToDeleteRef.size;
     countSpan.textContent = ` ${count} `;
     bulkDeleteBtn.disabled = count === 0;
-    
+
     if (count > 0) {
       bulkDeleteBtn.style.display = "inline-flex";
     } else {
@@ -634,10 +663,16 @@ export function initContactManagementFilter() {
 
   function performFilter() {
     const nameQuery = filterName ? filterName.value.toLowerCase().trim() : "";
-    const numberQuery = filterNumber ? filterNumber.value.toLowerCase().trim() : "";
-    const instansiQuery = filterInstansi ? filterInstansi.value.toLowerCase().trim() : "";
-    const jabatanQuery = filterJabatan ? filterJabatan.value.toLowerCase().trim() : "";
-    
+    const numberQuery = filterNumber
+      ? filterNumber.value.toLowerCase().trim()
+      : "";
+    const instansiQuery = filterInstansi
+      ? filterInstansi.value.toLowerCase().trim()
+      : "";
+    const jabatanQuery = filterJabatan
+      ? filterJabatan.value.toLowerCase().trim()
+      : "";
+
     const rows = tbody.querySelectorAll("tr");
     let visibleCount = 0;
     const totalCount = rows.length;
@@ -649,24 +684,25 @@ export function initContactManagementFilter() {
       return;
     }
 
-    const hasActiveFilter = nameQuery || numberQuery || instansiQuery || jabatanQuery;
+    const hasActiveFilter =
+      nameQuery || numberQuery || instansiQuery || jabatanQuery;
 
     if (clearAllBtn) {
       clearAllBtn.style.display = hasActiveFilter ? "inline-flex" : "none";
     }
 
     if (!hasActiveFilter) {
-      rows.forEach(row => {
+      rows.forEach((row) => {
         if (row.cells.length > 1) {
           row.style.display = "";
           visibleCount++;
         }
       });
-      
+
       if (filterInfo) filterInfo.innerHTML = "";
       if (noResults) noResults.style.display = "none";
     } else {
-      rows.forEach(row => {
+      rows.forEach((row) => {
         if (row.cells.length <= 1) {
           row.style.display = "none";
           return;
@@ -676,14 +712,16 @@ export function initContactManagementFilter() {
         const number = (row.cells[2].textContent || "").toLowerCase();
         const instansi = (row.cells[3].textContent || "").toLowerCase();
         const jabatan = (row.cells[4].textContent || "").toLowerCase();
-        
+
         const matchName = !nameQuery || name.includes(nameQuery);
         const matchNumber = !numberQuery || number.includes(numberQuery);
-        const matchInstansi = !instansiQuery || instansi.includes(instansiQuery);
+        const matchInstansi =
+          !instansiQuery || instansi.includes(instansiQuery);
         const matchJabatan = !jabatanQuery || jabatan.includes(jabatanQuery);
-        
-        const matchAll = matchName && matchNumber && matchInstansi && matchJabatan;
-        
+
+        const matchAll =
+          matchName && matchNumber && matchInstansi && matchJabatan;
+
         if (matchAll) {
           row.style.display = "";
           visibleCount++;
@@ -691,14 +729,14 @@ export function initContactManagementFilter() {
           row.style.display = "none";
         }
       });
-      
+
       if (filterInfo) {
         const activeFilters = [];
         if (nameQuery) activeFilters.push(`Nama: "${nameQuery}"`);
         if (numberQuery) activeFilters.push(`Nomor: "${numberQuery}"`);
         if (instansiQuery) activeFilters.push(`Instansi: "${instansiQuery}"`);
         if (jabatanQuery) activeFilters.push(`Jabatan: "${jabatanQuery}"`);
-        
+
         if (visibleCount === 0) {
           filterInfo.innerHTML = `
             <i class="fa-solid fa-circle-exclamation"></i> 
@@ -720,7 +758,7 @@ export function initContactManagementFilter() {
           filterInfo.style.color = "#4299e1";
         }
       }
-      
+
       if (noResults) {
         noResults.style.display = visibleCount === 0 ? "block" : "none";
       }
@@ -731,7 +769,7 @@ export function initContactManagementFilter() {
 
   function updateFilterInputStyles() {
     const inputs = [filterName, filterNumber, filterInstansi, filterJabatan];
-    inputs.forEach(input => {
+    inputs.forEach((input) => {
       if (!input) return;
       if (input.value.trim()) {
         input.style.borderColor = "#4299e1";
@@ -763,7 +801,7 @@ export function initContactManagementFilter() {
   if (filterJabatan) {
     filterJabatan.addEventListener("input", performFilter);
   }
-  
+
   if (clearAllBtn) {
     clearAllBtn.addEventListener("click", clearAllFilters);
   }
@@ -779,38 +817,41 @@ export function initBulkDeleteListeners() {
   const bulkDeleteBtn = document.getElementById("bulkDeleteContactBtn");
   if (bulkDeleteBtn) {
     bulkDeleteBtn.addEventListener("click", async () => {
-      const contactManager = await import('./contact-manager.js');
+      const contactManager = await import("./contact-manager.js");
       contactManager.handleBulkDeleteContacts();
     });
   }
 
   // ✅ Select All / Deselect All untuk Contact Management
   const selectAllMgmtBtn = document.getElementById("selectAllContactsDelete");
-  const deselectAllMgmtBtn = document.getElementById("deselectAllContactsDelete");
+  const deselectAllMgmtBtn = document.getElementById(
+    "deselectAllContactsDelete"
+  );
 
   if (selectAllMgmtBtn) {
     // Hapus event listener lama jika ada
     const newSelectAllBtn = selectAllMgmtBtn.cloneNode(true);
     selectAllMgmtBtn.parentNode.replaceChild(newSelectAllBtn, selectAllMgmtBtn);
-    
-    newSelectAllBtn.addEventListener("click", function() {
+
+    newSelectAllBtn.addEventListener("click", function () {
       const selectedContactsToDeleteRef = getSelectedContactsToDeleteRef();
-      
+
       // ✅ Ambil hanya checkbox yang VISIBLE (setelah filter)
-      const visibleCheckboxes = Array.from(document.querySelectorAll(".contact-delete-checkbox"))
-        .filter(cb => {
-          const row = cb.closest('tr');
-          return row && row.style.display !== 'none';
-        });
-      
-      visibleCheckboxes.forEach(checkbox => {
+      const visibleCheckboxes = Array.from(
+        document.querySelectorAll(".contact-delete-checkbox")
+      ).filter((cb) => {
+        const row = cb.closest("tr");
+        return row && row.style.display !== "none";
+      });
+
+      visibleCheckboxes.forEach((checkbox) => {
         const contactId = parseInt(checkbox.value);
         selectedContactsToDeleteRef.add(contactId);
         checkbox.checked = true;
       });
-      
+
       updateBulkDeleteButton(selectedContactsToDeleteRef);
-      
+
       this.classList.add("active");
       setTimeout(() => this.classList.remove("active"), 300);
     });
@@ -819,26 +860,30 @@ export function initBulkDeleteListeners() {
   if (deselectAllMgmtBtn) {
     // Hapus event listener lama jika ada
     const newDeselectAllBtn = deselectAllMgmtBtn.cloneNode(true);
-    deselectAllMgmtBtn.parentNode.replaceChild(newDeselectAllBtn, deselectAllMgmtBtn);
-    
-    newDeselectAllBtn.addEventListener("click", function() {
+    deselectAllMgmtBtn.parentNode.replaceChild(
+      newDeselectAllBtn,
+      deselectAllMgmtBtn
+    );
+
+    newDeselectAllBtn.addEventListener("click", function () {
       const selectedContactsToDeleteRef = getSelectedContactsToDeleteRef();
-      
+
       // ✅ Hilangkan hanya yang VISIBLE
-      const visibleCheckboxes = Array.from(document.querySelectorAll(".contact-delete-checkbox"))
-        .filter(cb => {
-          const row = cb.closest('tr');
-          return row && row.style.display !== 'none';
-        });
-      
-      visibleCheckboxes.forEach(checkbox => {
+      const visibleCheckboxes = Array.from(
+        document.querySelectorAll(".contact-delete-checkbox")
+      ).filter((cb) => {
+        const row = cb.closest("tr");
+        return row && row.style.display !== "none";
+      });
+
+      visibleCheckboxes.forEach((checkbox) => {
         const contactId = parseInt(checkbox.value);
         selectedContactsToDeleteRef.delete(contactId);
         checkbox.checked = false;
       });
-      
+
       updateBulkDeleteButton(selectedContactsToDeleteRef);
-      
+
       this.classList.add("active");
       setTimeout(() => this.classList.remove("active"), 300);
     });

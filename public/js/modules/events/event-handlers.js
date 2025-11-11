@@ -201,7 +201,7 @@ export function initMeetingFileUploadListener() {
     meetingFilePreview.innerHTML = "";
     
     if (currentFiles.length === 0) {
-      meetingFilePreview.innerHTML = "<span style='color: #718096; font-size: 13px;'>Belum ada file terpilih</span>";
+      meetingFilePreview.innerHTML = "<span style='color: #718096; font-size: 13px;'>Tidak ada file terpilih</span>";
       if (meetingClearAllBtn) meetingClearAllBtn.style.display = "none";
       return;
     }
@@ -818,7 +818,7 @@ export function initMeetingForm() {
 
   const meetingFilePreview = document.getElementById("meetingFileNames");
   if (meetingFilePreview) {
-    meetingFilePreview.innerHTML = "<span style='color: #718096; font-size: 13px;'>Belum ada file terpilih</span>";
+    meetingFilePreview.innerHTML = "<span style='color: #718096; font-size: 13px;'>Tidak ada file terpilih</span>";
   }
 
   const meetingClearAllBtn = document.getElementById("clearAllMeetingFilesBtn");
@@ -1070,7 +1070,7 @@ export async function renderScheduleTable(forceRefresh = false) {
     schedulesContainer.innerHTML = "";
 
     if (filteredSchedules.length === 0) {
-      schedulesContainer.innerHTML = '<tr><td colspan="6" class="text-center">Belum ada jadwal untuk filter ini.</td></tr>';
+      schedulesContainer.innerHTML = '<tr><td colspan="6" class="text-center">Tidak ada jadwal untuk filter ini.</td></tr>';
     } else {
       const rowPromises = filteredSchedules.map(async (schedule) => {
         const newRow = document.createElement("tr");

@@ -104,7 +104,7 @@ export function renderContactCrudGroupList(searchQuery = "") {
     list.innerHTML = `
       <div class="empty-state" style="padding: 40px 20px;">
         <i class="fa-solid fa-users" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
-        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Belum ada grup tersedia</p>
+        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada grup yang tersedia</p>
       </div>
     `;
     return;
@@ -175,7 +175,7 @@ export function renderGroupSelectionListForEdit(searchQuery = "") {
     list.innerHTML = `
       <div class="empty-state" style="padding: 40px 20px;">
         <i class="fa-solid fa-users" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
-        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Belum ada grup tersedia</p>
+        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada grup yang tersedia</p>
       </div>
     `;
     return;
@@ -246,7 +246,7 @@ export function renderMeetingGroupSelectionListForEdit(searchQuery = "") {
     list.innerHTML = `
       <div class="empty-state" style="padding: 40px 20px;">
         <i class="fa-solid fa-users" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
-        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Belum ada grup tersedia</p>
+        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada grup yang tersedia</p>
       </div>
     `;
     return;
@@ -314,7 +314,8 @@ function updateEditGroupSelectionInfo() {
   if (!infoDiv) return;
 
   if (selectedGroups.size === 0) {
-    infoDiv.innerHTML = "<small>Belum ada grup dipilih</small>";
+    infoDiv.innerHTML = "<small>Tidak ada grup dipilih</small>";
+    infoDiv.classList.add("empty");
     return;
   }
 
@@ -342,6 +343,7 @@ function updateEditGroupSelectionInfo() {
       ${selectedGroupNames.join(", ")}
     </small>
   `;
+  infoDiv.classList.remove("empty");
 }
 
 /**
@@ -352,7 +354,8 @@ function updateEditMeetingGroupSelectionInfo() {
   if (!infoDiv) return;
 
   if (selectedMeetingGroups.size === 0) {
-    infoDiv.innerHTML = "<small>Belum ada grup dipilih</small>";
+    infoDiv.innerHTML = "<small>Tidak ada grup yang dipilih</small>";
+    infoDiv.classList.add("empty");
     return;
   }
 
@@ -380,6 +383,7 @@ function updateEditMeetingGroupSelectionInfo() {
       ${selectedGroupNames.join(", ")}
     </small>
   `;
+  infoDiv.classList.remove("empty");
 }
 
 /**
@@ -393,7 +397,7 @@ function updateContactCrudGroupInfo() {
 
   if (selectedContactGroups.size === 0) {
     infoDiv.innerHTML =
-      "<small style='color: #a0aec0;'>Belum ada grup dipilih</small>";
+      "<small style='color: #a0aec0;'>Tidak ada grup dipilih</small>";
     return;
   }
 
@@ -419,7 +423,7 @@ export function renderEditContactGroupList(searchQuery = "") {
     list.innerHTML = `
       <div class="empty-state" style="padding: 20px;">
         <i class="fa-solid fa-users" style="font-size: 32px; color: #cbd5e0; margin-bottom: 8px;"></i>
-        <p style="color: #a0aec0; margin: 0; font-size: 13px;">Belum ada grup tersedia</p>
+        <p style="color: #a0aec0; margin: 0; font-size: 13px;">Tidak ada grup yang tersedia</p>
       </div>
     `;
     return;
@@ -490,7 +494,7 @@ function updateEditContactGroupInfo() {
 
   if (selectedEditContactGroups.size === 0) {
     infoDiv.innerHTML =
-      "<small style='color: #a0aec0;'>Belum ada grup dipilih</small>";
+      "<small style='color: #a0aec0;'>Tidak ada grup dipilih</small>";
     return;
   }
 
@@ -515,7 +519,7 @@ export function renderGroupSelectionList(searchQuery = "") {
     list.innerHTML = `
       <div class="empty-state" style="padding: 40px 20px;">
         <i class="fa-solid fa-users" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
-        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Belum ada grup tersedia</p>
+        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada grup yang tersedia</p>
       </div>
     `;
     return;
@@ -583,7 +587,7 @@ export function renderMeetingGroupSelectionList(searchQuery = "") {
     list.innerHTML = `
       <div class="empty-state" style="padding: 40px 20px;">
         <i class="fa-solid fa-users" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
-        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Belum ada grup tersedia</p>
+        <p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada grup yang tersedia</p>
       </div>
     `;
     return;
@@ -648,7 +652,8 @@ function updateGroupSelectionInfo() {
   if (!infoDiv) return;
 
   if (selectedGroups.size === 0) {
-    infoDiv.innerHTML = "<small>Belum ada grup dipilih</small>";
+    infoDiv.innerHTML = "<small>Tidak ada grup dipilih</small>";
+    infoDiv.classList.add("empty");
     return;
   }
 
@@ -676,6 +681,7 @@ function updateGroupSelectionInfo() {
       ${selectedGroupNames.join(", ")}
     </small>
   `;
+  infoDiv.classList.remove("empty");
 }
 
 /**
@@ -686,7 +692,7 @@ function updateMeetingGroupSelectionInfo() {
   if (!infoDiv) return;
 
   if (selectedMeetingGroups.size === 0) {
-    infoDiv.innerHTML = "<small>Belum ada grup dipilih</small>";
+    infoDiv.innerHTML = "<small>Tidak ada grup dipilih</small>";
     return;
   }
 

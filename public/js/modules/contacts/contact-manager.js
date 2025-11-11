@@ -139,7 +139,7 @@ export async function showEditContactForm(id) {
       </div>
       <div id="editContactGroupList" class="contact-checklist-box" style="max-height: 200px; overflow-y: auto; margin-bottom: 8px;"></div>
       <div id="editContactGroupInfo" style="margin-bottom: 16px; padding: 8px; background: #f7fafc; border-radius: 4px;">
-        <small style='color: #a0aec0;'>Belum ada grup dipilih</small>
+        <small style='color: #a0aec0;'>Tidak ada grup dipilih</small>
       </div>
 
       <button type="submit" id="updateContactBtn">

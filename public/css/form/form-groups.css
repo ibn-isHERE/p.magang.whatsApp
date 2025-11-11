@@ -120,31 +120,6 @@
   line-height: 18px;
 }
 
-#groupSelectionInfo,
-#meetingGroupSelectionInfo {
-  margin-top: 12px;
-  margin-bottom: 0;
-  padding: 12px 14px;
-  background: linear-gradient(135deg, #ebf8ff 0%, #bee3f8 100%);
-  border-radius: 8px;
-  border-left: 4px solid #2b6cb0;
-  color: #2c5282;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-#groupSelectionInfo small,
-#meetingGroupSelectionInfo small {
-  display: block;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-#groupSelectionInfo strong,
-#meetingGroupSelectionInfo strong {
-  color: #2b6cb0;
-  font-weight: 700;
-}
-
 /* ========================================
    GROUP DETAIL VIEW
    ======================================== */

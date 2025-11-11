@@ -1,5 +1,4 @@
 // group-manager.js - Group Management Module (UPDATED dengan Auto-Sync)
-import { getContactsRef } from '../contacts/contact-ui.js';
 
 let groups = [];
 export let selectedGroupMembers = new Set();
@@ -42,7 +41,7 @@ function renderGroupTable() {
   tbody.innerHTML = "";
   
   if (groups.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Belum ada grup</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;"><div class="empty-state" style="padding: 40px 20px;"><i class="fa-solid fa-users" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i><p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada grup yang tersedia</p></div></td></tr>';
     return;
   }
 
@@ -76,15 +75,8 @@ function renderGroupTable() {
 /**
  * Renders contact checklist for group management form (Add)
  */
-export function renderGroupContactChecklist(searchTerm = "") {
+export async function renderGroupContactChecklist(searchTerm = "") {
   const list = document.getElementById("groupContactList");
-  const contacts = getContactsRef();
-  const currentSearch = document.getElementById("groupContactSearch")?.value.toLowerCase().trim() || "";
-  const filtered = contacts.filter(
-    (c) =>
-      c.name.toLowerCase().includes(currentSearch) ||
-      c.number.includes(currentSearch)
-  );
   
   if (!list) {
     console.warn("groupContactList element not found");
@@ -92,58 +84,48 @@ export function renderGroupContactChecklist(searchTerm = "") {
   }
 
   // Import contacts dari contact-manager
-  const getContacts = async () => {
+  let contacts = [];
+  try {
     const contactManager = await import('../contacts/contact-manager.js');
-    return contactManager.contacts || [];
-  };
-
-  getContacts().then(contacts => {
-    if (filtered.length === 0) {
-    if (currentSearch) {
-      list.innerHTML = `
-        <div class="empty-state" style="padding: 40px 20px;">
-          <i class="fa-solid fa-search" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
-          <p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada kontak ditemukan dengan kata kunci "${currentSearch}"</p>
-        </div>
-      `;
-    } else {
-      list.innerHTML = `
-        <div class="empty-state" style="padding: 40px 20px;">
-          <i class="fa-solid fa-address-book" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i>
-          <p style="color: #a0aec0; margin: 0; font-size: 14px;">Belum ada kontak tersedia</p>
-        </div>
-      `;
-    }
+    contacts = contactManager.contacts || [];
+  } catch (error) {
+    console.error("Error importing contact manager:", error);
+    list.innerHTML = "<p>Error memuat kontak. Coba refresh halaman.</p>";
     return;
   }
 
-    list.innerHTML = "";
-    const lowerSearchTerm = searchTerm.toLowerCase().trim();
+  if (!contacts || contacts.length === 0) {
+    list.innerHTML = '<div class="empty-state" style="padding: 40px 20px;"><i class="fa-solid fa-address-book" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i><p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada kontak yang tersedia</p></div>';
+    return;
+  }
 
-    const filteredContacts = contacts.filter(
-      (contact) =>
-        contact.name.toLowerCase().includes(lowerSearchTerm) ||
-        contact.number.includes(lowerSearchTerm)
-    );
+  list.innerHTML = "";
+  const lowerSearchTerm = searchTerm.toLowerCase().trim();
 
-    if (filteredContacts.length === 0) {
-      list.innerHTML = "<p>Tidak ada kontak ditemukan.</p>";
-      return;
-    }
+  const filteredContacts = contacts.filter(
+    (contact) =>
+      contact.name.toLowerCase().includes(lowerSearchTerm) ||
+      contact.number.includes(lowerSearchTerm)
+  );
 
-    filteredContacts.forEach((contact) => {
-      const label = document.createElement("label");
-      const isChecked = selectedGroupMembers.has(contact.number) ? "checked" : "";
-      label.innerHTML = `
-        <input type="checkbox" class="group-contact-checkbox" value="${contact.number}" ${isChecked}> 
-        <strong>${contact.name}</strong> – ${contact.number}
-      `;
-      list.appendChild(label);
-    });
-    
-    attachGroupContactListeners();
-    updateGroupMembersInput();
+  if (filteredContacts.length === 0) {
+    list.innerHTML = "<p>Tidak ada kontak ditemukan.</p>";
+    return;
+  }
+
+  filteredContacts.forEach((contact) => {
+    const label = document.createElement("label");
+    const isChecked = selectedGroupMembers.has(contact.number) ? "checked" : "";
+    label.innerHTML = `
+      <input type="checkbox" class="group-contact-checkbox" value="${contact.number}" ${isChecked}> 
+      <strong>${contact.name}</strong> — ${contact.number}
+    `;
+    list.appendChild(label);
   });
+  
+  attachGroupContactListeners();
+  updateGroupMembersInput();
+  updateGroupMemberCount();
 }
 
 /**
@@ -163,19 +145,18 @@ function handleGroupCheckboxChange() {
     selectedGroupMembers.delete(this.value);
   }
   updateGroupMembersInput();
-  updateSelectAllState();
+  updateGroupMemberCount();
 }
 
 /**
- * Updates the select all checkbox state (Add form)
+ * Updates the member count display
  */
-function updateSelectAllState() {
-  const selectAllCheckbox = document.getElementById("selectAllGroupContacts");
-  if (!selectAllCheckbox) return;
-  
-  const allCheckboxes = document.querySelectorAll(".group-contact-checkbox");
-  const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
-  selectAllCheckbox.checked = allChecked && allCheckboxes.length > 0;
+function updateGroupMemberCount() {
+  const countDisplay = document.getElementById("groupMemberCount");
+  if (countDisplay) {
+    const count = selectedGroupMembers.size;
+    countDisplay.innerHTML = `<small><strong>${count} kontak dipilih</strong></small>`;
+  }
 }
 
 /**
@@ -374,7 +355,7 @@ export function resetGroupForm() {
 }
 
 /**
- * Initializes group form listeners (Add form - Search and Select All)
+ * Initializes group form listeners (Add form - Search and Select/Deselect All)
  */
 export function initGroupFormListeners() {
   const searchInput = document.getElementById("groupContactSearch");
@@ -384,21 +365,45 @@ export function initGroupFormListeners() {
     });
   }
   
-  const selectAll = document.getElementById("selectAllGroupContacts");
-  if (selectAll) {
-    selectAll.addEventListener("change", function () {
+  // Select All Button
+  const selectAllBtn = document.getElementById("selectAllGroupContacts");
+  if (selectAllBtn) {
+    selectAllBtn.addEventListener("click", function() {
+      // Get contacts synchronously from the rendered checkboxes
       const allCheckboxes = document.querySelectorAll(".group-contact-checkbox");
-      const isChecked = this.checked;
       
-      selectedGroupMembers.clear();
-
       allCheckboxes.forEach((checkbox) => {
-        checkbox.checked = isChecked;
-        if (isChecked) {
-          selectedGroupMembers.add(checkbox.value);
-        }
+        checkbox.checked = true;
+        selectedGroupMembers.add(checkbox.value);
       });
+      
       updateGroupMembersInput();
+      updateGroupMemberCount();
+      
+      // Add visual feedback
+      this.classList.add("active");
+      setTimeout(() => this.classList.remove("active"), 300);
+    });
+  }
+
+  // Deselect All Button
+  const deselectAllBtn = document.getElementById("deselectAllGroupContacts");
+  if (deselectAllBtn) {
+    deselectAllBtn.addEventListener("click", function() {
+      // Get contacts synchronously from the rendered checkboxes
+      const allCheckboxes = document.querySelectorAll(".group-contact-checkbox");
+      
+      allCheckboxes.forEach((checkbox) => {
+        checkbox.checked = false;
+        selectedGroupMembers.delete(checkbox.value);
+      });
+      
+      updateGroupMembersInput();
+      updateGroupMemberCount();
+      
+      // Add visual feedback
+      this.classList.add("active");
+      setTimeout(() => this.classList.remove("active"), 300);
     });
   }
 

@@ -625,7 +625,7 @@ export function showImportHelp() {
         <h4 style="color: #2c5282; margin-bottom: 12px;">📋 Langkah-langkah Import:</h4>
         
         <ol style="color: #4a5568; font-size: 13px; line-height: 1.8;">
-          <li>Buat grup yang diperlukan di menu <strong>Manajemen Grup</strong> (jika belum ada)</li>
+          <li>Buat grup yang diperlukan di menu <strong>Manajemen Grup</strong> (jika tidak ada)</li>
           <li>Download template CSV atau buat file Excel dengan format yang benar</li>
           <li>Isi data kontak sesuai kolom yang tersedia</li>
           <li>Untuk auto-sync ke grup, isi kolom <strong>grup</strong> dengan nama grup yang valid</li>

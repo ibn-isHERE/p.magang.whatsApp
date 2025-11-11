@@ -49,7 +49,7 @@ export function createMessageEditFormHtml(schedule) {
           <div id="edit-contactList" class="contact-checklist-box"></div>
           
           <div class="selection-info" id="editContactSelectionInfo">
-            <small>Belum ada kontak dipilih</small>
+            <small>Tidak ada kontak dipilih</small>
           </div>
         </div>
 
@@ -72,7 +72,7 @@ export function createMessageEditFormHtml(schedule) {
           <div id="edit-groupSelectionList" class="contact-checklist-box"></div>
           
           <div id="editGroupSelectionInfo" class="selection-info">
-            <small>Belum ada grup dipilih</small>
+            <small>Tidak ada grup dipilih</small>
           </div>
         </div>
       </div>
@@ -161,7 +161,7 @@ export function createMeetingEditFormHtml(schedule) {
           <div id="edit-meetingContactList" class="contact-checklist-box"></div>
           
           <div class="selection-info" id="editMeetingContactSelectionInfo">
-            <small>Belum ada kontak dipilih</small>
+            <small>Tidak ada kontak dipilih</small>
           </div>
         </div>
 
@@ -184,7 +184,7 @@ export function createMeetingEditFormHtml(schedule) {
           <div id="edit-meetingGroupSelectionList" class="contact-checklist-box"></div>
           
           <div id="editMeetingGroupSelectionInfo" class="selection-info">
-            <small>Belum ada grup dipilih</small>
+            <small>Tidak ada grup dipilih</small>
           </div>
         </div>
       </div>
@@ -774,7 +774,7 @@ function renderEditMeetingFilePreview() {
   const total = (existingEditMeetingFiles ? existingEditMeetingFiles.length : 0) + 
                 (selectedEditMeetingFiles ? selectedEditMeetingFiles.length : 0);
   if (total === 0) {
-    editPreview.innerHTML = "<span>Belum ada file terpilih</span>";
+    editPreview.innerHTML = "<span>Tidak ada file terpilih</span>";
     if (clearBtn) clearBtn.style.display = "none";
     return;
   }
