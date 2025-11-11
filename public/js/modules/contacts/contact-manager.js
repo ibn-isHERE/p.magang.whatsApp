@@ -88,7 +88,16 @@ export async function showEditContactForm(id) {
     }
   }
 
+  // ✅ FETCH INSTANSI & JABATAN DARI DATABASE
   await fetchGroupsForDropdown();
+  
+  // ✅ Import instansi & jabatan manager
+  const instansiModule = await import('../settings/instansi-manager.js');
+  const jabatanModule = await import('../settings/jabatan-manager.js');
+  
+  // ✅ Fetch data master
+  await instansiModule.fetchInstansi();
+  await jabatanModule.fetchJabatan();
 
   const modalBody = document.getElementById("editContactModalBody");
   if (!modalBody) return;
@@ -112,18 +121,6 @@ export async function showEditContactForm(id) {
       </label>
       <select id="edit-contact-instansi" class="phone-num-input" required>
         <option value="">-- Pilih Instansi --</option>
-        <option value="Tim ZI">Tim ZI</option>
-        <option value="Tim Umum">Tim Umum</option>
-        <option value="Tim Statistik Sosial">Tim Statistik Sosial</option>
-        <option value="Tim Statistik Distribusi">Tim Statistik Distribusi</option>
-        <option value="Tim Neraca Wilayah dan Analisis Statistik">Tim Neraca Wilayah dan Analisis Statistik</option>
-        <option value="Tim Statistik Produksi">Tim Statistik Produksi</option>
-        <option value="Tim IPDS (TI)">Tim IPDS (TI)</option>
-        <option value="Tim IPDS (DLS)">Tim IPDS (DLS)</option>
-        <option value="Tim Administrasi">Tim Administrasi</option>
-        <option value="Tim Humas dan UKK">Tim Humas dan UKK</option>
-        <option value="Tim Statistik Sektoral">Tim Statistik Sektoral</option>
-        <option value="Tim Manajemen dan Tata Kelola">Tim Manajemen dan Tata Kelola</option>
       </select>
 
       <label for="edit-contact-jabatan">
@@ -131,8 +128,6 @@ export async function showEditContactForm(id) {
       </label>
       <select id="edit-contact-jabatan" class="phone-num-input" required>
         <option value="">-- Pilih Jabatan --</option>
-        <option value="Kepala Bagian Umum">Kepala Bagian Umum</option>
-        <option value="Pegawai">Pegawai</option>
       </select>
 
       <label for="editContactGroupSearch">
@@ -156,8 +151,13 @@ export async function showEditContactForm(id) {
     </form>
   `;
 
-  document.getElementById("edit-contact-instansi").value = contact.instansi;
-  document.getElementById("edit-contact-jabatan").value = contact.jabatan;
+  // ✅ POPULATE DROPDOWNS DARI DATABASE
+  instansiModule.updateInstansiDropdowns();
+  jabatanModule.updateJabatanDropdowns();
+  
+  // ✅ SET VALUE SETELAH DROPDOWN TERISI
+  document.getElementById("edit-contact-instansi").value = contact.instansi || '';
+  document.getElementById("edit-contact-jabatan").value = contact.jabatan || '';
 
   const contactGroups = await import('./contact-groups.js');
   contactGroups.renderEditContactGroupList();
@@ -169,9 +169,7 @@ export async function showEditContactForm(id) {
     });
   }
 
-  // ✅ Setup real-time validation untuk edit form
   setupEditFormValidation();
-
   showEditContactModal();
 
   document.getElementById("editContactForm").addEventListener("submit", handleEditContactSubmit);

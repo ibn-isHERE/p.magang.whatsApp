@@ -1,5 +1,6 @@
 // routes/instansi.js - CRUD API for Instansi Master Data
 const express = require("express");
+const { toTitleCase, normalizeForComparison } = require('../utils/textHelpers');
 
 function createInstansiRouter(db) {
   const router = express.Router();
@@ -81,58 +82,60 @@ function createInstansiRouter(db) {
   // ==========================================
   // CREATE NEW INSTANSI
   // ==========================================
-  router.post("/", async (req, res) => {
-    try {
-      const { nama, keterangan } = req.body;
+ router.post("/", async (req, res) => {
+  try {
+    const { nama, keterangan } = req.body;
 
-      // Validasi nama
-      if (!nama || nama.trim().length < 2) {
-        return res.status(400).json({ 
-          success: false, 
-          error: "Nama instansi minimal 2 karakter",
-          field: "nama"
-        });
-      }
-
-      // Cek duplikasi nama
-      const existing = await dbGet(
-        "SELECT id FROM instansi WHERE LOWER(nama) = LOWER(?)",
-        [nama.trim()]
-      );
-
-      if (existing) {
-        return res.status(409).json({ 
-          success: false, 
-          error: `Instansi "${nama.trim()}" sudah ada`,
-          field: "nama",
-          duplicate: true
-        });
-      }
-
-      // Insert data
-      const result = await dbRun(
-        "INSERT INTO instansi (nama, keterangan, aktif) VALUES (?, ?, 1)",
-        [nama.trim(), keterangan || null]
-      );
-
-      res.status(201).json({ 
-        success: true, 
-        message: "Instansi berhasil ditambahkan",
-        data: {
-          id: result.lastID,
-          nama: nama.trim(),
-          keterangan: keterangan || null,
-          aktif: 1
-        }
-      });
-    } catch (err) {
-      console.error("Error creating instansi:", err);
-      res.status(500).json({ 
+    if (!nama || nama.trim().length < 2) {
+      return res.status(400).json({ 
         success: false, 
-        error: "Gagal menambahkan instansi" 
+        error: "Nama instansi minimal 2 karakter",
+        field: "nama"
       });
     }
-  });
+
+    // ✅ Normalisasi ke Title Case
+    const normalizedNama = toTitleCase(nama.trim());
+
+    // ✅ Cek duplikasi (case-insensitive)
+    const existing = await dbGet(
+      "SELECT id, nama FROM instansi WHERE LOWER(nama) = LOWER(?)",
+      [normalizedNama]
+    );
+
+    if (existing) {
+      return res.status(409).json({ 
+        success: false, 
+        error: `Instansi "${normalizedNama}" sudah ada`,
+        field: "nama",
+        duplicate: true
+      });
+    }
+
+    // Insert dengan nama yang sudah dinormalisasi
+    const result = await dbRun(
+      "INSERT INTO instansi (nama, keterangan, aktif) VALUES (?, ?, 1)",
+      [normalizedNama, keterangan || null]
+    );
+
+    res.status(201).json({ 
+      success: true, 
+      message: "Instansi berhasil ditambahkan",
+      data: {
+        id: result.lastID,
+        nama: normalizedNama,
+        keterangan: keterangan || null,
+        aktif: 1
+      }
+    });
+  } catch (err) {
+    console.error("Error creating instansi:", err);
+    res.status(500).json({ 
+      success: false, 
+      error: "Gagal menambahkan instansi" 
+    });
+  }
+});
 
   // ==========================================
   // UPDATE INSTANSI
@@ -151,6 +154,9 @@ function createInstansiRouter(db) {
         });
       }
 
+      // ✅ Normalisasi ke Title Case
+      const normalizedNama = toTitleCase(nama.trim());
+
       // Cek apakah instansi ada
       const existing = await dbGet("SELECT * FROM instansi WHERE id = ?", [id]);
       if (!existing) {
@@ -160,27 +166,27 @@ function createInstansiRouter(db) {
         });
       }
 
-      // Cek duplikasi nama (kecuali untuk instansi yang sedang diedit)
+      // ✅ Cek duplikasi nama (case-insensitive, kecuali untuk instansi yang sedang diedit)
       const duplicate = await dbGet(
-        "SELECT id FROM instansi WHERE LOWER(nama) = LOWER(?) AND id != ?",
-        [nama.trim(), id]
+        "SELECT id, nama FROM instansi WHERE LOWER(nama) = LOWER(?) AND id != ?",
+        [normalizedNama, id]
       );
 
       if (duplicate) {
         return res.status(409).json({ 
           success: false, 
-          error: `Instansi "${nama.trim()}" sudah ada`,
+          error: `Instansi "${normalizedNama}" sudah ada`,
           field: "nama",
           duplicate: true
         });
       }
 
-      // Update data
+      // ✅ Update data dengan nama yang sudah dinormalisasi
       const result = await dbRun(
         `UPDATE instansi 
          SET nama = ?, keterangan = ?, aktif = ?, updatedAt = CURRENT_TIMESTAMP 
          WHERE id = ?`,
-        [nama.trim(), keterangan || null, aktif !== undefined ? aktif : 1, id]
+        [normalizedNama, keterangan || null, aktif !== undefined ? aktif : 1, id]
       );
 
       if (result.changes === 0) {
@@ -190,12 +196,21 @@ function createInstansiRouter(db) {
         });
       }
 
+      // ✅ Jika nama berubah, update juga di tabel contacts
+      if (normalizeForComparison(existing.nama) !== normalizeForComparison(normalizedNama)) {
+        await dbRun(
+          "UPDATE contacts SET instansi = ? WHERE LOWER(instansi) = LOWER(?)",
+          [normalizedNama, existing.nama]
+        );
+        console.log(`✅ Updated instansi di contacts: "${existing.nama}" → "${normalizedNama}"`);
+      }
+
       res.json({ 
         success: true, 
         message: "Instansi berhasil diupdate",
         data: {
           id,
-          nama: nama.trim(),
+          nama: normalizedNama,
           keterangan: keterangan || null,
           aktif: aktif !== undefined ? aktif : 1
         }

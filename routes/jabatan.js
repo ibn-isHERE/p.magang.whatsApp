@@ -1,5 +1,6 @@
 // routes/jabatan.js - CRUD API for Jabatan Master Data
 const express = require("express");
+const { toTitleCase, normalizeForComparison } = require('../utils/textHelpers');
 
 function createJabatanRouter(db) {
   const router = express.Router();
@@ -94,25 +95,28 @@ function createJabatanRouter(db) {
         });
       }
 
-      // Cek duplikasi nama
+      // ✅ Normalisasi ke Title Case
+      const normalizedNama = toTitleCase(nama.trim());
+
+      // ✅ Cek duplikasi nama (case-insensitive)
       const existing = await dbGet(
-        "SELECT id FROM jabatan WHERE LOWER(nama) = LOWER(?)",
-        [nama.trim()]
+        "SELECT id, nama FROM jabatan WHERE LOWER(nama) = LOWER(?)",
+        [normalizedNama]
       );
 
       if (existing) {
         return res.status(409).json({ 
           success: false, 
-          error: `Jabatan "${nama.trim()}" sudah ada`,
+          error: `Jabatan "${normalizedNama}" sudah ada`,
           field: "nama",
           duplicate: true
         });
       }
 
-      // Insert data
+      // ✅ Insert data dengan nama yang sudah dinormalisasi
       const result = await dbRun(
         "INSERT INTO jabatan (nama, keterangan, aktif) VALUES (?, ?, 1)",
-        [nama.trim(), keterangan || null]
+        [normalizedNama, keterangan || null]
       );
 
       res.status(201).json({ 
@@ -120,7 +124,7 @@ function createJabatanRouter(db) {
         message: "Jabatan berhasil ditambahkan",
         data: {
           id: result.lastID,
-          nama: nama.trim(),
+          nama: normalizedNama,
           keterangan: keterangan || null,
           aktif: 1
         }
@@ -137,7 +141,7 @@ function createJabatanRouter(db) {
   // ==========================================
   // UPDATE JABATAN
   // ==========================================
-  router.put("/:id", async (req, res) => {
+router.put("/:id", async (req, res) => {
     try {
       const { id } = req.params;
       const { nama, keterangan, aktif } = req.body;
@@ -151,6 +155,9 @@ function createJabatanRouter(db) {
         });
       }
 
+      // ✅ Normalisasi ke Title Case
+      const normalizedNama = toTitleCase(nama.trim());
+
       // Cek apakah jabatan ada
       const existing = await dbGet("SELECT * FROM jabatan WHERE id = ?", [id]);
       if (!existing) {
@@ -160,27 +167,27 @@ function createJabatanRouter(db) {
         });
       }
 
-      // Cek duplikasi nama (kecuali untuk jabatan yang sedang diedit)
+      // ✅ Cek duplikasi nama (case-insensitive, kecuali untuk jabatan yang sedang diedit)
       const duplicate = await dbGet(
-        "SELECT id FROM jabatan WHERE LOWER(nama) = LOWER(?) AND id != ?",
-        [nama.trim(), id]
+        "SELECT id, nama FROM jabatan WHERE LOWER(nama) = LOWER(?) AND id != ?",
+        [normalizedNama, id]
       );
 
       if (duplicate) {
         return res.status(409).json({ 
           success: false, 
-          error: `Jabatan "${nama.trim()}" sudah ada`,
+          error: `Jabatan "${normalizedNama}" sudah ada`,
           field: "nama",
           duplicate: true
         });
       }
 
-      // Update data
+      // ✅ Update data dengan nama yang sudah dinormalisasi
       const result = await dbRun(
         `UPDATE jabatan 
          SET nama = ?, keterangan = ?, aktif = ?, updatedAt = CURRENT_TIMESTAMP 
          WHERE id = ?`,
-        [nama.trim(), keterangan || null, aktif !== undefined ? aktif : 1, id]
+        [normalizedNama, keterangan || null, aktif !== undefined ? aktif : 1, id]
       );
 
       if (result.changes === 0) {
@@ -190,12 +197,21 @@ function createJabatanRouter(db) {
         });
       }
 
+      // ✅ Jika nama berubah, update juga di tabel contacts
+      if (normalizeForComparison(existing.nama) !== normalizeForComparison(normalizedNama)) {
+        await dbRun(
+          "UPDATE contacts SET jabatan = ? WHERE LOWER(jabatan) = LOWER(?)",
+          [normalizedNama, existing.nama]
+        );
+        console.log(`✅ Updated jabatan di contacts: "${existing.nama}" → "${normalizedNama}"`);
+      }
+
       res.json({ 
         success: true, 
         message: "Jabatan berhasil diupdate",
         data: {
           id,
-          nama: nama.trim(),
+          nama: normalizedNama,
           keterangan: keterangan || null,
           aktif: aktif !== undefined ? aktif : 1
         }

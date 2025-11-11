@@ -1,6 +1,7 @@
 // routes/contacts.js - Updated with Phone Number Validation
 const express = require("express");
 const util = require("util");
+const { toTitleCase } = require('../utils/textHelpers');
 
 // ========================================
 // ✅ PHONE NUMBER VALIDATOR
@@ -216,13 +217,13 @@ function createContactsRouter(db) {
     const sql = "INSERT INTO contacts (name, number, instansi, jabatan, grup) VALUES (?, ?, ?, ?, ?)";
 
     try {
-      const result = await dbRun(sql, [
-        name.trim(),
-        phoneValidation.normalized,
-        instansi || null,  // ← Bisa NULL
-        jabatan || null,   // ← Bisa NULL
-        groupValue,
-      ]);
+  const result = await dbRun(sql, [
+    name.trim(),
+    phoneValidation.normalized,
+    instansi ? toTitleCase(instansi) : null,  
+    jabatan ? toTitleCase(jabatan) : null,   
+    groupValue,
+  ]);
       
 
       // Respond with success

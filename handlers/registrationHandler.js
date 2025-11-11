@@ -2,6 +2,7 @@
 // Handler untuk registrasi dan unregistrasi kontak
 
 const templates = require('../config/messageTemplates');
+const { toTitleCase } = require('../utils/textHelpers');
 
 class RegistrationHandler {
     constructor(db, client) {
@@ -115,8 +116,9 @@ class RegistrationHandler {
         }
 
         const nama = parts[1].trim();
-        const instansi = parts[2].trim();
-        const jabatan = parts[3].trim();
+        const instansi = toTitleCase(parts[2].trim());  
+        const jabatan = toTitleCase(parts[3].trim());   
+
 
         // Validasi semua field terisi
         if (!nama || !instansi || !jabatan) {

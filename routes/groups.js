@@ -2,6 +2,7 @@
 
 const express = require("express");
 const util = require("util");
+const { toTitleCase, normalizeForComparison } = require('../utils/textHelpers');
 
 function createGroupsRouter(db) {
   const router = express.Router();
@@ -80,7 +81,21 @@ function createGroupsRouter(db) {
       if (!name || !String(name).trim()) {
         return res.status(400).json({ error: "Nama grup wajib diisi." });
       }
-      const groupName = String(name).trim();
+      
+      // ✅ Normalisasi ke Title Case
+      const groupName = toTitleCase(String(name).trim());
+
+      // ✅ Cek duplikasi (case-insensitive) SEBELUM insert
+      const existingGroups = await dbAll("SELECT name FROM groups");
+      const isDuplicate = existingGroups.some(g => 
+        normalizeForComparison(g.name) === normalizeForComparison(groupName)
+      );
+
+      if (isDuplicate) {
+        return res.status(409).json({ 
+          error: `Grup "${groupName}" sudah ada (tidak case-sensitive).` 
+        });
+      }
 
       // ✅ Support both 'members' and 'contactNumbers' for flexibility
       let newMembers = [];
@@ -102,7 +117,7 @@ function createGroupsRouter(db) {
 
       const membersJson = newMembers.length > 0 ? JSON.stringify(newMembers) : null;
       const result = await dbRun("INSERT INTO groups (name, members) VALUES (?, ?)", [
-        groupName,
+        groupName, // ✅ Menggunakan groupName yang sudah dinormalisasi
         membersJson,
       ]);
 
@@ -119,9 +134,7 @@ function createGroupsRouter(db) {
       });
     } catch (err) {
       console.error("Create group error:", err);
-      if (err.message && err.message.includes("UNIQUE constraint failed")) {
-        return res.status(409).json({ error: "Nama grup sudah ada." });
-      }
+      // ✅ Error handling sudah tidak perlu lagi karena cek duplikasi manual
       res.status(500).json({ error: err.message });
     }
   });
@@ -135,7 +148,39 @@ function createGroupsRouter(db) {
       if (!name || !String(name).trim()) {
         return res.status(400).json({ error: "Nama grup wajib diisi." });
       }
-      const newName = String(name).trim();
+      
+      // ✅ Normalisasi ke Title Case
+      const newName = toTitleCase(String(name).trim());
+
+      // Get old record
+      const oldRows = await dbAll("SELECT name, members FROM groups WHERE id = ?", [id]);
+      if (!oldRows || oldRows.length === 0) {
+        return res.status(404).json({ message: `Grup dengan ID ${id} tidak ditemukan.` });
+      }
+      
+      const oldRow = oldRows[0];
+      const oldName = oldRow.name;
+      
+      // ✅ Cek duplikasi (case-insensitive) hanya jika nama berubah
+      if (normalizeForComparison(oldName) !== normalizeForComparison(newName)) {
+        const existingGroups = await dbAll("SELECT id, name FROM groups WHERE id != ?", [id]);
+        const isDuplicate = existingGroups.some(g => 
+          normalizeForComparison(g.name) === normalizeForComparison(newName)
+        );
+
+        if (isDuplicate) {
+          return res.status(409).json({ 
+            error: `Grup "${newName}" sudah ada (tidak case-sensitive).` 
+          });
+        }
+      }
+
+      let oldMembers = [];
+      try {
+        oldMembers = oldRow.members ? JSON.parse(oldRow.members) : [];
+      } catch (e) {
+        oldMembers = [];
+      }
 
       // ✅ Support both 'members' and 'contactNumbers'
       let newMembers = [];
@@ -155,24 +200,9 @@ function createGroupsRouter(db) {
       // Remove duplicates
       newMembers = [...new Set(newMembers)];
 
-      // Get old record
-      const oldRows = await dbAll("SELECT name, members FROM groups WHERE id = ?", [id]);
-      if (!oldRows || oldRows.length === 0) {
-        return res.status(404).json({ message: `Grup dengan ID ${id} tidak ditemukan.` });
-      }
-      
-      const oldRow = oldRows[0];
-      const oldName = oldRow.name;
-      let oldMembers = [];
-      try {
-        oldMembers = oldRow.members ? JSON.parse(oldRow.members) : [];
-      } catch (e) {
-        oldMembers = [];
-      }
-
       const membersJson = newMembers.length > 0 ? JSON.stringify(newMembers) : null;
       const result = await dbRun("UPDATE groups SET name = ?, members = ? WHERE id = ?", [
-        newName,
+        newName, // ✅ Menggunakan newName yang sudah dinormalisasi
         membersJson,
         id,
       ]);
@@ -195,8 +225,8 @@ function createGroupsRouter(db) {
         }
       }
 
-      // If group name changed, update all contacts
-      if (oldName !== newName) {
+      // ✅ If group name changed (case-insensitive check), update all contacts
+      if (normalizeForComparison(oldName) !== normalizeForComparison(newName)) {
         const contactsWithOld = await dbAll(
           "SELECT id, grup, number FROM contacts WHERE grup IS NOT NULL"
         );
@@ -210,8 +240,16 @@ function createGroupsRouter(db) {
           }
           if (!Array.isArray(cGroups)) cGroups = [];
 
-          if (cGroups.includes(oldName)) {
-            const replaced = cGroups.map((g) => (g === oldName ? newName : g));
+          // ✅ Cari grup dengan case-insensitive
+          const hasOldGroup = cGroups.some(g => 
+            normalizeForComparison(g) === normalizeForComparison(oldName)
+          );
+
+          if (hasOldGroup) {
+            // Replace old group name dengan new name (case-insensitive)
+            const replaced = cGroups.map((g) => 
+              normalizeForComparison(g) === normalizeForComparison(oldName) ? newName : g
+            );
             const uniqueGroups = [...new Set(replaced)];
             const jsonVal = uniqueGroups.length > 0 ? JSON.stringify(uniqueGroups) : null;
             await dbRun("UPDATE contacts SET grup = ? WHERE id = ?", [jsonVal, c.id]);
