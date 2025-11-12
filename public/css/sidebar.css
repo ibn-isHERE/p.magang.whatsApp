@@ -1,0 +1,316 @@
+/* ============================================
+   HAMBURGER MENU & SIDEBAR STYLES
+   ============================================ */
+
+/* Hamburger Button */
+.hamburger-menu {
+  position: fixed !important;
+  top: 10px;
+  left: 20px;
+  z-index: 2000;
+  background: #003366;
+  border: none;
+  border-radius: 8px;
+  width: 50px;
+  height: 50px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0, 51, 102, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hamburger-menu:hover {
+  background: #004080;
+  box-shadow: 0 6px 16px rgba(0, 51, 102, 0.4);
+  transform: scale(1.05);
+}
+
+.hamburger-menu:active {
+  transform: scale(0.95);}
+
+.hamburger-menu span {
+  display: block;
+  width: 28px;
+  height: 3px;
+  background: white;
+  border-radius: 3px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hamburger Button Hidden when Sidebar Open */
+.hamburger-menu.active {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.8);
+}
+
+/* Sidebar Overlay */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1500;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Sidebar Container */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -320px;
+  width: 320px;
+  height: 100vh;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  z-index: 1600;
+  overflow-y: auto;
+  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar.active {
+  left: 0;
+}
+
+/* Sidebar Header */
+.sidebar-header {
+  padding: 24px 20px;
+  background: linear-gradient(135deg, #003366 0%, #004080 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-header img {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: white;
+  padding: 4px;
+}
+
+.sidebar-header-text h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-header-text p {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  opacity: 0.9;
+}
+
+/* Sidebar Menu */
+.sidebar-menu {
+  padding: 16px 0;
+  flex: 1;
+}
+
+.sidebar-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  color: #2d3748;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-menu-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: #2b6cb0;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+.sidebar-menu-item:hover {
+  background: #edf2f7;
+  padding-left: 28px;
+}
+
+.sidebar-menu-item:hover::before {
+  transform: translateX(0);
+}
+
+.sidebar-menu-item.active {
+  background: linear-gradient(90deg, #ebf8ff 0%, #e6f7ff 100%);
+  color: #2b6cb0;
+  font-weight: 600;
+  padding-left: 28px;
+}
+
+.sidebar-menu-item.active::before {
+  transform: translateX(0);
+}
+
+.sidebar-menu-item i {
+  font-size: 20px;
+  width: 24px;
+  text-align: center;
+  color: #4a5568;
+}
+
+.sidebar-menu-item.active i {
+  color: #2b6cb0;
+}
+
+.sidebar-menu-item .notification-badge {
+  position: absolute;
+  right: 20px;
+  background: #e53e3e;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #f7fafc;
+  font-size: 12px;
+  color: #718096;
+  text-align: center;
+}
+
+.sidebar-footer p {
+  margin: 0;
+}
+
+/* Scrollbar Styling */
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: #f7fafc;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 280px;
+    left: -280px;
+  }
+  
+  .hamburger-menu {
+    width: 45px;
+    height: 45px;
+    top: 15px;
+    left: 15px;
+  }
+  
+  .hamburger-menu span {
+    width: 24px;
+  }
+  
+  .sidebar-header {
+    padding: 20px 16px;
+  }
+  
+  .sidebar-menu-item {
+    padding: 14px 20px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar {
+    width: 260px;
+    left: -260px;
+  }
+  
+  .hamburger-menu {
+    width: 42px;
+    height: 42px;
+    top: 12px;
+    left: 12px;
+  }
+  
+  .hamburger-menu span {
+    width: 22px;
+    height: 2.5px;
+  }
+}
+
+/* Animation Keyframes */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+/* Prevent Body Scroll when Sidebar Open */
+body.sidebar-open {
+  overflow: hidden;
+}
+
+/* Adjust main content margin when sidebar is visible */
+@media (min-width: 1200px) {
+  body.sidebar-always-visible .main-content {
+    margin-left: 320px;
+    transition: margin-left 0.4s ease;
+  }
+}

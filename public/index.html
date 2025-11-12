@@ -22,6 +22,69 @@
   </head>
 
   <body>
+    <!-- Hamburger Menu Button -->
+<button class="hamburger-menu" id="hamburgerBtn" aria-label="Toggle Menu" style="position: fixed; overflow: hidden;">
+  <span></span>
+  <span></span>
+  <span></span>
+</button>
+
+<!-- Sidebar Overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Sidebar Navigation -->
+<aside class="sidebar" id="sidebar">
+  <!-- Sidebar Header -->
+  <div class="sidebar-header">
+    <img
+      src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg/1726px-Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg.png"
+      alt="Logo BPS"
+    />
+    <div class="sidebar-header-text">
+      <h3>BPS Navigation</h3>
+      <p>Pesan Pengingat</p>
+    </div>
+  </div>
+
+  <!-- Sidebar Menu -->
+  <nav class="sidebar-menu">
+    <button class="sidebar-menu-item active" data-form="message">
+      <i class="fa-solid fa-envelope"></i>
+      <span>Kirim Pesan</span>
+    </button>
+
+    <button class="sidebar-menu-item" data-form="meeting">
+      <i class="fa-solid fa-calendar-check"></i>
+      <span>Jadwal Rapat</span>
+    </button>
+
+    <button class="sidebar-menu-item" data-form="contacts">
+      <i class="fa-solid fa-address-book"></i>
+      <span>Manajemen Kontak</span>
+    </button>
+
+    <button class="sidebar-menu-item" data-form="group">
+      <i class="fa-solid fa-users"></i>
+      <span>Manajemen Grup</span>
+    </button>
+
+    <button class="sidebar-menu-item" data-form="chat">
+      <i class="fa-solid fa-comments"></i>
+      <span>Customer Service</span>
+      <span class="notification-badge" style="display: none">0</span>
+    </button>
+
+    <button class="sidebar-menu-item" data-form="settings">
+      <i class="fa-solid fa-cog"></i>
+      <span>Master Data</span>
+    </button>
+  </nav>
+
+  <!-- Sidebar Footer -->
+  <div class="sidebar-footer">
+    <p>&copy; 2025 Badan Pusat Statistik</p>
+  </div>
+</aside>
     <div class="navbar">
       <div class="navbar-left">
         <img
@@ -39,38 +102,6 @@
 
       <div class="main-content">
         <section class="form-container">
-          <div class="tabs">
-            <div id="main-tabs">
-              <button class="tab-button active" onclick="showForm('message')">
-                <i class="fa-solid fa-envelope"></i> Kirim Pesan
-              </button>
-              <button class="tab-button" onclick="showForm('meeting')">
-                <i class="fa-solid fa-calendar-check"></i> Jadwal Rapat
-              </button>
-              <button class="tab-button" onclick="showForm('contacts')">
-                <i class="fa-solid fa-address-book"></i> Manajemen Kontak
-              </button>
-              <button class="tab-button" onclick="showForm('group')">
-                <i class="fa-solid fa-users"></i> Manajemen Grup
-              </button>
-              <button class="tab-button" onclick="showForm('chat')">
-                <i class="fa-solid fa-comments"></i> Customer Service
-                <span
-                  id="chatBadge"
-                  class="notification-badge"
-                  style="display: none"
-                  >0</span
-                >
-              </button>
-              <button class="tab-button" onclick="showForm('settings')">
-                <i class="fa-solid fa-cog"></i> Master Data
-              </button>
-            </div>
-
-            <button id="edit-tab" class="tab-button" style="display: none">
-              <i class="fa-solid fa-pencil"></i> Edit Jadwal
-            </button>
-          </div>
 
           <!-- IMPROVED MESSAGE FORM dengan Tab System -->
           <div id="messageFormContainer" class="form-content active">

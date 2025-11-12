@@ -23,11 +23,23 @@ import {
   showNotification
 } from './modules/events/event-handlers.js';
 
+// ✅ IMPORT SIDEBAR MODULE
+import { 
+  initSidebar, 
+  updateChatBadge, 
+  setActiveMenuItem 
+} from './modules/ui/sidebar.js';
+
 /**
  * Enhanced showForm with proper module loading
  */
 async function showForm(formId) {
   showFormOriginal(formId);
+  
+  // ✅ UPDATE SIDEBAR ACTIVE STATE
+  if (window.setActiveMenuItem) {
+    window.setActiveMenuItem(formId);
+  }
   
   if (formId === "contacts") {
     const contactManager = await import('./modules/contacts/contact-manager.js');
@@ -79,6 +91,7 @@ async function showForm(formId) {
       // Load conversations when chat tab is shown
     }
   }
+  
   if (formId === "settings") {
     const instansiManager = await import('./modules/settings/instansi-manager.js');
     const jabatanManager = await import('./modules/settings/jabatan-manager.js');
@@ -143,6 +156,10 @@ async function initApp() {
   console.log("🚀 Starting app initialization...");
 
   try {
+    // ✅ INITIALIZE SIDEBAR FIRST
+    console.log("🎯 Initializing sidebar...");
+    initSidebar();
+    
     // Load all modules dynamically
     const contactManager = await import('./modules/contacts/contact-manager.js');
     const groupManager = await import('./modules/groups/group-manager.js');
@@ -193,6 +210,10 @@ async function initApp() {
     window.closeAddMembersModal = closeAddMembersModal;
     window.closeDetailGroupModal = closeDetailGroupModal;
     window.showNotification = showNotification;
+    
+    // ✅ EXPORT SIDEBAR FUNCTIONS TO WINDOW
+    window.updateChatBadge = updateChatBadge;
+    window.setActiveMenuItem = setActiveMenuItem;
 
     // Export contact manager to window for references
     window.contactManagerModule = contactManager;
