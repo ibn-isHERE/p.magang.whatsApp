@@ -1,4 +1,4 @@
-// sidebar.js - Sidebar Navigation Handler
+// sidebar.js - Sidebar Navigation Handler (Simplified)
 
 /**
  * Initialize Sidebar Navigation
@@ -9,7 +9,7 @@ export function initSidebar() {
   const hamburger = document.getElementById('hamburgerBtn');
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebarOverlay');
-  const menuItems = document.querySelectorAll('.sidebar-menu-item');
+  const menuItems = document.querySelectorAll('.sidebar-menu-item:not(.sidebar-logout-btn)');
   
   if (!hamburger || !sidebar || !overlay) {
     console.error('❌ Sidebar elements not found');
@@ -47,20 +47,30 @@ export function initSidebar() {
   hamburger.addEventListener('click', toggleSidebar);
   overlay.addEventListener('click', closeSidebar);
   
-  // Handle menu item clicks
+  // Handle menu item clicks (excluding logout button)
   menuItems.forEach(item => {
     item.addEventListener('click', function() {
       const formId = this.dataset.form;
       
-      // Remove active class from all items
+      // Skip if it's logout button or no form id
+      if (!formId || this.classList.contains('sidebar-logout-btn')) {
+        return;
+      }
+      
+      // Remove active class from all items (except logout)
       menuItems.forEach(i => i.classList.remove('active'));
       
       // Add active class to clicked item
       this.classList.add('active');
       
-      // Call showForm function (imported from main)
-      if (window.showForm && formId) {
-        window.showForm(formId);
+      // ✅ SPECIAL HANDLING for User Management
+      if (formId === 'User') {
+        showUserManagement();
+      } else {
+        // Call showForm function (imported from main)
+        if (window.showForm && formId) {
+          window.showForm(formId);
+        }
       }
       
       // Close sidebar on mobile
@@ -69,6 +79,53 @@ export function initSidebar() {
       }
     });
   });
+  
+  // ✅ Function to show User Management
+  function showUserManagement() {
+    // Hide all form containers
+    document.querySelectorAll('.form-content').forEach(container => {
+      container.classList.remove('active');
+      container.classList.add('hidden');
+    });
+
+    // Show user management form
+    const userMgmtForm = document.getElementById('userManagementFormContainer');
+    if (userMgmtForm) {
+      userMgmtForm.classList.remove('hidden');
+      userMgmtForm.classList.add('active');
+    }
+
+    // Hide all main containers
+    const allMainContainers = [
+      'scheduleContainer',
+      'chatMainContainer',
+      'contactMainContainer',
+      'groupMainContainer',
+      'instansiMainContainer',
+      'jabatanMainContainer',
+      'userManagementMainContainer'
+    ];
+
+    allMainContainers.forEach(containerId => {
+      const container = document.getElementById(containerId);
+      if (container) {
+        container.style.display = 'none';
+      }
+    });
+
+    // Show user management main container
+    const userMgmtMain = document.getElementById('userManagementMainContainer');
+    if (userMgmtMain) {
+      userMgmtMain.style.display = 'block';
+    }
+
+    // Initialize user management if not already initialized
+    if (typeof window.initializeUserManagement === 'function') {
+      window.initializeUserManagement();
+    }
+  }
+  
+  // ✅ TIDAK PERLU EVENT DELEGATION LAGI - Logout sudah pakai onclick di HTML
   
   // Close sidebar on ESC key
   document.addEventListener('keydown', (e) => {
@@ -110,7 +167,7 @@ export function updateChatBadge(count) {
  * Set Active Menu Item
  */
 export function setActiveMenuItem(formId) {
-  const menuItems = document.querySelectorAll('.sidebar-menu-item');
+  const menuItems = document.querySelectorAll('.sidebar-menu-item:not(.sidebar-logout-btn)');
   menuItems.forEach(item => {
     if (item.dataset.form === formId) {
       item.classList.add('active');

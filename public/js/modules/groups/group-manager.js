@@ -3,6 +3,8 @@
 let groups = [];
 export let selectedGroupMembers = new Set();
 
+import {getContactsRef} from '../contacts/contact-ui.js';
+
 /**
  * Get groups array
  */
@@ -29,6 +31,13 @@ export async function fetchAndRenderGroups() {
     console.error("Error fetching groups:", error);
     Swal.fire("Error", error.message, "error");
   }
+}
+
+function getSelectedGroupNumbersRef() {
+  if (window.groupManagerModule) {
+    return window.groupManagerModule.selectedGroupMembers || new Set();
+  }
+  return selectedGroupMembers;
 }
 
 /**
@@ -152,11 +161,34 @@ function handleGroupCheckboxChange() {
  * Updates the member count display
  */
 function updateGroupMemberCount() {
-  const countDisplay = document.getElementById("groupMemberCount");
-  if (countDisplay) {
-    const count = selectedGroupMembers.size;
-    countDisplay.innerHTML = `<small><strong>${count} kontak dipilih</strong></small>`;
-  }
+  const infoDiv = document.getElementById("groupMemberCount");
+    if (!infoDiv) return;
+  
+    const contacts = getContactsRef();
+    const selectedNumbers = getSelectedGroupNumbersRef();
+  
+    if (selectedNumbers.size === 0) {
+      infoDiv.innerHTML = "<small>Tidak ada kontak dipilih</small>";
+      infoDiv.classList.add("empty");
+      return;
+    }
+  
+    const selectedNames = Array.from(selectedNumbers)
+      .map((number) => {
+        const contact = contacts.find((c) => c.number === number);
+        return contact ? contact.name : number;
+      })
+      .slice(0, 3);
+  
+    let infoText = `<strong>${selectedNumbers.size} kontak dipilih</strong>`;
+    if (selectedNames.length > 0) {
+      infoText += `<br><small>${selectedNames.join(", ")}${
+        selectedNumbers.size > 3 ? ", ..." : ""
+      }</small>`;
+    }
+  
+    infoDiv.innerHTML = infoText;
+    infoDiv.classList.remove("empty");
 }
 
 /**

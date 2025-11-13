@@ -398,15 +398,32 @@ function updateContactCrudGroupInfo() {
   if (selectedContactGroups.size === 0) {
     infoDiv.innerHTML =
       "<small style='color: #a0aec0;'>Tidak ada grup dipilih</small>";
+      infoDiv.classList.add("empty");
     return;
   }
 
-  const groupNames = Array.from(selectedContactGroups).join(", ");
+  const selectedGroupNames = Array.from(selectedContactGroups);
+  let totalMembers = 0;
+  selectedContactGroups.forEach((groupName) => {
+    const group = groups.find((g) => g.name === groupName);
+    if (group && group.members) {
+      try {
+        const members = JSON.parse(group.members);
+        totalMembers += members.length;
+      } catch (e) {
+        console.error("Error parsing members for group:", groupName, e);
+      }
+    }
+  });
+
+
   infoDiv.innerHTML = `
-    <small style='color: #2d3748;'>
-      <strong>${selectedContactGroups.size} grup dipilih:</strong> ${groupNames}
+    <small>
+      <strong>${selectedContactGroups.size} grup dipilih</strong> (${totalMembers} anggota)<br>
+      ${selectedGroupNames.join(", ")}
     </small>
   `;
+  infoDiv.classList.remove("empty");
 }
 
 /**

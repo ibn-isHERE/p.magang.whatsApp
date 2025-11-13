@@ -76,7 +76,7 @@ export function renderContactList() {
     const isChecked = selectedNumbers.has(contact.number) ? "checked" : "";
     label.innerHTML = `
       <input type="checkbox" class="contact-checkbox" name="selectedContacts" value="${contact.number}" ${isChecked} />
-      <strong>${contact.name}</strong> – ${contact.number}
+      <strong>${contact.name}</strong><small>${contact.number}</small>
     `;
     list.appendChild(label);
   });

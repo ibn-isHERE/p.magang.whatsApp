@@ -166,8 +166,10 @@ const createChatsRouter = require("./routes/chats");
 const createGroupsRouter = require('./routes/groups');
 const createInstansiRouter = require('./routes/instansi');
 const createJabatanRouter = require('./routes/jabatan');
+const { router: authRouter } = require('./routes/auth-routes');
 
 // Setup routers
+app.use('/api/auth', authRouter);
 app.use("/", schedulesModule.router);
 app.use("/", meetingsModule.router);
 app.use("/api/contacts", createContactsRouter(db));
@@ -358,8 +360,8 @@ app.get("/get-all-schedules", (req, res) => {
             scheduledTime: row.scheduledTime,
             status: row.status,
             type: "message",
-            selectedGroups: row.selectedGroups ? JSON.parse(row.selectedGroups) : null,  // ✅ Add groupInfo
-            groupInfo: row.groupInfo ? JSON.parse(row.groupInfo) : null                   // ✅ Add groupInfo
+            selectedGroups: row.selectedGroups ? JSON.parse(row.selectedGroups) : null,
+            groupInfo: row.groupInfo ? JSON.parse(row.groupInfo) : null
           };
         });
 
@@ -380,8 +382,8 @@ app.get("/get-all-schedules", (req, res) => {
             date: row.date,
             startTime: row.startTime,
             endTime: row.endTime,
-            selectedGroups: row.selectedGroups ? JSON.parse(row.selectedGroups) : null,  // ✅ Add groupInfo
-            groupInfo: row.groupInfo ? JSON.parse(row.groupInfo) : null                   // ✅ Add groupInfo
+            selectedGroups: row.selectedGroups ? JSON.parse(row.selectedGroups) : null,
+            groupInfo: row.groupInfo ? JSON.parse(row.groupInfo) : null
           };
         });
 
@@ -412,6 +414,7 @@ app.get("/get-all-schedules", (req, res) => {
     });
   });
 });
+
 app.get("/system-stats", (req, res) => {
   db.get(
     `SELECT COUNT(*) as totalMessages FROM schedules`,
@@ -620,7 +623,7 @@ app.post('/api/import', upload.single('contactFile'), async (req, res) => {
         for (let index = 0; index < contacts.length; index++) {
             const contact = contacts[index];
             
-            console.log(`\n📝 Baris ${index + 1}:`, {
+            console.log(`\n🔍 Baris ${index + 1}:`, {
                 name: contact.name,
                 number: contact.number,
                 instansi: contact.instansi,
@@ -763,7 +766,7 @@ app.post('/api/import', upload.single('contactFile'), async (req, res) => {
                         );
                     });
 
-                    console.log(`📝 Updated grup "${groupName}" dengan ${memberNumbers.length} member baru`);
+                    console.log(`🔄 Updated grup "${groupName}" dengan ${memberNumbers.length} member baru`);
                     groupsSynced++;
                 } else {
                     console.log(`⏸️  Grup "${groupName}" belum ada - akan dibuat manual oleh user`);
@@ -901,7 +904,7 @@ function emitScheduleUpdated(updateData) {
       timestamp: new Date().toISOString(),
       forceRefresh: true // Always force refresh untuk edit
     });
-    console.log(`ðŸ"¡ Emitted schedule-updated: ${updateData.scheduleId}`, {
+    console.log(`📡 Emitted schedule-updated: ${updateData.scheduleId}`, {
       hasGroupInfo: !!updateData.groupInfo,
       forceRefresh: true
     });
@@ -981,6 +984,8 @@ server.listen(port, () => {
     console.log(`Socket.IO server ready`);
     console.log(`Media folder: ${mediaDir}`);
     console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+    console.log('✅ Auth system enabled at /api/auth');
+    console.log('🔐 Login page: http://localhost:${port}/index.html');
     console.log("=".repeat(50));
 });
 

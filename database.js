@@ -19,7 +19,56 @@ db.serialize(() => {
     console.log("🔧 Creating database tables...\n");
 
     // ==========================================
-    // 1. SCHEDULES TABLE (Message Reminders)
+    // 1. USERS TABLE (Authentication & Authorization)
+    // ==========================================
+    db.run(
+        `CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            name TEXT NOT NULL,
+            role TEXT NOT NULL CHECK(role IN ('admin', 'operator')) DEFAULT 'operator',
+            is_active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            last_login TEXT DEFAULT NULL
+        )`,
+        (err) => {
+            if (err) {
+                console.error("❌ Gagal membuat tabel 'users':", err.message);
+            } else {
+                console.log("✅ Tabel 'users' siap digunakan.");
+                
+                // Create indexes
+                db.run("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)");
+                db.run("CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)");
+                db.run("CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active)");
+                
+                // Insert default admin if not exists
+                db.get("SELECT COUNT(*) as count FROM users WHERE email = ?", ['admin@example.com'], (countErr, row) => {
+                    if (!countErr && row.count === 0) {
+                        // Password: bps123
+                        const defaultAdminHash = '$2b$10$/yjPYz.a9oIDA04jYR0/S.PXjms64xjEnb9goqOCbbaYaJSnGBTCq';
+                        
+                        db.run(
+                            `INSERT INTO users (email, password, name, role, is_active, created_at) 
+                             VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+                            ['admin@example.com', defaultAdminHash, 'Administrator', 'admin', 1],
+                            (insertErr) => {
+                                if (!insertErr) {
+                                    console.log("✅ Default admin account created (admin@example.com / bps123)");
+                                }
+                            }
+                        );
+                    } else {
+                        console.log("ℹ️  Admin account already exists");
+                    }
+                });
+            }
+        }
+    );
+
+    // ==========================================
+    // 2. SCHEDULES TABLE (Message Reminders)
     // ==========================================
     db.run(
         `CREATE TABLE IF NOT EXISTS schedules (
@@ -66,7 +115,7 @@ db.serialize(() => {
     );
 
     // ==========================================
-    // 2. MEETINGS TABLE (Meeting Schedules)
+    // 3. MEETINGS TABLE (Meeting Schedules)
     // ==========================================
     db.run(
         `CREATE TABLE IF NOT EXISTS meetings (
@@ -119,7 +168,7 @@ db.serialize(() => {
     );
 
     // ==========================================
-    // 3. CONTACTS TABLE (Contact Management)
+    // 4. CONTACTS TABLE (Contact Management)
     // ==========================================
     db.run(
         `CREATE TABLE IF NOT EXISTS contacts (
@@ -175,7 +224,7 @@ db.serialize(() => {
     );
 
     // ==========================================
-    // 4. GROUPS TABLE (Contact Groups)
+    // 5. GROUPS TABLE (Contact Groups)
     // ==========================================
     db.run(
         `CREATE TABLE IF NOT EXISTS groups (
@@ -194,7 +243,7 @@ db.serialize(() => {
     );
 
     // ==========================================
-    // 5. CHATS TABLE (Customer Service Chat)
+    // 6. CHATS TABLE (Customer Service Chat)
     // ==========================================
     db.run(
         `CREATE TABLE IF NOT EXISTS chats (
@@ -206,7 +255,7 @@ db.serialize(() => {
             messageType TEXT DEFAULT 'chat',
             mediaUrl TEXT,
             mediaData TEXT,
-            isRead BOOLEAN DEFAULT FALSE,
+            isRead INTEGER DEFAULT 0,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             status TEXT DEFAULT 'active',
             session_id TEXT
@@ -241,7 +290,7 @@ db.serialize(() => {
                     };
 
                     addColumnIfNotExists('messageType', "messageType TEXT DEFAULT 'chat'");
-                    addColumnIfNotExists('isRead', "isRead BOOLEAN DEFAULT FALSE");
+                    addColumnIfNotExists('isRead', "isRead INTEGER DEFAULT 0");
                     addColumnIfNotExists('created_at', "created_at TEXT DEFAULT CURRENT_TIMESTAMP");
                     addColumnIfNotExists('mediaUrl', "mediaUrl TEXT NULL");
                     addColumnIfNotExists('mediaData', "mediaData TEXT NULL");
@@ -253,7 +302,7 @@ db.serialize(() => {
     );
 
     // ==========================================
-    // 6. CREATE INDEXES FOR PERFORMANCE
+    // 7. CREATE INDEXES FOR PERFORMANCE
     // ==========================================
     db.run("CREATE INDEX IF NOT EXISTS idx_chats_fromNumber ON chats(fromNumber)", (err) => {
         if (err) {
@@ -304,7 +353,7 @@ db.serialize(() => {
     });
 
     // ==========================================
-    // 7. INSTANSI TABLE (Master Data)
+    // 8. INSTANSI TABLE (Master Data)
     // ==========================================
     db.run(
         `CREATE TABLE IF NOT EXISTS instansi (
@@ -353,7 +402,7 @@ db.serialize(() => {
     );
 
     // ==========================================
-    // 8. JABATAN TABLE (Master Data)
+    // 9. JABATAN TABLE (Master Data)
     // ==========================================
     db.run(
         `CREATE TABLE IF NOT EXISTS jabatan (

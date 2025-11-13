@@ -1,35 +1,41 @@
-// ui-helpers.js - UI Helper Functions Module (FIXED - Clear selections on modal close)
+// ui-helpers.js - UI Helper Functions Module (FIXED - User Management Support)
 
 /**
  * Shows a specific form/tab and hides others
  */
-/**
- * Shows a specific form/tab and hides others
- */
 export function showForm(formId) {
+  console.log(`🔄 showForm called with: ${formId}`);
+  
+  // Hide ALL form containers first
   document.querySelectorAll(".form-content").forEach((form) => {
     form.style.display = "none";
     form.classList.remove("active");
   });
 
-  document.querySelectorAll(".tab-button").forEach((button) => {
+  // Remove active state from all sidebar buttons
+  document.querySelectorAll(".sidebar-menu-item").forEach((button) => {
     button.classList.remove("active");
   });
 
+  // Get all main containers
   const scheduleContainer = document.getElementById("scheduleContainer");
   const chatMainContainer = document.getElementById("chatMainContainer");
   const contactMainContainer = document.getElementById("contactMainContainer");
   const groupMainContainer = document.getElementById("groupMainContainer");
   const instansiMainContainer = document.getElementById("instansiMainContainer");
   const jabatanMainContainer = document.getElementById("jabatanMainContainer");
+  const userManagementMainContainer = document.getElementById("userManagementMainContainer");
 
+  // Hide ALL main containers first
   if (scheduleContainer) scheduleContainer.style.display = "none";
   if (chatMainContainer) chatMainContainer.style.display = "none";
   if (contactMainContainer) contactMainContainer.style.display = "none";
   if (groupMainContainer) groupMainContainer.style.display = "none";
   if (instansiMainContainer) instansiMainContainer.style.display = "none";
   if (jabatanMainContainer) jabatanMainContainer.style.display = "none";
+  if (userManagementMainContainer) userManagementMainContainer.style.display = "none";
 
+  // Now show the correct form and container based on formId
   if (formId === "message") {
     const messageForm = document.getElementById("messageFormContainer");
     if (messageForm) {
@@ -76,17 +82,39 @@ export function showForm(formId) {
       settingsForm.style.display = "block";
       settingsForm.classList.add("active");
     }
-    // Show instansi by default
+    // Show instansi by default when opening settings
     if (instansiMainContainer) instansiMainContainer.style.display = "flex";
     if (jabatanMainContainer) jabatanMainContainer.style.display = "none";
   }
+  // ✅ FIX: Add User Management handler (case-insensitive)
+  else if (formId === "User" || formId === "user") {
+    const userForm = document.getElementById("userManagementFormContainer");
+    if (userForm) {
+      userForm.style.display = "block";
+      userForm.classList.add("active");
+      console.log("✅ User form displayed");
+    } else {
+      console.error("❌ userManagementFormContainer not found!");
+    }
+    
+    if (userManagementMainContainer) {
+      userManagementMainContainer.style.display = "flex";
+      console.log("✅ User table container displayed");
+    } else {
+      console.error("❌ userManagementMainContainer not found!");
+    }
+  }
 
-  const selectedTab = document.querySelector(`[onclick="showForm('${formId}')"]`);
-  if (selectedTab) {
-    selectedTab.classList.add("active");
+  // Set active state on the corresponding sidebar button
+  const activeButton = document.querySelector(`[data-form="${formId}"]`);
+  if (activeButton) {
+    activeButton.classList.add("active");
+    console.log(`✅ Active button set for: ${formId}`);
+  } else {
+    console.warn(`⚠️ No sidebar button found for: ${formId}`);
   }
   
-  console.log(`Showing form: ${formId}`);
+  console.log(`✅ Form switched to: ${formId}`);
 }
 
 /**
@@ -126,7 +154,6 @@ export async function closeEditModal() {
     }
     
     // Re-render contact lists to reflect cleared selections
-    // Small delay to ensure DOM is ready
     setTimeout(async () => {
       try {
         const contactUI = await import('../contacts/contact-ui.js');
@@ -323,7 +350,7 @@ export function closeEditContactModal() {
 }
 
 /**
- * 🆕 Show detail group modal
+ * Show detail group modal
  */
 export function showDetailGroupModal() {
   const modal = document.getElementById('detailGroupModal');
@@ -332,7 +359,7 @@ export function showDetailGroupModal() {
 }
 
 /**
- * 🆕 Close detail group modal
+ * Close detail group modal
  */
 export function closeDetailGroupModal() {
   const modal = document.getElementById('detailGroupModal');
@@ -341,7 +368,7 @@ export function closeDetailGroupModal() {
 }
 
 /**
- * 🆕 Close add members modal
+ * Close add members modal
  */
 export function closeAddMembersModal() {
   const modal = document.getElementById('addMembersModal');
