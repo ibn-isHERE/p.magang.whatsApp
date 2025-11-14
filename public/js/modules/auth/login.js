@@ -1,10 +1,11 @@
+// login.js - FIXED VERSION (Persistent Session)
+
 // Toggle password visibility
 const togglePassword = document.getElementById("togglePassword");
 const passwordInput = document.getElementById("password");
 
 togglePassword.addEventListener("click", function () {
-  const type =
-    passwordInput.getAttribute("type") === "password" ? "text" : "password";
+  const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
   passwordInput.setAttribute("type", type);
   this.classList.toggle("fa-eye");
   this.classList.toggle("fa-eye-slash");
@@ -15,11 +16,9 @@ function showAlert(message, type = "error") {
   const alertBox = document.getElementById("alertBox");
   alertBox.className = `alert alert-${type}`;
   alertBox.innerHTML = `
-        <i class="fa-solid fa-${
-          type === "error" ? "circle-exclamation" : "circle-check"
-        }"></i>
-        ${message}
-    `;
+    <i class="fa-solid fa-${type === "error" ? "circle-exclamation" : "circle-check"}"></i>
+    ${message}
+  `;
   alertBox.style.display = "block";
 
   setTimeout(() => {
@@ -28,84 +27,71 @@ function showAlert(message, type = "error") {
 }
 
 // Handle form submission
-document
-  .getElementById("loginForm")
-  .addEventListener("submit", async function (e) {
-    e.preventDefault();
+document.getElementById("loginForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
 
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
-    const rememberMe = document.getElementById("rememberMe").checked;
-    const loginBtn = document.getElementById("loginBtn");
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const rememberMe = document.getElementById("rememberMe").checked;
+  const loginBtn = document.getElementById("loginBtn");
 
-    // Disable button and show loading
-    loginBtn.disabled = true;
-    loginBtn.innerHTML = '<div class="spinner"></div><span>Memproses...</span>';
+  // Disable button and show loading
+  loginBtn.disabled = true;
+  loginBtn.innerHTML = '<div class="spinner"></div><span>Memproses...</span>';
 
-    try {
-      console.log("🔄 Sending login request...");
-      console.log("Email:", email);
-      console.log("Password:", password);
+  try {
+    console.log("📤 Sending login request...");
 
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password, rememberMe }),
-      });
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password, rememberMe }),
+    });
 
-      console.log("✅ Response received!");
-      console.log("Response status:", response.status);
-      console.log("Response OK:", response.ok);
+    console.log("✅ Response received - Status:", response.status);
 
-      const data = await response.json();
+    const data = await response.json();
+    console.log("📥 Response data:", { success: data.success, hasToken: !!data.token });
 
-      console.log("✅ Data parsed!");
-      console.log("📥 Full response data:", data);
-      console.log("Data.success:", data.success);
-      console.log("Data.token:", data.token);
-      console.log("Data.user:", data.user);
-      console.log("Token type:", typeof data.token);
-      console.log("Token exists:", !!data.token);
-
-      if (response.ok && data.success) {
-        // Pilih storage berdasarkan "Ingat Saya"
-        const storage = rememberMe ? localStorage : sessionStorage;
-
-        console.log(
-          "💾 Saving to:",
-          rememberMe ? "localStorage" : "sessionStorage"
-        );
-
-        // SIMPAN token dan user
-        storage.setItem("token", data.token);
-        storage.setItem("user", JSON.stringify(data.user));
-
-        // Verify saved data
-        console.log("✅ Token saved:", storage.getItem("token"));
-        console.log("✅ User saved:", storage.getItem("user"));
-        console.log("✅ Token saved:", data.token.substring(0, 20) + "...");
-
-        showAlert("Login berhasil! Mengalihkan...", "success");
-
-        // Redirect to mainpage after short delay
-        setTimeout(() => {
-          console.log("🔄 Redirecting to mainpage...");
-          window.location.href = "/mainpage.html";
-        }, 1000);
+    if (response.ok && data.success) {
+      // ✅ SOLUSI: SELALU simpan ke localStorage agar persisten
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      
+      // ✅ Simpan lastActivity untuk activity tracking
+      const now = Date.now();
+      localStorage.setItem("lastActivity", data.user.lastActivity || now);
+      
+      // 🔒 Simpan flag "rememberMe" untuk keperluan UI
+      if (rememberMe) {
+        localStorage.setItem("rememberMe", "true");
       } else {
-        console.error("❌ Login failed:", data.message);
-        showAlert(data.message || "Email atau password salah!", "error");
-        loginBtn.disabled = false;
-        loginBtn.innerHTML =
-          '<i class="fa-solid fa-right-to-bracket"></i><span>Masuk</span>';
+        localStorage.removeItem("rememberMe");
       }
-    } catch (error) {
-      console.error("❌ Login error:", error);
-      showAlert("Terjadi kesalahan. Silakan coba lagi.", "error");
+
+      console.log("✅ Token saved to localStorage (persistent)");
+      console.log("✅ User data saved:", data.user.name);
+      console.log("✅ Activity tracking initialized");
+
+      showAlert("Login berhasil! Mengalihkan...", "success");
+
+      // Redirect to mainpage after short delay
+      setTimeout(() => {
+        console.log("🔄 Redirecting to mainpage...");
+        window.location.href = "/mainpage.html";
+      }, 1000);
+    } else {
+      console.error("❌ Login failed:", data.message);
+      showAlert(data.message || "Email atau password salah!", "error");
       loginBtn.disabled = false;
-      loginBtn.innerHTML =
-        '<i class="fa-solid fa-right-to-bracket"></i><span>Masuk</span>';
+      loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i><span>Masuk</span>';
     }
-  });
+  } catch (error) {
+    console.error("❌ Login error:", error);
+    showAlert("Terjadi kesalahan. Silakan coba lagi.", "error");
+    loginBtn.disabled = false;
+    loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i><span>Masuk</span>';
+  }
+});

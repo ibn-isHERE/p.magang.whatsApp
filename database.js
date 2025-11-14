@@ -30,7 +30,7 @@ db.serialize(() => {
             role TEXT NOT NULL CHECK(role IN ('admin', 'operator')) DEFAULT 'operator',
             is_active INTEGER DEFAULT 1,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            last_login TEXT DEFAULT NULL
+            last_login INTEGER DEFAULT NULL
         )`,
         (err) => {
             if (err) {
@@ -38,34 +38,128 @@ db.serialize(() => {
             } else {
                 console.log("✅ Tabel 'users' siap digunakan.");
                 
-                // Create indexes
-                db.run("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)");
-                db.run("CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)");
-                db.run("CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active)");
-                
-                // Insert default admin if not exists
-                db.get("SELECT COUNT(*) as count FROM users WHERE email = ?", ['admin@example.com'], (countErr, row) => {
-                    if (!countErr && row.count === 0) {
-                        // Password: bps123
-                        const defaultAdminHash = '$2b$10$/yjPYz.a9oIDA04jYR0/S.PXjms64xjEnb9goqOCbbaYaJSnGBTCq';
+                // ✅ AUTO MIGRATION: Check if last_login needs migration from TEXT to INTEGER
+                db.all("PRAGMA table_info(users)", (pragmaErr, columns) => {
+                    if (pragmaErr) {
+                        console.error("❌ Error checking users table:", pragmaErr);
+                        return;
+                    }
+                    
+                    const lastLoginCol = columns.find(c => c.name === 'last_login');
+                    
+                    // If last_login exists and is TEXT type, migrate to INTEGER
+                    if (lastLoginCol && lastLoginCol.type === 'TEXT') {
+                        console.log("🔄 Migrating last_login from TEXT to INTEGER...");
                         
-                        db.run(
-                            `INSERT INTO users (email, password, name, role, is_active, created_at) 
-                             VALUES (?, ?, ?, ?, ?, datetime('now'))`,
-                            ['admin@example.com', defaultAdminHash, 'Administrator', 'admin', 1],
-                            (insertErr) => {
-                                if (!insertErr) {
-                                    console.log("✅ Default admin account created (admin@example.com / bps123)");
+                        db.serialize(() => {
+                            // Step 1: Create new table with INTEGER last_login
+                            db.run(`
+                                CREATE TABLE users_new (
+                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    email TEXT NOT NULL UNIQUE,
+                                    password TEXT NOT NULL,
+                                    name TEXT NOT NULL,
+                                    role TEXT NOT NULL CHECK(role IN ('admin', 'operator')) DEFAULT 'operator',
+                                    is_active INTEGER DEFAULT 1,
+                                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                                    last_login INTEGER DEFAULT NULL
+                                )
+                            `, (createErr) => {
+                                if (createErr) {
+                                    console.error("❌ Failed to create users_new:", createErr);
+                                    return;
                                 }
-                            }
-                        );
+                                
+                                // Step 2: Copy data, convert TEXT timestamp to INTEGER milliseconds
+                                db.run(`
+                                    INSERT INTO users_new (id, email, password, name, role, is_active, created_at, last_login)
+                                    SELECT 
+                                        id, 
+                                        email, 
+                                        password, 
+                                        name, 
+                                        role, 
+                                        is_active, 
+                                        created_at,
+                                        CASE 
+                                            WHEN last_login IS NULL THEN NULL
+                                            WHEN last_login LIKE '%-%' THEN CAST(strftime('%s', last_login) * 1000 AS INTEGER)
+                                            ELSE CAST(last_login AS INTEGER)
+                                        END
+                                    FROM users
+                                `, (insertErr) => {
+                                    if (insertErr) {
+                                        console.error("❌ Failed to copy data:", insertErr);
+                                        return;
+                                    }
+                                    
+                                    // Step 3: Drop old table
+                                    db.run(`DROP TABLE users`, (dropErr) => {
+                                        if (dropErr) {
+                                            console.error("❌ Failed to drop old users table:", dropErr);
+                                            return;
+                                        }
+                                        
+                                        // Step 4: Rename new table
+                                        db.run(`ALTER TABLE users_new RENAME TO users`, (renameErr) => {
+                                            if (renameErr) {
+                                                console.error("❌ Failed to rename table:", renameErr);
+                                                return;
+                                            }
+                                            
+                                            console.log("✅ Migration complete! last_login is now INTEGER (milliseconds)");
+                                            
+                                            // Recreate indexes after migration
+                                            createUserIndexes();
+                                            insertDefaultAdmin();
+                                        });
+                                    });
+                                });
+                            });
+                        });
                     } else {
-                        console.log("ℹ️  Admin account already exists");
+                        // No migration needed
+                        console.log("✅ last_login column type is correct (INTEGER)");
+                        createUserIndexes();
+                        insertDefaultAdmin();
                     }
                 });
             }
         }
     );
+    
+    // Helper function to create user indexes
+    function createUserIndexes() {
+        db.run("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)");
+        db.run("CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)");
+        db.run("CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active)");
+        db.run("CREATE INDEX IF NOT EXISTS idx_users_last_login ON users(last_login)", (err) => {
+            if (!err) console.log("✅ Index pada users.last_login siap digunakan.");
+        });
+    }
+    
+    // Helper function to insert default admin
+    function insertDefaultAdmin() {
+        db.get("SELECT COUNT(*) as count FROM users WHERE email = ?", ['admin@example.com'], (countErr, row) => {
+            if (!countErr && row.count === 0) {
+                // Password: bps123
+                const defaultAdminHash = '$2b$10$/yjPYz.a9oIDA04jYR0/S.PXjms64xjEnb9goqOCbbaYaJSnGBTCq';
+                
+                db.run(
+                    `INSERT INTO users (email, password, name, role, is_active, created_at) 
+                     VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+                    ['admin@example.com', defaultAdminHash, 'Administrator', 'admin', 1],
+                    (insertErr) => {
+                        if (!insertErr) {
+                            console.log("✅ Default admin account created (admin@example.com / bps123)");
+                        }
+                    }
+                );
+            } else {
+                console.log("ℹ️  Admin account already exists");
+            }
+        });
+    }
 
     // ==========================================
     // 2. SCHEDULES TABLE (Message Reminders)
@@ -285,7 +379,7 @@ db.serialize(() => {
                                 }
                             });
                         } else {
-                            console.log(`✓ Column ${columnName} already exists in chats`);
+                            console.log(`✔ Column ${columnName} already exists in chats`);
                         }
                     };
 
