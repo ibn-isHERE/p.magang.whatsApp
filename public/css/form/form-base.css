@@ -42,6 +42,8 @@ form label {
 form input[type="text"],
 form input[type="tel"],
 form input[type="datetime-local"],
+form input[type="email"],
+form input[type="password"],
 form textarea,
 form select,
 .phone-num-input {
@@ -61,6 +63,8 @@ form select,
 form input[type="text"]:focus,
 form input[type="tel"]:focus,
 form input[type="datetime-local"]:focus,
+form input[type="email"]:focus,
+form input[type="password"]:focus,
 form textarea:focus,
 form select:focus {
   border-color: #4299e1;

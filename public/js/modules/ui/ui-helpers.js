@@ -5,7 +5,7 @@
  */
 export function showForm(formId) {
   console.log(`🔄 showForm called with: ${formId}`);
-  
+
   // Hide ALL form containers first
   document.querySelectorAll(".form-content").forEach((form) => {
     form.style.display = "none";
@@ -22,9 +22,13 @@ export function showForm(formId) {
   const chatMainContainer = document.getElementById("chatMainContainer");
   const contactMainContainer = document.getElementById("contactMainContainer");
   const groupMainContainer = document.getElementById("groupMainContainer");
-  const instansiMainContainer = document.getElementById("instansiMainContainer");
+  const instansiMainContainer = document.getElementById(
+    "instansiMainContainer"
+  );
   const jabatanMainContainer = document.getElementById("jabatanMainContainer");
-  const userManagementMainContainer = document.getElementById("userManagementMainContainer");
+  const userManagementMainContainer = document.getElementById(
+    "userManagementMainContainer"
+  );
 
   // Hide ALL main containers first
   if (scheduleContainer) scheduleContainer.style.display = "none";
@@ -33,7 +37,8 @@ export function showForm(formId) {
   if (groupMainContainer) groupMainContainer.style.display = "none";
   if (instansiMainContainer) instansiMainContainer.style.display = "none";
   if (jabatanMainContainer) jabatanMainContainer.style.display = "none";
-  if (userManagementMainContainer) userManagementMainContainer.style.display = "none";
+  if (userManagementMainContainer)
+    userManagementMainContainer.style.display = "none";
 
   // Now show the correct form and container based on formId
   if (formId === "message") {
@@ -43,40 +48,35 @@ export function showForm(formId) {
       messageForm.classList.add("active");
     }
     if (scheduleContainer) scheduleContainer.style.display = "block";
-  } 
-  else if (formId === "meeting") {
+  } else if (formId === "meeting") {
     const meetingForm = document.getElementById("meetingFormContainer");
     if (meetingForm) {
       meetingForm.style.display = "block";
       meetingForm.classList.add("active");
     }
     if (scheduleContainer) scheduleContainer.style.display = "block";
-  } 
-  else if (formId === "contacts") {
+  } else if (formId === "contacts") {
     const contactsForm = document.getElementById("contactsFormContainer");
     if (contactsForm) {
       contactsForm.style.display = "block";
       contactsForm.classList.add("active");
     }
     if (contactMainContainer) contactMainContainer.style.display = "flex";
-  } 
-  else if (formId === "group") {
+  } else if (formId === "group") {
     const groupsForm = document.getElementById("groupsFormContainer");
     if (groupsForm) {
       groupsForm.style.display = "block";
       groupsForm.classList.add("active");
     }
     if (groupMainContainer) groupMainContainer.style.display = "flex";
-  } 
-  else if (formId === "chat") {
+  } else if (formId === "chat") {
     const chatForm = document.getElementById("chatSidebarContainer");
     if (chatForm) {
       chatForm.style.display = "block";
       chatForm.classList.add("active");
     }
     if (chatMainContainer) chatMainContainer.style.display = "flex";
-  }
-  else if (formId === "settings") {
+  } else if (formId === "settings") {
     const settingsForm = document.getElementById("settingsFormContainer");
     if (settingsForm) {
       settingsForm.style.display = "block";
@@ -85,24 +85,13 @@ export function showForm(formId) {
     // Show instansi by default when opening settings
     if (instansiMainContainer) instansiMainContainer.style.display = "flex";
     if (jabatanMainContainer) jabatanMainContainer.style.display = "none";
-  }
-  // ✅ FIX: Add User Management handler (case-insensitive)
-  else if (formId === "User" || formId === "user") {
+  } else if (formId === "user") {
     const userForm = document.getElementById("userManagementFormContainer");
     if (userForm) {
       userForm.style.display = "block";
       userForm.classList.add("active");
-      console.log("✅ User form displayed");
-    } else {
-      console.error("❌ userManagementFormContainer not found!");
     }
-    
-    if (userManagementMainContainer) {
-      userManagementMainContainer.style.display = "flex";
-      console.log("✅ User table container displayed");
-    } else {
-      console.error("❌ userManagementMainContainer not found!");
-    }
+    if (userManagementMainContainer) userManagementMainContainer.style.display = "flex";
   }
 
   // Set active state on the corresponding sidebar button
@@ -113,7 +102,7 @@ export function showForm(formId) {
   } else {
     console.warn(`⚠️ No sidebar button found for: ${formId}`);
   }
-  
+
   console.log(`✅ Form switched to: ${formId}`);
 }
 
@@ -134,45 +123,46 @@ export async function closeEditModal() {
   const modal = document.getElementById("editModal");
   modal.style.display = "none";
   document.getElementById("editModalBody").innerHTML = "";
-  
+
   // ✅ CRITICAL FIX: Clear selected numbers when closing edit modal
   try {
-    const contactManager = await import('../contacts/contact-manager.js');
-    
+    const contactManager = await import("../contacts/contact-manager.js");
+
     // Clear message form selections
     if (contactManager.selectedNumbers) {
       const prevCount = contactManager.selectedNumbers.size;
       contactManager.selectedNumbers.clear();
       console.log(`✅ Cleared ${prevCount} selectedNumbers on modal close`);
     }
-    
-    // Clear meeting form selections  
+
+    // Clear meeting form selections
     if (contactManager.selectedMeetingNumbers) {
       const prevCount = contactManager.selectedMeetingNumbers.size;
       contactManager.selectedMeetingNumbers.clear();
-      console.log(`✅ Cleared ${prevCount} selectedMeetingNumbers on modal close`);
+      console.log(
+        `✅ Cleared ${prevCount} selectedMeetingNumbers on modal close`
+      );
     }
-    
+
     // Re-render contact lists to reflect cleared selections
     setTimeout(async () => {
       try {
-        const contactUI = await import('../contacts/contact-ui.js');
+        const contactUI = await import("../contacts/contact-ui.js");
         if (contactUI.renderContactList) {
           contactUI.renderContactList();
         }
         if (contactUI.renderMeetingContactList) {
           contactUI.renderMeetingContactList();
         }
-        console.log('✅ Contact lists re-rendered after clearing selections');
+        console.log("✅ Contact lists re-rendered after clearing selections");
       } catch (err) {
-        console.error('Error re-rendering contact lists:', err);
+        console.error("Error re-rendering contact lists:", err);
       }
     }, 100);
-    
-    console.log('✅ Contact selections cleared successfully on modal close');
-    
+
+    console.log("✅ Contact selections cleared successfully on modal close");
   } catch (error) {
-    console.error('❌ Error clearing selections on modal close:', error);
+    console.error("❌ Error clearing selections on modal close:", error);
   }
 }
 
@@ -246,7 +236,8 @@ export function formatTimeDifference(scheduledTimeStr) {
     now.getDate()
   );
   const diffDaysFull = Math.round(
-    (startOfDayScheduled.getTime() - startOfDayNow.getTime()) / (1000 * 60 * 60 * 24)
+    (startOfDayScheduled.getTime() - startOfDayNow.getTime()) /
+      (1000 * 60 * 60 * 24)
   );
 
   const timeOptions = { hour: "2-digit", minute: "2-digit", hour12: false };
@@ -257,23 +248,37 @@ export function formatTimeDifference(scheduledTimeStr) {
   } else if (diffMinutes < 60) {
     return `${diffMinutes} menit lagi`;
   } else if (diffHours < 24 && diffDaysFull === 0) {
-    return `${diffHours} jam lagi (${scheduledTime.toLocaleTimeString("id-ID", timeOptions)})`;
+    return `${diffHours} jam lagi (${scheduledTime.toLocaleTimeString(
+      "id-ID",
+      timeOptions
+    )})`;
   } else if (diffDaysFull === 0) {
-    return `Hari ini (${scheduledTime.toLocaleTimeString("id-ID", timeOptions)})`;
+    return `Hari ini (${scheduledTime.toLocaleTimeString(
+      "id-ID",
+      timeOptions
+    )})`;
   } else if (diffDaysFull === 1) {
     return `Besok (${scheduledTime.toLocaleTimeString("id-ID", timeOptions)})`;
   } else if (diffDaysFull === 2) {
     return `Lusa (${scheduledTime.toLocaleTimeString("id-ID", timeOptions)})`;
   } else if (diffDaysFull > 2 && diffDaysFull < 7) {
-    const dayName = scheduledTime.toLocaleDateString("id-ID", { weekday: "long" });
-    return `${diffDaysFull} hari lagi (${dayName}) (${scheduledTime.toLocaleDateString("id-ID", dateOptionsFull)})`;
+    const dayName = scheduledTime.toLocaleDateString("id-ID", {
+      weekday: "long",
+    });
+    return `${diffDaysFull} hari lagi (${dayName}) (${scheduledTime.toLocaleDateString(
+      "id-ID",
+      dateOptionsFull
+    )})`;
   } else if (diffDaysFull >= 7 && diffDaysFull < 30) {
     const diffWeeks = Math.floor(diffDaysFull / 7);
     const remainingDays = diffDaysFull % 7;
     let weekText = `${diffWeeks} minggu`;
     let dayText = remainingDays > 0 ? ` ${remainingDays} hari` : "";
     let totalDaysText = `(total ${diffDaysFull} hari)`;
-    let scheduledDateFormatted = scheduledTime.toLocaleDateString("id-ID", dateOptionsFull);
+    let scheduledDateFormatted = scheduledTime.toLocaleDateString(
+      "id-ID",
+      dateOptionsFull
+    );
     let finalString = `${weekText}${dayText} lagi ${totalDaysText} (${scheduledDateFormatted})`;
     if (diffWeeks === 1 && remainingDays === 0) {
       finalString = `Seminggu lagi ${totalDaysText} (${scheduledDateFormatted})`;
@@ -283,10 +288,16 @@ export function formatTimeDifference(scheduledTimeStr) {
     return finalString;
   } else if (diffDaysFull < 365) {
     const diffMonths = Math.floor(diffDaysFull / 30);
-    return `${diffMonths} bulan lagi (total ${diffDaysFull} hari) (${scheduledTime.toLocaleDateString("id-ID", dateOptionsFull)})`;
+    return `${diffMonths} bulan lagi (total ${diffDaysFull} hari) (${scheduledTime.toLocaleDateString(
+      "id-ID",
+      dateOptionsFull
+    )})`;
   } else {
     const diffYears = Math.floor(diffDaysFull / 365);
-    return `${diffYears} tahun lagi (total ${diffDaysFull} hari) (${scheduledTime.toLocaleDateString("id-ID", { dateStyle: "medium" })})`;
+    return `${diffYears} tahun lagi (total ${diffDaysFull} hari) (${scheduledTime.toLocaleDateString(
+      "id-ID",
+      { dateStyle: "medium" }
+    )})`;
   }
 }
 
@@ -295,7 +306,7 @@ export function formatTimeDifference(scheduledTimeStr) {
  */
 export function playNotificationSound() {
   console.log("Playing notification sound...");
-  
+
   let audio = document.getElementById("notificationSound");
   if (!audio) {
     audio = document.createElement("audio");
@@ -303,7 +314,7 @@ export function playNotificationSound() {
     audio.preload = "auto";
     document.body.appendChild(audio);
   }
-  
+
   audio.play().catch((e) => {
     console.log("Could not play notification sound:", e.message);
   });
@@ -314,7 +325,7 @@ export function playNotificationSound() {
  */
 export function showBrowserNotification(messageData) {
   console.log("Showing browser notification for:", messageData);
-  
+
   if ("Notification" in window) {
     if (Notification.permission === "default") {
       Notification.requestPermission().then((permission) => {
@@ -353,45 +364,45 @@ export function closeEditContactModal() {
  * Show detail group modal
  */
 export function showDetailGroupModal() {
-  const modal = document.getElementById('detailGroupModal');
+  const modal = document.getElementById("detailGroupModal");
   if (!modal) return;
-  modal.style.display = 'block';
+  modal.style.display = "block";
 }
 
 /**
  * Close detail group modal
  */
 export function closeDetailGroupModal() {
-  const modal = document.getElementById('detailGroupModal');
+  const modal = document.getElementById("detailGroupModal");
   if (!modal) return;
-  modal.style.display = 'none';
+  modal.style.display = "none";
 }
 
 /**
  * Close add members modal
  */
 export function closeAddMembersModal() {
-  const modal = document.getElementById('addMembersModal');
+  const modal = document.getElementById("addMembersModal");
   if (!modal) return;
-  modal.style.display = 'none';
+  modal.style.display = "none";
 }
 
 /**
  * Close edit group modal (legacy - still needed for add form)
  */
 export function closeEditGroupModal() {
-  const modal = document.getElementById('editGroupModal');
+  const modal = document.getElementById("editGroupModal");
   if (!modal) return;
-  modal.style.display = 'none';
+  modal.style.display = "none";
 }
 
 /**
  * Show edit group modal (legacy - still needed for add form)
  */
 export function showEditGroupModal() {
-  const modal = document.getElementById('editGroupModal');
+  const modal = document.getElementById("editGroupModal");
   if (!modal) return;
-  modal.style.display = 'block';
+  modal.style.display = "block";
 }
 
 /**
@@ -399,7 +410,9 @@ export function showEditGroupModal() {
  */
 function showNotification(messageData) {
   const notification = new Notification("Pesan WhatsApp Baru", {
-    body: `${messageData.contactName || messageData.fromNumber}: ${messageData.message}`,
+    body: `${messageData.contactName || messageData.fromNumber}: ${
+      messageData.message
+    }`,
     icon: "/favicon.ico",
     tag: "whatsapp-message",
     requireInteraction: false,
