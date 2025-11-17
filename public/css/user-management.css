@@ -1,0 +1,102 @@
+/* ========================================
+   USER MANAGEMENT TABLE STYLES
+   ======================================== */
+
+#user-management-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Role Badges for User Table */
+#user-management-table .role-badge {
+  display: inline-block;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+#user-management-table .role-badge.admin {
+  background: #d7e8fe;
+  color: #305fc5;
+}
+
+#user-management-table .role-badge.operator {
+  background: #ffecac;
+  color: #ad7c10;
+}
+
+/* Status Badges */
+#user-management-table .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#user-management-table .status-badge.active {
+  background: #c6f6d5;
+  color: #22543d;
+}
+
+#user-management-table .status-badge.inactive {
+  background: #fed7d7;
+  color: #c53030;
+}
+
+#user-management-table .status-badge i {
+  font-size: 8px;
+}
+
+/* Action Buttons */
+#user-management-table .action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+#user-management-table .btn-action {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#user-management-table .btn-edit {
+  background: #4299e1;
+  color: white;
+}
+
+#user-management-table .btn-edit:hover {
+  background: #3182ce;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(66, 153, 225, 0.3);
+}
+
+#user-management-table .btn-delete {
+  background: #fc8181;
+  color: white;
+}
+
+#user-management-table .btn-delete:hover {
+  background: #f56565;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(252, 129, 129, 0.3);
+}
+
+/* Form Styling Consistency */
+#user-crud-form input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}

@@ -11,3 +11,6 @@
 @import url('responsive.css');
 @import url('chat_style.css');
 @import url('sidebar.css');
+@import url('user-profile.css');
+@import url('user-management.css');
+@import url('auth.css');

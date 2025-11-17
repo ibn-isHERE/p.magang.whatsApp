@@ -416,3 +416,13 @@ body::after {
     padding: 28px 20px;
   }
 }
+/* Chrome, Edge, Safari */
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-inner-spin-button,
+input[type="password"]::-webkit-search-decoration,
+input[type="password"]::-webkit-clear-button {
+    display: none;
+}
+input[type="password"]::-ms-reveal {
+    display: none; /* Untuk Edge lama / IE */
+}

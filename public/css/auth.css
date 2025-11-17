@@ -1,0 +1,16 @@
+/* ========================================
+   AUTH & PASSWORD INPUT STYLES
+   ======================================== */
+
+/* Chrome, Edge, Safari - Hide password reveal buttons */
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-inner-spin-button,
+input[type="password"]::-webkit-search-decoration,
+input[type="password"]::-webkit-clear-button {
+  display: none;
+}
+
+/* Edge Legacy / IE - Hide password reveal */
+input[type="password"]::-ms-reveal {
+  display: none;
+}
