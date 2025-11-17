@@ -1,0 +1,149 @@
+<!-- MEDIA MODAL -->
+<div id="mediaModal" class="modal">
+    <span class="close-modal" onclick="closeMediaModal()">&times;</span>
+    <div class="modal-content" id="modalContent"></div>
+    <a id="downloadLink" class="download-button" download>
+        <i class="fa-solid fa-download"></i> Unduh
+    </a>
+</div>
+
+<!-- EDIT MODAL -->
+<div id="editModal" class="edit-modal">
+    <div class="edit-modal-content">
+        <div class="edit-modal-header">
+            <h2 id="editModalTitle">Edit Jadwal</h2>
+            <button class="edit-modal-close" onclick="closeEditModal()">&times;</button>
+        </div>
+        <div id="editModalBody"></div>
+    </div>
+</div>
+
+<!-- EDIT CONTACT MODAL -->
+<div id="editContactModal" class="edit-modal">
+    <div class="edit-modal-content">
+        <div class="edit-modal-header">
+            <h2 id="editContactModalTitle">Edit Kontak</h2>
+            <button class="edit-modal-close" onclick="closeEditContactModal()">&times;</button>
+        </div>
+        <div id="editContactModalBody"></div>
+    </div>
+</div>
+
+<!-- EDIT GROUP MODAL -->
+<div id="editGroupModal" class="edit-modal">
+    <div class="edit-modal-content">
+        <div class="edit-modal-header">
+            <h2 id="editGroupModalTitle">Edit Grup</h2>
+            <button class="edit-modal-close" onclick="closeEditGroupModal()">&times;</button>
+        </div>
+        <div id="editGroupModalBody"></div>
+    </div>
+</div>
+
+<!-- DETAIL GROUP MODAL -->
+<div id="detailGroupModal" class="edit-modal">
+    <div class="edit-modal-content" style="max-width: 900px">
+        <div class="edit-modal-header">
+            <h2 id="detailGroupModalTitle">Detail Grup</h2>
+            <button class="edit-modal-close" onclick="closeDetailGroupModal()">&times;</button>
+        </div>
+        <div id="detailGroupModalBody" style="padding: 20px">
+            <!-- Content akan diisi oleh JavaScript -->
+        </div>
+    </div>
+</div>
+
+<!-- ADD MEMBERS MODAL -->
+<div id="addMembersModal" class="edit-modal">
+    <div class="edit-modal-content" style="max-width: 600px">
+        <div class="edit-modal-header">
+            <h2>Tambah Anggota ke Grup</h2>
+            <button class="edit-modal-close" onclick="closeAddMembersModal()">&times;</button>
+        </div>
+        <div id="addMembersModalBody" style="padding: 20px">
+            <div class="search-box-wrapper" style="margin-bottom: 16px">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" id="addMemberSearch" placeholder="Cari kontak..." autocomplete="off" />
+            </div>
+
+            <div class="select-all-container" style="margin-bottom: 12px">
+                <label for="selectAllAddMembers">Pilih Semua</label>
+                <input type="checkbox" id="selectAllAddMembers" />
+            </div>
+
+            <div id="addMembersList" class="contact-checklist-box" style="max-height: 400px; overflow-y: auto">
+                <p style="text-align: center; color: #a0aec0">Memuat kontak...</p>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; gap: 10px">
+                <button id="confirmAddMembersBtn" class="btn-primary" style="flex: 1">
+                    <i class="fa-solid fa-user-plus"></i> Tambahkan
+                </button>
+                <button onclick="closeAddMembersModal()" class="btn-secondary" style="flex: 1">
+                    <i class="fa-solid fa-times"></i> Batal
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- USER MODAL -->
+<div id="userModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Tambah User Baru</h3>
+            <button class="close-modal" onclick="closeUserModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="userForm">
+                <input type="hidden" id="userId" />
+
+                <div class="form-group">
+                    <label for="userName">
+                        <i class="fa-solid fa-user"></i> Nama Lengkap
+                    </label>
+                    <input type="text" id="userName" placeholder="Masukkan nama lengkap" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="userEmail">
+                        <i class="fa-solid fa-envelope"></i> Email
+                    </label>
+                    <input type="email" id="userEmail" placeholder="Masukkan email" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="userPassword">
+                        <i class="fa-solid fa-lock"></i> Password
+                        <small id="passwordHint" style="color: #a0aec0; font-weight: normal"></small>
+                    </label>
+                    <input type="password" id="userPassword" placeholder="Minimal 6 karakter" />
+                </div>
+
+                <div class="form-group">
+                    <label for="userRole">
+                        <i class="fa-solid fa-user-tag"></i> Role
+                    </label>
+                    <select id="userRole" required>
+                        <option value="">-- Pilih Role --</option>
+                        <option value="admin">Admin</option>
+                        <option value="operator">Operator</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="userActive" checked />
+                        <label for="userActive" style="margin: 0">User Aktif</label>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-modal btn-secondary" onclick="closeUserModal()">Batal</button>
+            <button type="button" class="btn-modal btn-primary" onclick="saveUser()">
+                <i class="fa-solid fa-save"></i> Simpan
+            </button>
+        </div>
+    </div>
+</div>

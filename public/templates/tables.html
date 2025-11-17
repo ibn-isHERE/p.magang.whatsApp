@@ -1,0 +1,255 @@
+<!-- SCHEDULE TABLE -->
+<div class="schedule-container" id="scheduleContainer">
+    <div class="schedule-header">
+        <h2>Jadwal Pesan Terkirim/Terjadwal</h2>
+        <div class="filter-buttons d-flex justify-content-center mb-3">
+            <button class="filter-button active" data-filter="all">Semua</button>
+            <button class="filter-button" data-filter="meeting">Jadwal Rapat</button>
+            <button class="filter-button" data-filter="terjadwal">Terjadwal</button>
+            <button class="filter-button" data-filter="terkirim">Terkirim</button>
+            <button class="filter-button" data-filter="dibatalkan">Dibatalkan</button>
+            <button class="filter-button" data-filter="gagal">Gagal</button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table id="scheduleTable">
+            <thead>
+                <tr>
+                    <th>Waktu Terjadwal</th>
+                    <th>Nomor Tujuan</th>
+                    <th>Pesan</th>
+                    <th>File</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- CHAT MAIN CONTAINER -->
+<div class="chat-main-container" id="chatMainContainer" style="display: none">
+    <div class="chat-header" id="chatHeader">
+        <div class="chat-info">
+            <h3 id="activeContactName">Pilih percakapan</h3>
+            <span id="activeContactNumber"></span>
+        </div>
+        <div class="chat-actions">
+            <button id="refreshChatBtn" title="Refresh">
+                <i class="fa-solid fa-refresh"></i>
+            </button>
+            <button id="endChatBtn" title="Akhiri Chat" style="color: red">
+                <i class="fa-solid fa-ban"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+        <div class="no-chat-selected">
+            <i class="fa-solid fa-comments"></i>
+            <p>Pilih percakapan untuk mulai chat</p>
+        </div>
+    </div>
+
+    <div class="chat-input-area" id="chatInputArea" style="display: none">
+        <div class="chat-input-container">
+            <input type="file" id="chatFileInput" accept="image/*,video/*,application/pdf" style="display: none" />
+            <button id="attachFileBtn" title="Lampirkan File">
+                <i class="fa-solid fa-paperclip"></i>
+            </button>
+
+            <input type="text" id="replyInput" placeholder="Ketik balasan..." />
+
+            <button id="sendReplyBtn" title="Kirim">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- CONTACT TABLE -->
+<div id="contactMainContainer" class="contact-main-container">
+    <div class="schedule-header">
+        <h3>Daftar Kontak Tersimpan</h3>
+    </div>
+
+    <div class="member-filter-container" style="margin-bottom: 20px">
+        <div class="filter-header">
+            <h4><i class="fa-solid fa-filter"></i> Filter Kontak</h4>
+            <button id="clearAllContactFilters" class="clear-all-filters-btn" style="display: none">
+                <i class="fa-solid fa-times"></i> Reset Semua Filter
+            </button>
+        </div>
+
+        <div class="filter-grid">
+            <div class="filter-item">
+                <label><i class="fa-solid fa-user"></i> Nama</label>
+                <input type="text" id="filterContactName" placeholder="Cari nama..." class="filter-input" autocomplete="off" />
+            </div>
+
+            <div class="filter-item">
+                <label><i class="fa-solid fa-phone"></i> Nomor</label>
+                <input type="text" id="filterContactNumber" placeholder="Cari nomor..." class="filter-input" autocomplete="off" />
+            </div>
+
+            <div class="filter-item">
+                <label><i class="fa-solid fa-building"></i> Instansi</label>
+                <input type="text" id="filterContactInstansi" placeholder="Cari instansi..." class="filter-input" autocomplete="off" />
+            </div>
+
+            <div class="filter-item">
+                <label><i class="fa-solid fa-briefcase"></i> Jabatan</label>
+                <input type="text" id="filterContactJabatan" placeholder="Cari jabatan..." class="filter-input" autocomplete="off" />
+            </div>
+        </div>
+
+        <div id="filterContactResultInfo" class="filter-result-info"></div>
+    </div>
+
+    <div class="bulk-actions-bar" style="margin-bottom: 16px; padding: 10px 12px; background: #f7fafc; border-radius: 8px; border: 2px solid #e2e8f0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <div style="display: ruby">
+            <button type="button" id="selectAllContactsDelete" class="quick-action-btn select-all" style="padding: 6px 10px; font-size: 12px; margin: 0">
+                <i class="fa-solid fa-check-double"></i> Pilih Semua
+            </button>
+
+            <button type="button" id="deselectAllContactsDelete" class="quick-action-btn deselect-all" style="padding: 6px 10px; font-size: 12px; margin: 0">
+                <i class="fa-solid fa-times"></i> Batalkan Semua
+            </button>
+        </div>
+
+        <button id="bulkDeleteContactBtn" class="btn-remove-members" style="display: none; margin-left: auto; padding: 7px 12px; font-size: 12px;" disabled>
+            <i class="fa-solid fa-trash"></i> Hapus <span id="bulkDeleteCount">0</span> Kontak
+        </button>
+    </div>
+
+    <div class="table-wrapper">
+        <table id="contact-management-table">
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align: center">
+                        <i class="fa-solid fa-check-square" style="color: #4299e1"></i>
+                    </th>
+                    <th>Nama</th>
+                    <th>Nomor</th>
+                    <th>Instansi</th>
+                    <th>Jabatan</th>
+                    <th>Grup</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="contact-management-tbody"></tbody>
+        </table>
+        <div id="noContactResults" class="no-search-results" style="display: none">
+            <i class="fa-solid fa-search"></i>
+            <p>Tidak ada kontak yang cocok dengan pencarian</p>
+        </div>
+    </div>
+</div>
+
+<!-- GROUP TABLE -->
+<div id="groupMainContainer" class="contact-main-container">
+    <div class="schedule-header">
+        <h3>Daftar Grup Tersimpan</h3>
+    </div>
+
+    <div class="table-wrapper">
+        <table id="group-management-table">
+            <thead>
+                <tr>
+                    <th>Nama Grup</th>
+                    <th>Jumlah Anggota</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="group-management-tbody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- INSTANSI TABLE -->
+<div id="instansiMainContainer" class="contact-main-container" style="display: none">
+    <div class="schedule-header">
+        <h3>Daftar Instansi</h3>
+    </div>
+
+    <div class="table-wrapper">
+        <table id="instansi-management-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px">ID</th>
+                    <th>Nama Instansi</th>
+                    <th>Keterangan</th>
+                    <th style="width: 200px">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="instansi-management-tbody">
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 40px">
+                        <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #cbd5e0"></i>
+                        <p style="color: #a0aec0; margin-top: 12px">Memuat data...</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- JABATAN TABLE -->
+<div id="jabatanMainContainer" class="contact-main-container" style="display: none">
+    <div class="schedule-header">
+        <h3>Daftar Jabatan</h3>
+    </div>
+
+    <div class="table-wrapper">
+        <table id="jabatan-management-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px">ID</th>
+                    <th>Nama Jabatan</th>
+                    <th>Keterangan</th>
+                    <th style="width: 200px">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="jabatan-management-tbody">
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 40px">
+                        <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #cbd5e0"></i>
+                        <p style="color: #a0aec0; margin-top: 12px">Memuat data...</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- USER MANAGEMENT TABLE -->
+<div id="userManagementMainContainer" class="contact-main-container" style="display: none">
+    <div class="schedule-header">
+        <h3>Daftar User Sistem</h3>
+    </div>
+
+    <div class="table-wrapper">
+        <table id="user-management-table">
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Last Login</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="user-management-tbody">
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px">
+                        <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #cbd5e0"></i>
+                        <p style="color: #a0aec0; margin-top: 12px">Memuat data...</p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
