@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-producti
 // ⚙️ Session Configuration
 const SESSION_CONFIG = {
   IDLE_TIMEOUT: 7 * 24 * 60 * 60 * 1000, // 7 hari dalam milliseconds
-  TOKEN_EXPIRY: "30d" // Token JWT tetap long-lived (untuk refresh capability)
+  TOKEN_EXPIRY: "7d" // Token JWT tetap long-lived (untuk refresh capability)
 };
 
 // Middleware untuk verifikasi token
