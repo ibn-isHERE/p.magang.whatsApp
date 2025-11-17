@@ -1,4 +1,4 @@
-// auth-protection.js - FIXED VERSION (Simplified & Persistent)
+// auth-protection.js - FIXED VERSION (Simplified & Persistent - No Remember Me)
 
 // ✅ Cek auth dari localStorage (sudah persisten)
 const token = localStorage.getItem('token');
@@ -55,7 +55,7 @@ function handleLogout() {
             // ✅ Clear semua data auth dari localStorage
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            localStorage.removeItem('rememberMe');
+            localStorage.removeItem('lastActivity');
             
             console.log('✅ Auth data cleared');
             

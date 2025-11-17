@@ -1,4 +1,4 @@
-// login.js - FIXED VERSION (Persistent Session)
+// login.js - FIXED VERSION (Persistent Session - No Remember Me)
 
 // Toggle password visibility
 const togglePassword = document.getElementById("togglePassword");
@@ -17,9 +17,9 @@ function showAlert(message, type = "error") {
   alertBox.className = `alert alert-${type}`;
   alertBox.innerHTML = `
     <i class="fa-solid fa-${type === "error" ? "circle-exclamation" : "circle-check"}"></i>
-    ${message}
+    <span>${message}</span>
   `;
-  alertBox.style.display = "block";
+  alertBox.style.display = "flex";
 
   setTimeout(() => {
     alertBox.style.display = "none";
@@ -32,7 +32,6 @@ document.getElementById("loginForm").addEventListener("submit", async function (
 
   const email = document.getElementById("email").value.trim();
   const password = document.getElementById("password").value;
-  const rememberMe = document.getElementById("rememberMe").checked;
   const loginBtn = document.getElementById("loginBtn");
 
   // Disable button and show loading
@@ -47,7 +46,7 @@ document.getElementById("loginForm").addEventListener("submit", async function (
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, password, rememberMe }),
+      body: JSON.stringify({ email, password }),
     });
 
     console.log("✅ Response received - Status:", response.status);
@@ -63,13 +62,6 @@ document.getElementById("loginForm").addEventListener("submit", async function (
       // ✅ Simpan lastActivity untuk activity tracking
       const now = Date.now();
       localStorage.setItem("lastActivity", data.user.lastActivity || now);
-      
-      // 🔒 Simpan flag "rememberMe" untuk keperluan UI
-      if (rememberMe) {
-        localStorage.setItem("rememberMe", "true");
-      } else {
-        localStorage.removeItem("rememberMe");
-      }
 
       console.log("✅ Token saved to localStorage (persistent)");
       console.log("✅ User data saved:", data.user.name);
