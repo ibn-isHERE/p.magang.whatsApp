@@ -40,7 +40,7 @@
 
       .user-name {
         font-weight: 600;
-        color: #2d3748;
+        color: white;
         margin-bottom: 2px;
       }
 
@@ -118,29 +118,6 @@
         overflow: hidden;
       }
 
-      #user-management-table thead {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-      }
-
-      #user-management-table th {
-        padding: 15px;
-        text-align: left;
-        font-weight: 600;
-        font-size: 14px;
-      }
-
-      #user-management-table td {
-        padding: 15px;
-        border-bottom: 1px solid #e2e8f0;
-        font-size: 14px;
-        color: #4a5568;
-      }
-
-      #user-management-table tbody tr:hover {
-        background: #f7fafc;
-      }
-
       /* Role & Status Badges for User Table */
       #user-management-table .role-badge {
         display: inline-block;
@@ -152,13 +129,13 @@
       }
 
       #user-management-table .role-badge.admin {
-        background: #fed7d7;
-        color: #c53030;
+        background: #d7e8fe;
+        color: #305fc5;
       }
 
       #user-management-table .role-badge.operator {
-        background: #c6f6d5;
-        color: #22543d;
+        background: #ffecac;
+        color: #ad7c10;
       }
 
       #user-management-table .status-badge {
@@ -300,7 +277,7 @@
         </button>
 
         <!-- HIDDEN FOR OPERATOR - User Management -->
-        <button class="sidebar-menu-item" data-form="User">
+        <button class="sidebar-menu-item" data-form="user">
           <i class="fa-solid fa-users-cog"></i>
           <span>Manajemen User</span>
         </button>

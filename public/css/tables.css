@@ -97,7 +97,8 @@
 
 #scheduleTable thead,
 #contact-management-table thead,
-#group-management-table thead {
+#group-management-table thead,
+#user-management-table thead {
   position: sticky;
   top: 0;
   background-color: #f1f3f5;
@@ -109,7 +110,9 @@
 #contact-management-table th,
 #contact-management-table td,
 #group-management-table th,
-#group-management-table td {
+#group-management-table td,
+#user-management-table th,
+#user-management-table td {
   border-bottom: 1px solid #e9ecef;
   padding: 10.5px 8.4px;
   text-align: left;
@@ -120,7 +123,8 @@
 
 #scheduleTable th,
 #contact-management-table th,
-#group-management-table th {
+#group-management-table th,
+#user-management-table th {
   background-color: #e9ecef;
   font-weight: 700;
   color: #495057;
@@ -130,19 +134,22 @@
 
 #scheduleTable th:first-child,
 #contact-management-table th:first-child,
-#group-management-table th:first-child {
+#group-management-table th:first-child,
+#user-management-table th:first-child {
   border-top-left-radius: 7px;
 }
 
 #scheduleTable th:last-child,
 #contact-management-table th:last-child,
-#group-management-table th:last-child {
+#group-management-table th:last-child,
+#user-management-table th:last-child {
   border-top-right-radius: 7px;
 }
 
 #scheduleTable tbody tr:last-child td,
 #contact-management-table tbody tr:last-child td,
-#group-management-table tbody tr:last-child td {
+#group-management-table tbody tr:last-child td,
+#user-management-table tbody tr:last-child td {
   border-bottom: none;
 }
 
