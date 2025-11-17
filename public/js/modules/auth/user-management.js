@@ -19,7 +19,7 @@ function checkAuthentication() {
       text: "Silakan login kembali",
       confirmButtonText: "OK",
     }).then(() => {
-      window.location.href = "/login.html";
+      window.location.href = "/index.html";
     });
     return false;
   }
@@ -72,7 +72,7 @@ async function loadUsersList() {
         text: "Silakan login kembali",
         confirmButtonText: "OK",
       }).then(() => {
-        window.location.href = "/login.html";
+        window.location.href = "/index.html";
       });
       return;
     }
@@ -281,7 +281,7 @@ async function deleteUserCrud(userId) {
         text: "Silakan login kembali",
         confirmButtonText: "OK",
       }).then(() => {
-        window.location.href = "/login.html";
+        window.location.href = "/index.html";
       });
       return;
     }
@@ -407,7 +407,7 @@ document.addEventListener("DOMContentLoaded", function () {
             text: "Silakan login kembali",
             confirmButtonText: "OK",
           }).then(() => {
-            window.location.href = "/login.html";
+            window.location.href = "/index.html";
           });
           return;
         }
@@ -458,7 +458,7 @@ window.resetUserCrudForm = resetUserCrudForm;
 // ✅ AUTO LOAD saat tab User Management dibuka
 document.addEventListener("DOMContentLoaded", function () {
   // Observe sidebar menu clicks
-  const userManagementBtn = document.querySelector('[data-form="User"]');
+  const userManagementBtn = document.querySelector('[data-form="user"]');
   if (userManagementBtn) {
     userManagementBtn.addEventListener("click", function () {
       console.log("🔄 Loading users list...");
