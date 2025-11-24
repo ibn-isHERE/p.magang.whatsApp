@@ -1,5 +1,5 @@
 // ===========================
-// USER MANAGEMENT MODULE - UPDATED WITH MODAL & PASSWORD TOGGLE
+// USER MANAGEMENT MODULE - NO REFRESH FIX
 // ===========================
 
 let users = [];
@@ -30,12 +30,10 @@ function checkAuthentication() {
 async function loadUsersList() {
   const tbody = document.getElementById("user-management-tbody");
 
-  // Check authentication first
   if (!checkAuthentication()) {
     return;
   }
 
-  // Show loading state
   tbody.innerHTML = `
     <tr>
       <td colspan="6" style="text-align: center; padding: 40px">
@@ -47,7 +45,6 @@ async function loadUsersList() {
 
   try {
     const token = getAuthToken();
-    console.log("🔑 Token found:", token ? "YES" : "NO");
     
     const response = await fetch("/api/auth/users", {
       method: "GET",
@@ -57,9 +54,6 @@ async function loadUsersList() {
       },
     });
 
-    console.log("📡 Response status:", response.status);
-
-    // Handle authentication errors
     if (response.status === 401 || response.status === 403) {
       sessionStorage.removeItem("token");
       sessionStorage.removeItem("user");
@@ -78,13 +72,11 @@ async function loadUsersList() {
     }
 
     const data = await response.json();
-    console.log("📦 Response data:", data);
 
     if (!response.ok) {
       throw new Error(data.message || "Gagal memuat data users");
     }
 
-    // Validate data structure
     if (!data.success) {
       throw new Error(data.message || "Response tidak valid");
     }
@@ -205,7 +197,7 @@ function resetUserCrudForm() {
   if (hintText) hintText.textContent = "";
 }
 
-// ✅ NEW: Open Edit User Modal
+// Open Edit User Modal
 function openEditUserModal(userId) {
   const user = users.find((u) => u.id === userId);
   if (!user) {
@@ -217,7 +209,6 @@ function openEditUserModal(userId) {
     return;
   }
 
-  // Create modal content
   const modalContent = `
     <div id="editUserModal" class="edit-modal" style="display: flex;">
       <div class="edit-modal-content" style="max-width: 600px;">
@@ -329,16 +320,13 @@ function openEditUserModal(userId) {
     </div>
   `;
 
-  // Remove existing modal if any
   const existingModal = document.getElementById("editUserModal");
   if (existingModal) {
     existingModal.remove();
   }
 
-  // Add modal to body
   document.body.insertAdjacentHTML("beforeend", modalContent);
 
-  // Add password toggle functionality
   const togglePassword = document.getElementById("toggleEditPassword");
   const passwordInput = document.getElementById("edit-user-password");
   
@@ -349,14 +337,12 @@ function openEditUserModal(userId) {
     this.classList.toggle("fa-eye-slash");
   });
 
-  // Add form submit handler
   const editForm = document.getElementById("editUserForm");
   editForm.addEventListener("submit", async function (e) {
     e.preventDefault();
     await handleEditUserSubmit();
   });
 
-  // Close modal on outside click
   const modal = document.getElementById("editUserModal");
   modal.addEventListener("click", function (e) {
     if (e.target === modal) {
@@ -365,7 +351,7 @@ function openEditUserModal(userId) {
   });
 }
 
-// ✅ NEW: Close Edit User Modal
+// Close Edit User Modal
 function closeEditUserModal() {
   const modal = document.getElementById("editUserModal");
   if (modal) {
@@ -373,7 +359,7 @@ function closeEditUserModal() {
   }
 }
 
-// ✅ NEW: Handle Edit User Form Submit
+// Handle Edit User Form Submit
 async function handleEditUserSubmit() {
   if (!checkAuthentication()) {
     return;
@@ -386,7 +372,6 @@ async function handleEditUserSubmit() {
   const role = document.getElementById("edit-user-role").value;
   const isActive = document.getElementById("edit-user-active").checked;
 
-  // Validation
   if (!name || !email || !role) {
     Swal.fire({
       icon: "warning",
@@ -396,7 +381,6 @@ async function handleEditUserSubmit() {
     return;
   }
 
-  // Email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     Swal.fire({
@@ -407,7 +391,6 @@ async function handleEditUserSubmit() {
     return;
   }
 
-  // Password validation if provided
   if (password && password.length < 6) {
     Swal.fire({
       icon: "warning",
@@ -440,7 +423,6 @@ async function handleEditUserSubmit() {
       body: JSON.stringify(userData),
     });
 
-    // Handle authentication errors
     if (response.status === 401 || response.status === 403) {
       sessionStorage.removeItem("token");
       sessionStorage.removeItem("user");
@@ -472,10 +454,7 @@ async function handleEditUserSubmit() {
       showConfirmButton: false,
     });
 
-    // Close modal
     closeEditUserModal();
-
-    // Reload user list
     loadUsersList();
   } catch (error) {
     console.error("Error updating user:", error);
@@ -515,7 +494,6 @@ async function deleteUserCrud(userId) {
       },
     });
 
-    // Handle authentication errors
     if (response.status === 401 || response.status === 403) {
       sessionStorage.removeItem("token");
       sessionStorage.removeItem("user");
@@ -558,16 +536,14 @@ async function deleteUserCrud(userId) {
   }
 }
 
-// ✅ NEW: Initialize Password Toggle for ADD User Form
+// Initialize Password Toggle for ADD User Form
 function initPasswordToggle() {
   const passwordInput = document.getElementById("user-crud-password");
   if (!passwordInput) return;
 
-  // Check if toggle already exists
   const existingToggle = passwordInput.parentElement.querySelector('.password-toggle');
   if (existingToggle) return;
 
-  // Create wrapper if not exists
   let wrapper = passwordInput.parentElement;
   if (wrapper.tagName !== 'DIV' || !wrapper.classList.contains('input-wrapper')) {
     wrapper = document.createElement('div');
@@ -579,14 +555,12 @@ function initPasswordToggle() {
     wrapper.style.position = 'relative';
   }
 
-  // Create toggle icon
   const toggleIcon = document.createElement('i');
   toggleIcon.className = 'fa-solid fa-eye password-toggle';
   toggleIcon.style.cssText = 'position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #a0aec0; z-index: 10;';
   
   wrapper.appendChild(toggleIcon);
   
-  // Add click event
   toggleIcon.addEventListener('click', function() {
     const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
     passwordInput.setAttribute('type', type);
@@ -594,166 +568,201 @@ function initPasswordToggle() {
     this.classList.toggle('fa-eye-slash');
   });
 
-  // Add padding to input to prevent text overlap with icon
   passwordInput.style.paddingRight = '40px';
 }
 
-// Initialize User Management Form (for ADD form in sidebar)
-document.addEventListener("DOMContentLoaded", function () {
-  const userCrudForm = document.getElementById("user-crud-form");
-  if (userCrudForm) {
-    // Initialize password toggle
-    initPasswordToggle();
-
-    userCrudForm.addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      if (!checkAuthentication()) {
-        return;
-      }
-
-      const userId = document.getElementById("user-crud-id").value;
-      const name = document.getElementById("user-crud-name").value.trim();
-      const email = document.getElementById("user-crud-email").value.trim();
-      const password = document.getElementById("user-crud-password").value;
-      const role = document.getElementById("user-crud-role").value;
-      const isActive = document.getElementById("user-crud-active").checked;
-
-      // Validation
-      if (!name || !email || !role) {
-        Swal.fire({
-          icon: "warning",
-          title: "Data Tidak Lengkap",
-          text: "Mohon lengkapi semua field yang wajib diisi",
-        });
-        return;
-      }
-
-      // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        Swal.fire({
-          icon: "warning",
-          title: "Email Tidak Valid",
-          text: "Mohon masukkan email yang valid",
-        });
-        return;
-      }
-
-      // Password validation for new user
-      if (!userId && !password) {
-        Swal.fire({
-          icon: "warning",
-          title: "Password Diperlukan",
-          text: "Password wajib diisi untuk user baru",
-        });
-        return;
-      }
-
-      if (password && password.length < 6) {
-        Swal.fire({
-          icon: "warning",
-          title: "Password Terlalu Pendek",
-          text: "Password minimal 6 karakter",
-        });
-        return;
-      }
-
-      const userData = {
-        name,
-        email,
-        role,
-        is_active: isActive,
-      };
-
-      if (password) {
-        userData.password = password;
-      }
-
-      try {
-        const url = userId ? `/api/auth/users/${userId}` : "/api/auth/users";
-        const method = userId ? "PUT" : "POST";
-        const token = getAuthToken();
-
-        const response = await fetch(url, {
-          method: method,
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(userData),
-        });
-
-        // Handle authentication errors
-        if (response.status === 401 || response.status === 403) {
-          sessionStorage.removeItem("token");
-          sessionStorage.removeItem("user");
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          
-          Swal.fire({
-            icon: "error",
-            title: "Sesi Berakhir",
-            text: "Silakan login kembali",
-            confirmButtonText: "OK",
-          }).then(() => {
-            window.location.href = "/index.html";
-          });
-          return;
-        }
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          throw new Error(result.message || "Terjadi kesalahan");
-        }
-
-        Swal.fire({
-          icon: "success",
-          title: "Berhasil!",
-          text: userId ? "User berhasil diupdate" : "User berhasil ditambahkan",
-          timer: 2000,
-          showConfirmButton: false,
-        });
-
-        // Reset form
-        resetUserCrudForm();
-
-        // Reload user list
-        loadUsersList();
-      } catch (error) {
-        console.error("Error saving user:", error);
-        Swal.fire({
-          icon: "error",
-          title: "Gagal!",
-          text: error.message,
-        });
-      }
-    });
+// ✅ CRITICAL FIX: Handle Add New User - PREVENT ALL REFRESH
+async function handleAddUserSubmit(e) {
+  // ✅ TRIPLE PREVENTION
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
   }
+
+  // ✅ Log to console IMMEDIATELY (sebelum apapun)
+  console.log("%c🚀 FORM SUBMIT TRIGGERED!", "color: green; font-size: 20px; font-weight: bold;");
+  console.log("Event:", e);
+
+  if (!checkAuthentication()) {
+    console.log("❌ Authentication failed");
+    return false;
+  }
+
+  const name = document.getElementById("user-crud-name").value.trim();
+  const email = document.getElementById("user-crud-email").value.trim();
+  const password = document.getElementById("user-crud-password").value;
+  const role = document.getElementById("user-crud-role").value;
+  const isActive = document.getElementById("user-crud-active").checked;
+
+  console.log("📝 Form data:", { name, email, password: password ? "***" : "", role, isActive });
+
+  // Validation
+  if (!name || !email || !role || !password) {
+    Swal.fire({
+      icon: "warning",
+      title: "Data Tidak Lengkap",
+      text: "Mohon lengkapi semua field yang wajib diisi",
+    });
+    return false;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    Swal.fire({
+      icon: "warning",
+      title: "Email Tidak Valid",
+      text: "Mohon masukkan email yang valid",
+    });
+    return false;
+  }
+
+  if (password.length < 6) {
+    Swal.fire({
+      icon: "warning",
+      title: "Password Terlalu Pendek",
+      text: "Password minimal 6 karakter",
+    });
+    return false;
+  }
+
+  const userData = {
+    name,
+    email,
+    password,
+    role,
+    is_active: isActive,
+  };
+
+  console.log("📤 Sending data:", userData);
+
+  try {
+    const token = getAuthToken();
+    console.log("🔑 Using token:", token ? "YES" : "NO");
+
+    const response = await fetch("/api/auth/users", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(userData),
+    });
+
+    console.log("📡 Response status:", response.status);
+
+    if (response.status === 401 || response.status === 403) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      
+      Swal.fire({
+        icon: "error",
+        title: "Sesi Berakhir",
+        text: "Silakan login kembali",
+        confirmButtonText: "OK",
+      }).then(() => {
+        window.location.href = "/index.html";
+      });
+      return false;
+    }
+
+    const result = await response.json();
+    console.log("📦 Response data:", result);
+
+    if (!response.ok) {
+      throw new Error(result.message || "Terjadi kesalahan saat menambahkan user");
+    }
+
+    Swal.fire({
+      icon: "success",
+      title: "Berhasil!",
+      text: "User berhasil ditambahkan",
+      timer: 2000,
+      showConfirmButton: false,
+    });
+
+    resetUserCrudForm();
+    console.log("🔄 Reloading user list...");
+    await loadUsersList();
+
+    return false; // ✅ PREVENT DEFAULT LAGI
+
+  } catch (error) {
+    console.error("❌ Error adding user:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Gagal!",
+      text: error.message,
+    });
+    return false;
+  }
+}
+
+// ✅ INITIALIZE - RUN AS EARLY AS POSSIBLE
+(function() {
+  console.log("🎯 USER MANAGEMENT MODULE LOADING...");
+  
+  // ✅ Wait for DOM or run immediately
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initUserManagement);
+  } else {
+    initUserManagement();
+  }
+})();
+
+function initUserManagement() {
+  console.log("🎯 INITIALIZING USER MANAGEMENT");
+  console.log("Document ready state:", document.readyState);
+
+  const userCrudForm = document.getElementById("user-crud-form");
+  
+  if (!userCrudForm) {
+    console.warn("⚠️ Form not found: user-crud-form - Will retry in 500ms");
+    setTimeout(initUserManagement, 500);
+    return;
+  }
+
+  console.log("✅ Form found:", userCrudForm);
+  
+  // ✅ REMOVE action and method attributes from form
+  userCrudForm.removeAttribute('action');
+  userCrudForm.removeAttribute('method');
+  
+  // ✅ Set onsubmit directly
+  userCrudForm.onsubmit = function(e) {
+    console.log("%c⚡ ONSUBMIT FIRED!", "color: red; font-size: 18px;");
+    return handleAddUserSubmit(e);
+  };
+  
+  // ✅ ALSO add event listener as backup
+  userCrudForm.addEventListener('submit', function(e) {
+    console.log("%c⚡ EVENTLISTENER FIRED!", "color: blue; font-size: 18px;");
+    return handleAddUserSubmit(e);
+  }, true); // Use capture phase
+  
+  console.log("✅ Form handlers attached");
+  
+  // Initialize password toggle
+  setTimeout(initPasswordToggle, 100);
 
   // Cancel button
   const cancelBtn = document.getElementById("user-crud-cancel");
   if (cancelBtn) {
-    cancelBtn.addEventListener("click", resetUserCrudForm);
+    cancelBtn.onclick = function(e) {
+      e.preventDefault();
+      resetUserCrudForm();
+      return false;
+    };
   }
-});
 
-// Make functions globally available
-window.loadUsersList = loadUsersList;
-window.openEditUserModal = openEditUserModal;
-window.closeEditUserModal = closeEditUserModal;
-window.deleteUserCrud = deleteUserCrud;
-window.resetUserCrudForm = resetUserCrudForm;
-
-// ✅ AUTO LOAD saat tab User Management dibuka
-document.addEventListener("DOMContentLoaded", function () {
   // Observe sidebar menu clicks
   const userManagementBtn = document.querySelector('[data-form="user"]');
   if (userManagementBtn) {
     userManagementBtn.addEventListener("click", function () {
       console.log("🔄 Loading users list...");
-      loadUsersList();
+      setTimeout(() => loadUsersList(), 100);
     });
   }
 
@@ -761,6 +770,14 @@ document.addEventListener("DOMContentLoaded", function () {
   const userContainer = document.getElementById("userManagementMainContainer");
   if (userContainer && userContainer.style.display !== "none") {
     console.log("🔄 User Management already active, loading users...");
-    loadUsersList();
+    setTimeout(() => loadUsersList(), 100);
   }
-});
+}
+
+// Make functions globally available
+window.loadUsersList = loadUsersList;
+window.openEditUserModal = openEditUserModal;
+window.closeEditUserModal = closeEditUserModal;
+window.deleteUserCrud = deleteUserCrud;
+window.resetUserCrudForm = resetUserCrudForm;
+window.handleAddUserSubmit = handleAddUserSubmit;

@@ -259,12 +259,17 @@ router.get("/users", authenticateToken, requireAdmin, (req, res) => {
   });
 });
 
-// Create new user (Admin only)
+// Create new user (Admin only) - FIXED VERSION
 router.post("/users", authenticateToken, requireAdmin, async (req, res) => {
+  console.log("🔵 POST /users - Creating new user");
+  console.log("📦 Request body:", req.body);
+  
   try {
-    const { email, password, name, role } = req.body;
+    const { email, password, name, role, is_active } = req.body;
 
+    // Validation
     if (!email || !password || !name || !role) {
+      console.log("⚠️ Missing required fields");
       return res.status(400).json({
         success: false,
         message: "Semua field harus diisi",
@@ -272,6 +277,7 @@ router.post("/users", authenticateToken, requireAdmin, async (req, res) => {
     }
 
     if (!["admin", "operator"].includes(role)) {
+      console.log("⚠️ Invalid role:", role);
       return res.status(400).json({
         success: false,
         message: "Role tidak valid",
@@ -282,50 +288,80 @@ router.post("/users", authenticateToken, requireAdmin, async (req, res) => {
     const checkQuery = "SELECT id FROM users WHERE email = ?";
     db.get(checkQuery, [email], async (err, result) => {
       if (err) {
-        console.error("Database error:", err);
+        console.error("❌ Database error (check email):", err);
         return res.status(500).json({
           success: false,
           message: "Terjadi kesalahan server",
+          error: err.message
         });
       }
 
       if (result) {
+        console.log("⚠️ Email already exists:", email);
         return res.status(400).json({
           success: false,
           message: "Email sudah terdaftar",
         });
       }
 
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
+      try {
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+        console.log("✅ Password hashed");
 
-      // Insert user baru
-      const insertQuery = `
-        INSERT INTO users (email, password, name, role, is_active, created_at) 
-        VALUES (?, ?, ?, ?, 1, datetime('now'))
-      `;
+        // ✅ FIX: Determine is_active value (default to true if not provided)
+        const isActiveValue = is_active !== undefined ? (is_active ? 1 : 0) : 1;
+        console.log("📝 is_active value:", isActiveValue);
 
-      db.run(insertQuery, [email, hashedPassword, name, role], function (err) {
-        if (err) {
-          console.error("Database error:", err);
-          return res.status(500).json({
-            success: false,
-            message: "Gagal membuat user",
+        // Insert user baru
+        const insertQuery = `
+          INSERT INTO users (email, password, name, role, is_active, created_at) 
+          VALUES (?, ?, ?, ?, ?, datetime('now'))
+        `;
+
+        // ✅ FIX: Include is_active in parameters
+        db.run(insertQuery, [email, hashedPassword, name, role, isActiveValue], function (err) {
+          if (err) {
+            console.error("❌ Database error (insert):", err);
+            
+            // ✅ Handle UNIQUE constraint error specifically
+            if (err.code === 'SQLITE_CONSTRAINT' && err.message.includes('email')) {
+              return res.status(400).json({
+                success: false,
+                message: "Email sudah terdaftar",
+              });
+            }
+            
+            return res.status(500).json({
+              success: false,
+              message: "Gagal membuat user",
+              error: err.message
+            });
+          }
+
+          console.log("✅ User created successfully, ID:", this.lastID);
+
+          res.json({
+            success: true,
+            message: "User berhasil dibuat",
+            userId: this.lastID,
           });
-        }
-
-        res.json({
-          success: true,
-          message: "User berhasil dibuat",
-          userId: this.lastID,
         });
-      });
+      } catch (hashError) {
+        console.error("❌ Password hashing error:", hashError);
+        return res.status(500).json({
+          success: false,
+          message: "Gagal memproses password",
+          error: hashError.message
+        });
+      }
     });
   } catch (error) {
-    console.error("Create user error:", error);
+    console.error("❌ Create user error:", error);
     res.status(500).json({
       success: false,
       message: "Terjadi kesalahan server",
+      error: error.message
     });
   }
 });

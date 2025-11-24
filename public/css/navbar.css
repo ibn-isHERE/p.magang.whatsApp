@@ -1,7 +1,7 @@
 /* ---- Navbar Styles ---- */
 .navbar {
   background-color: #003366;
-  padding: 35px 16.8px;
+  padding: 31.5px 15.12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -9,9 +9,9 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 49px;
+  height: 44.1px;
   z-index: 1000;
-  box-shadow: 0 2.8px 5.6px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2.52px 5.04px rgba(0, 0, 0, 0.15);
 }
 
 .navbar-left {
@@ -20,15 +20,15 @@
 }
 
 .navbar-left img {
-  width: 63px;
-  height: 49px;
-  margin-right: 10.5px;
-  margin-left: 70px;
+  width: 56.7px;
+  height: 44.1px;
+  margin-right: 9.45px;
+  margin-left: 9.45px;
 }
 
 .navbar-text {
   color: white;
-  font-size: 16.8px;
+  font-size: 15.12px;
   font-weight: 700;
   white-space: nowrap;
   font-style: italic;
@@ -37,12 +37,12 @@
 
 .footer {
   background-color: #003366;
-  padding: 7px 16.8px;
+  padding: 6.3px 15.12px;
   display: flex;
   align-items: center;
   justify-content: center;
   left: 0;
   right: 0;
-  height: 49px;
-  box-shadow: 0 2.8px 5.6px rgba(0, 0, 0, 0.15);
+  height: 44.1px;
+  box-shadow: 0 2.52px 5.04px rgba(0, 0, 0, 0.15);
 }

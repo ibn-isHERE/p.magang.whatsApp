@@ -34,13 +34,13 @@
 }
 
 .user-role-badge.admin {
-  background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
-  color: white;
+  background: #d7e8fe;
+  color: #305fc5;
 }
 
 .user-role-badge.operator {
-  background: linear-gradient(135deg, #68d391 0%, #48bb78 100%);
-  color: white;
+  background: #ffecac;
+  color: #ad7c10;
 }
 
 /* Logout Button */

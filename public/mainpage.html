@@ -1,115 +1,141 @@
 <!DOCTYPE html>
 <html lang="id">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Pesan Pengingat</title>
     <link rel="icon" type="image/x-icon" href="./asset/result_bps.png" />
-    
+
     <!-- CSS -->
     <link rel="stylesheet" href="css/main.css" />
-    
+
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
     <script src="/socket.io/socket.io.js"></script>
     <script src="./js/phone-validator.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
+
     <!-- Auth Protection -->
     <script src="./js/modules/auth/auth-protection.js"></script>
-</head>
+  </head>
 
-<body>
+  <body>
     <!-- Hamburger Menu -->
-    <button class="hamburger-menu" id="hamburgerBtn" aria-label="Toggle Menu" style="position: fixed; overflow: hidden">
-        <span></span><span></span><span></span>
-    </button>
 
     <!-- Sidebar Overlay -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg/1726px-Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg.png" alt="Logo BPS" />
-            <div class="sidebar-header-text">
-                <h3>BPS Navigation</h3>
-                <p>Pesan Pengingat</p>
-            </div>
+      <div class="sidebar-header">
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg/1726px-Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg.png"
+          alt="Logo BPS"
+        />
+        <div class="sidebar-header-text">
+          <h3>BPS Navigation</h3>
+          <p>Pesan Pengingat</p>
         </div>
+      </div>
 
-        <nav class="sidebar-menu">
-            <button class="sidebar-menu-item active" data-form="message">
-                <i class="fa-solid fa-envelope"></i><span>Kirim Pesan</span>
-            </button>
-            <button class="sidebar-menu-item" data-form="meeting">
-                <i class="fa-solid fa-calendar-check"></i><span>Jadwal Rapat</span>
-            </button>
-            <button class="sidebar-menu-item" data-form="contacts">
-                <i class="fa-solid fa-address-book"></i><span>Manajemen Kontak</span>
-            </button>
-            <button class="sidebar-menu-item" data-form="group">
-                <i class="fa-solid fa-users"></i><span>Manajemen Grup</span>
-            </button>
-            <button class="sidebar-menu-item" data-form="chat">
-                <i class="fa-solid fa-comments"></i><span>Customer Service</span>
-                <span class="notification-badge" style="display: none">0</span>
-            </button>
-            <button class="sidebar-menu-item" data-form="settings">
-                <i class="fa-solid fa-cog"></i><span>Master Data</span>
-            </button>
-            <button class="sidebar-menu-item" data-form="user">
-                <i class="fa-solid fa-users-cog"></i><span>Manajemen User</span>
-            </button>
-            <button class="sidebar-menu-item sidebar-logout-btn" onclick="handleLogout()">
-                <i class="fa-solid fa-sign-out-alt"></i><span>Logout</span>
-            </button>
-        </nav>
+      <nav class="sidebar-menu">
+        <button class="sidebar-menu-item active" data-form="message">
+          <i class="fa-solid fa-envelope"></i><span>Kirim Pesan</span>
+        </button>
+        <button class="sidebar-menu-item" data-form="meeting">
+          <i class="fa-solid fa-calendar-check"></i><span>Jadwal Rapat</span>
+        </button>
+        <button class="sidebar-menu-item" data-form="contacts">
+          <i class="fa-solid fa-address-book"></i><span>Manajemen Kontak</span>
+        </button>
+        <button class="sidebar-menu-item" data-form="group">
+          <i class="fa-solid fa-users"></i><span>Manajemen Grup</span>
+        </button>
+        <button class="sidebar-menu-item" data-form="chat">
+          <i class="fa-solid fa-comments"></i><span>Customer Service</span>
+          <span class="notification-badge" style="display: none">0</span>
+        </button>
+        <button class="sidebar-menu-item" data-form="settings">
+          <i class="fa-solid fa-cog"></i><span>Master Data</span>
+        </button>
+        <button class="sidebar-menu-item" data-form="user">
+          <i class="fa-solid fa-users-cog"></i><span>Manajemen User</span>
+        </button>
+        <button
+          class="sidebar-menu-item sidebar-logout-btn"
+          onclick="handleLogout()"
+        >
+          <i class="fa-solid fa-sign-out-alt"></i><span>Logout</span>
+        </button>
+      </nav>
 
-        <div class="sidebar-footer">
-            <p>&copy; 2025 Badan Pusat Statistik</p>
-        </div>
+      <div class="sidebar-footer">
+        <p>&copy; 2025 Badan Pusat Statistik</p>
+      </div>
     </aside>
 
     <!-- Navbar -->
     <div class="navbar">
-        <div class="navbar-left">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg/1726px-Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg.png" alt="Logo BPS" />
-            <span class="navbar-text">Badan Pusat Statistik</span>
-        </div>
-        <div class="user-profile-container" id="userProfileContainer"></div>
+      <div class="navbar-left">
+        <button
+          class="hamburger-menu"
+          id="hamburgerBtn"
+          aria-label="Toggle Menu"
+          style="overflow: hidden"
+        >
+          <span></span><span></span><span></span>
+        </button>
+        <img
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg/1726px-Lambang_Badan_Pusat_Statistik_%28BPS%29_Indonesia.svg.png"
+          alt="Logo BPS"
+        />
+        <span class="navbar-text">Badan Pusat Statistik</span>
+      </div>
+      <div class="user-profile-container" id="userProfileContainer"></div>
     </div>
 
     <!-- Main Content -->
     <main>
-        <div class="app-header">
-            <h1>Pesan Pengingat WhatsApp</h1>
-        </div>
+      <div class="app-header">
+        <h1>Pesan Pengingat WhatsApp</h1>
+      </div>
 
-        <div class="main-content">
-            <!-- Forms will be loaded here -->
-            <section class="form-container" id="formsContainer">
-                <div style="text-align: center; padding: 40px;">
-                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #cbd5e0"></i>
-                    <p style="color: #a0aec0; margin-top: 12px">Memuat formulir...</p>
-                </div>
-            </section>
+      <div class="main-content">
+        <!-- Forms will be loaded here -->
+        <section class="form-container" id="formsContainer">
+          <div style="text-align: center; padding: 40px">
+            <i
+              class="fa-solid fa-spinner fa-spin"
+              style="font-size: 32px; color: #cbd5e0"
+            ></i>
+            <p style="color: #a0aec0; margin-top: 12px">Memuat formulir...</p>
+          </div>
+        </section>
 
-            <!-- Tables will be loaded here -->
-            <section class="content-area" id="tablesContainer">
-                <div style="text-align: center; padding: 40px;">
-                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #cbd5e0"></i>
-                    <p style="color: #a0aec0; margin-top: 12px">Memuat tabel...</p>
-                </div>
-            </section>
-        </div>
+        <!-- Tables will be loaded here -->
+        <section class="content-area" id="tablesContainer">
+          <div style="text-align: center; padding: 40px">
+            <i
+              class="fa-solid fa-spinner fa-spin"
+              style="font-size: 32px; color: #cbd5e0"
+            ></i>
+            <p style="color: #a0aec0; margin-top: 12px">Memuat tabel...</p>
+          </div>
+        </section>
+      </div>
     </main>
 
     <!-- Footer -->
     <footer class="footer">
-        <p>&copy; 2025 Pesan Pengingat. All rights reserved.</p>
+      <p>&copy; 2025 Pesan Pengingat. All rights reserved.</p>
     </footer>
 
     <!-- Modals will be loaded here -->
@@ -117,43 +143,45 @@
 
     <!-- Audio -->
     <audio id="notificationSound" preload="auto">
-        <source type="audio/wav" src="" />
+      <source type="audio/wav" src="" />
     </audio>
 
     <!-- Template Loader Script -->
     <script>
-        // Simple template loader
-        async function loadTemplate(file, targetId) {
-            try {
-                const response = await fetch(`/templates/${file}`);
-                if (!response.ok) throw new Error(`Failed to load ${file}`);
-                const html = await response.text();
-                document.getElementById(targetId).innerHTML = html;
-            } catch (error) {
-                console.error(`Error loading ${file}:`, error);
-                document.getElementById(targetId).innerHTML = `
+      // Simple template loader
+      async function loadTemplate(file, targetId) {
+        try {
+          const response = await fetch(`/templates/${file}`);
+          if (!response.ok) throw new Error(`Failed to load ${file}`);
+          const html = await response.text();
+          document.getElementById(targetId).innerHTML = html;
+        } catch (error) {
+          console.error(`Error loading ${file}:`, error);
+          document.getElementById(targetId).innerHTML = `
                     <div style="text-align: center; padding: 40px; color: #e53e3e;">
                         <i class="fa-solid fa-exclamation-triangle" style="font-size: 32px;"></i>
                         <p style="margin-top: 12px;">Gagal memuat ${file}</p>
                     </div>
                 `;
-            }
         }
+      }
 
-        // Load all templates
-        Promise.all([
-            loadTemplate('forms.html', 'formsContainer'),
-            loadTemplate('tables.html', 'tablesContainer'),
-            loadTemplate('modals.html', 'modalsContainer')
-        ]).then(() => {
-            console.log('✅ All templates loaded successfully');
-        }).catch(error => {
-            console.error('❌ Error loading templates:', error);
+      // Load all templates
+      Promise.all([
+        loadTemplate("forms.html", "formsContainer"),
+        loadTemplate("tables.html", "tablesContainer"),
+        loadTemplate("modals.html", "modalsContainer"),
+      ])
+        .then(() => {
+          console.log("✅ All templates loaded successfully");
+        })
+        .catch((error) => {
+          console.error("❌ Error loading templates:", error);
         });
     </script>
 
     <!-- Main Scripts -->
     <script type="module" src="./js/main.js"></script>
     <script src="./js/modules/auth/user-management.js"></script>
-</body>
+  </body>
 </html>
