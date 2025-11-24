@@ -1,6 +1,4 @@
 // contact-import.js - Complete Contact Import Module (FIXED)
-// Path: public/js/modules/contacts/contact-import.js
-
 /**
  * Initialize contact import functionality
  */
@@ -640,7 +638,7 @@ export function showImportHelp() {
           </strong>
           <ul style="margin: 0; padding-left: 20px; color: #2c5282; font-size: 12px; line-height: 1.7;">
             <li>Kontak akan otomatis ditambahkan ke grup yang disebutkan di kolom <strong>grup</strong></li>
-            <li>Nama grup harus persis sama dengan yang ada di database (case-sensitive)</li>
+            <li>Nama grup harus sesuai dengan yang ada di database. Pencocokan nama grup dilakukan tanpa membedakan huruf besar dan kecil (case-insensitive).</li>
             <li>Statistik import akan menunjukkan jumlah kontak yang berhasil disinkronkan</li>
             <li>Jika grup tidak ditemukan, kontak tetap diimport tapi tidak masuk grup</li>
           </ul>

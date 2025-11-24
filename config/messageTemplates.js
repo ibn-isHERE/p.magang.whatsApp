@@ -1,4 +1,3 @@
-// config/messageTemplates.js
 // Template pesan untuk bot WhatsApp BPS
 
 module.exports = {

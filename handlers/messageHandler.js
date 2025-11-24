@@ -1,4 +1,3 @@
-// handlers/messageHandler.js
 // Main orchestrator untuk semua pesan WhatsApp masuk
 
 const path = require('path');

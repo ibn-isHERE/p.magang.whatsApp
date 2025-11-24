@@ -1,4 +1,3 @@
-// login-redirect.js
 // Script ini dijalankan di index.html (halaman login)
 // Jika user SUDAH login, langsung redirect ke mainpage.html
 

@@ -1,7 +1,3 @@
-// ===========================
-// USER MANAGEMENT MODULE - NO REFRESH FIX
-// ===========================
-
 let users = [];
 
 // Helper function to get token from either storage

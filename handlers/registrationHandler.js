@@ -1,4 +1,3 @@
-// handlers/registrationHandler.js
 // Handler untuk registrasi dan unregistrasi kontak
 
 const templates = require('../config/messageTemplates');

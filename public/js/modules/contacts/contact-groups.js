@@ -1,6 +1,4 @@
 // contact-groups.js - Contact Group Selection Logic Module
-// ✅ FIXED: Added dynamic update trigger for manual numbers
-
 export let selectedGroups = new Set();
 export let selectedMeetingGroups = new Set();
 

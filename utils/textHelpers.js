@@ -1,4 +1,3 @@
-// utils/textHelpers.js
 /**
  * Convert text to Title Case (huruf besar per kata)
  * Contoh: "tim umum" -> "Tim Umum"

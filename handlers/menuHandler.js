@@ -1,4 +1,3 @@
-// handlers/menuHandler.js
 // Handler untuk menu layanan BPS dan chat dengan admin
 
 const templates = require('../config/messageTemplates');
@@ -190,9 +189,9 @@ class MenuHandler {
                 // Timer 2: Akhiri sesi 5 menit setelah peringatan
                 this.inactivityTimers[fromNumber].end = setTimeout(() => {
                     this.endChatSession(fromNumber);
-                }, 1 * 60 * 1000); // 5 menit
+                }, 5 * 60 * 1000); // 5 menit
 
-            }, 1 * 60 * 1000), // 10 menit
+            }, 10 * 60 * 1000), // 10 menit
             end: null
         };
         

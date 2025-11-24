@@ -1,6 +1,3 @@
-// public/js/modules/settings/instansi-manager.js
-// Instansi Management Module
-
 let instansiList = [];
 let isEditingInstansi = false;
 

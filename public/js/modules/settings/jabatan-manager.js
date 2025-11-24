@@ -1,5 +1,4 @@
 // public/js/modules/settings/jabatan-manager.js
-// Jabatan Management Module (Updated: Modal + Hard Delete)
 
 let jabatanList = [];
 let isEditingJabatan = false;
