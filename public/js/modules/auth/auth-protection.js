@@ -78,7 +78,7 @@ function restrictAccess() {
         console.log('🔒 Applying operator restrictions...');
         
         // ❌ HIDE menu buttons untuk operator
-        const restrictedMenus = ['settings', 'user'];
+        const restrictedMenus = ['user'];
 
         restrictedMenus.forEach(menu => {
             const menuButton = document.querySelector(`[data-form="${menu}"]`);
@@ -90,9 +90,6 @@ function restrictAccess() {
 
         // ❌ HIDE containers untuk operator
         const restrictedContainers = [
-            'settingsFormContainer',
-            'instansiMainContainer',
-            'jabatanMainContainer',
             'userManagementFormContainer',
             'userManagementMainContainer'
         ];
