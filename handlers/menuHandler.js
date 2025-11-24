@@ -152,7 +152,7 @@ class MenuHandler {
         }
 
         this.inactivityTimers[fromNumber] = {
-            // Timer 1: Peringatan setelah 10 menit
+            // Timer 1: Peringatan setelah 30 menit
             warning: setTimeout(async () => {
                 await this.client.sendMessage(`${fromNumber}@c.us`, templates.inactivityWarning);
                 console.log(`⏰ Mengirim peringatan inaktivitas ke ${fromNumber}.`);
@@ -189,13 +189,13 @@ class MenuHandler {
                 // Timer 2: Akhiri sesi 5 menit setelah peringatan
                 this.inactivityTimers[fromNumber].end = setTimeout(() => {
                     this.endChatSession(fromNumber);
-                }, 5 * 60 * 1000); // 5 menit
+                }, 10 * 60 * 1000); // 10 menit
 
-            }, 10 * 60 * 1000), // 10 menit
+            }, 30 * 60 * 1000), // 30 menit
             end: null
         };
         
-        console.log(`⏱️ Timer inaktivitas diset untuk ${fromNumber} (10 menit + 5 menit)`);
+        console.log(`⏱️ Timer inaktivitas diset untuk ${fromNumber} (30 menit + 10 menit)`);
     }
 
     /**

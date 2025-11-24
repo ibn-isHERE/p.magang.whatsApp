@@ -200,7 +200,7 @@ Tim kami akan merespons secepatnya.`,
     // Pesan peringatan inaktivitas
     inactivityWarning: `⏰ Apakah masih ada yang perlu dibantu? 
 
-Jika tidak, cukup abaikan pesan ini, maka sesi ini akan ditutup dalam 5 menit. 
+Jika tidak, cukup abaikan pesan ini, maka sesi ini akan ditutup dalam 10 menit. 
 
 Terima kasih.`,
 
