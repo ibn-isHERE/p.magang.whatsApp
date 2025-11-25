@@ -1,7 +1,7 @@
-// routes/contacts.js - Updated with Phone Number Validation
+// routes/contacts.js - Fully Case-Insensitive with Auto Title Case
 const express = require("express");
 const util = require("util");
-const { toTitleCase } = require('../utils/textHelpers');
+const { toTitleCase, normalizeForComparison } = require('../utils/textHelpers');
 
 // ========================================
 // ✅ PHONE NUMBER VALIDATOR
@@ -87,20 +87,28 @@ function createContactsRouter(db) {
   };
 
   /**
-   * Helper: updateGroupMembers
+   * Helper: updateGroupMembers - CASE-INSENSITIVE VERSION
    * Supports multiple groups - updates all groups that the contact belongs to
+   * 🔥 UPDATED: Pencocokan nama grup tidak case-sensitive
    */
   async function updateGroupMembers(groupName, contactNumber, action) {
     if (!groupName || !contactNumber) return;
 
     try {
+      // 🔥 CASE-INSENSITIVE: Gunakan LOWER() untuk pencocokan
       const rows = await dbAll(
-        "SELECT id, members FROM groups WHERE name = ?",
+        "SELECT id, name, members FROM groups WHERE LOWER(name) = LOWER(?)",
         [groupName]
       );
-      if (!rows || rows.length === 0) return;
+      
+      if (!rows || rows.length === 0) {
+        console.log(`⚠️ Grup "${groupName}" tidak ditemukan`);
+        return;
+      }
 
       const row = rows[0];
+      console.log(`✅ Grup ditemukan: "${row.name}" (dicari: "${groupName}")`);
+      
       let membersArray = [];
       try {
         membersArray = row.members ? JSON.parse(row.members) : [];
@@ -112,8 +120,10 @@ function createContactsRouter(db) {
       const set = new Set(membersArray.map(String));
       if (action === "add") {
         set.add(String(contactNumber));
+        console.log(`➕ Menambahkan ${contactNumber} ke grup "${row.name}"`);
       } else if (action === "remove") {
         set.delete(String(contactNumber));
+        console.log(`➖ Menghapus ${contactNumber} dari grup "${row.name}"`);
       }
 
       const newMembers = Array.from(set);
@@ -189,6 +199,10 @@ function createContactsRouter(db) {
       return res.status(500).json({ error: "Gagal memeriksa duplikasi nomor" });
     }
 
+    // 🔥 AUTO TITLE CASE untuk instansi dan jabatan (seperti di registrationHandler)
+    const normalizedInstansi = instansi ? toTitleCase(instansi) : null;
+    const normalizedJabatan = jabatan ? toTitleCase(jabatan) : null;
+
     // ✅ Support multiple groups
     let groupValue = null;
     let groupNamesForSync = [];
@@ -217,14 +231,15 @@ function createContactsRouter(db) {
     const sql = "INSERT INTO contacts (name, number, instansi, jabatan, grup) VALUES (?, ?, ?, ?, ?)";
 
     try {
-  const result = await dbRun(sql, [
-    name.trim(),
-    phoneValidation.normalized,
-    instansi ? toTitleCase(instansi) : null,  
-    jabatan ? toTitleCase(jabatan) : null,   
-    groupValue,
-  ]);
-      
+      const result = await dbRun(sql, [
+        name.trim(),
+        phoneValidation.normalized,
+        normalizedInstansi,
+        normalizedJabatan,
+        groupValue,
+      ]);
+
+      console.log(`✅ Kontak ditambahkan: ${name.trim()} | Instansi: ${normalizedInstansi} | Jabatan: ${normalizedJabatan}`);
 
       // Respond with success
       res.json({ 
@@ -234,8 +249,8 @@ function createContactsRouter(db) {
           id: result.lastID,
           name: name.trim(),
           number: phoneValidation.normalized,
-          instansi,
-          jabatan,
+          instansi: normalizedInstansi,
+          jabatan: normalizedJabatan,
           grup: groupValue
         }
       });
@@ -258,7 +273,7 @@ function createContactsRouter(db) {
     const { id } = req.params;
     const { name, number, instansi, jabatan, grup } = req.body;
 
-     if (!name || !number) {
+    if (!name || !number) {
       return res.status(400).json({ 
         error: "Nama dan nomor wajib diisi." 
       });
@@ -321,6 +336,10 @@ function createContactsRouter(db) {
         oldGrupArray = [];
       }
 
+      // 🔥 AUTO TITLE CASE untuk instansi dan jabatan
+      const normalizedInstansi = instansi ? toTitleCase(instansi) : null;
+      const normalizedJabatan = jabatan ? toTitleCase(jabatan) : null;
+
       // ✅ Parse new groups - support multiple groups
       let groupValue = null;
       let newGrupArray = [];
@@ -346,14 +365,16 @@ function createContactsRouter(db) {
 
       const sql = "UPDATE contacts SET name = ?, number = ?, instansi = ?, jabatan = ?, grup = ? WHERE id = ?";
     
-    const result = await dbRun(sql, [
+      const result = await dbRun(sql, [
         name.trim(),
         phoneValidation.normalized,
-        instansi || null,  // ← Bisa NULL
-        jabatan || null,   // ← Bisa NULL
+        normalizedInstansi,
+        normalizedJabatan,
         groupValue,
         id,
-    ]);
+      ]);
+
+      console.log(`✅ Kontak diupdate: ${name.trim()} | Instansi: ${normalizedInstansi} | Jabatan: ${normalizedJabatan}`);
 
       if (result.changes === 0) {
         return res.status(404).json({ 
@@ -368,8 +389,8 @@ function createContactsRouter(db) {
           id,
           name: name.trim(),
           number: phoneValidation.normalized,
-          instansi,
-          jabatan,
+          instansi: normalizedInstansi,
+          jabatan: normalizedJabatan,
           grup: groupValue
         }
       });

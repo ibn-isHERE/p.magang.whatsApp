@@ -468,7 +468,7 @@ db.serialize(() => {
                 db.get("SELECT COUNT(*) as count FROM instansi", (countErr, row) => {
                     if (!countErr && row.count === 0) {
                         const defaultInstansi = [
-                            'Tim ZI',
+                            'Tim Zi',
                             'Tim Umum',
                             'Tim Statistik Sosial',
                             'Tim Statistik Distribusi',

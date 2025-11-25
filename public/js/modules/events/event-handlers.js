@@ -466,7 +466,7 @@ export function initReminderForm() {
 
   await Swal.fire({
     icon: "success",
-    title: "✅ Pesan Terjadwal!",
+    title: "Pesan Terjadwal!",
     html: `
       <div style="text-align: left; padding: 10px;">
         <p><strong>📊 Total Penerima:</strong> <span class="badge badge-primary">${finalNumbers.length} nomor</span></p>

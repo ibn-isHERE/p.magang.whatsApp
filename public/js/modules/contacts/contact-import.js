@@ -589,7 +589,7 @@ export function downloadExcelTemplate() {
           </strong>
           <ul style="margin: 0; padding-left: 20px; color: #2c5282; font-size: 12px; line-height: 1.7;">
             <li>Jika kolom <strong>grup</strong> diisi, kontak akan otomatis ditambahkan ke grup tersebut</li>
-            <li>Nama grup harus <strong>sama persis</strong> dengan yang ada di database</li>
+            <li>Nama grup harus sesuai dengan yang ada di database. Pencocokan nama grup dilakukan tanpa membedakan huruf besar dan kecil (case-insensitive)</li>
             <li>Grup harus sudah dibuat sebelum import</li>
             <li>Cek console browser untuk melihat hasil sinkronisasi</li>
           </ul>
