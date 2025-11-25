@@ -251,7 +251,7 @@ router.post("/check-room-availability", async (req, res) => {
 /**
  * POST tambah meeting
  */
-router.post("/add-meeting", upload.array('files', 5), async (req, res) => {
+router.post("/add-meeting", upload.array('files', 10), async (req, res) => {
     try {
         console.log("\n=== [ADD MEETING] Request Received ===");
         console.log("Body:", req.body);
@@ -495,7 +495,7 @@ router.post("/add-meeting", upload.array('files', 5), async (req, res) => {
 /**
  * PUT edit meeting
  */
-router.put("/edit-meeting/:id", upload.array('files', 5), async (req, res) => {
+router.put("/edit-meeting/:id", upload.array('files', 10), async (req, res) => {
     const { id } = req.params;
     const { 
         meetingTitle, 

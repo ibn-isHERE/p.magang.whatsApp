@@ -500,7 +500,7 @@ export async function handleBulkDeleteContacts() {
     Swal.close();
     Swal.fire({
       icon: "error",
-      title: "❌ Gagal",
+      title: "Gagal",
       text: error.message || "Terjadi kesalahan saat menghapus kontak",
       confirmButtonColor: "#f56565",
     });

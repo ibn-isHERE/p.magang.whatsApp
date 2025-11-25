@@ -541,11 +541,11 @@ export function initReminderForm() {
   await scheduleRender.renderScheduleTable();
   window.scrollTo({ top: 0, behavior: "smooth" });
   
-  console.log('✅✅✅ ALL FORM DATA CLEARED SUCCESSFULLY ✅✅✅');
+  console.log(' ALL FORM DATA CLEARED SUCCESSFULLY');
 } else {
         Swal.fire({
           icon: "error",
-          title: "❌ Gagal",
+          title: "Gagal",
           text: text,
           confirmButtonColor: "#fc8181"
         });
@@ -554,7 +554,7 @@ export function initReminderForm() {
       Swal.close();
       Swal.fire({
         icon: "error",
-        title: "❌ Koneksi Gagal",
+        title: " Koneksi Gagal",
         text: "Tidak dapat terhubung ke server. Silakan coba lagi.",
         confirmButtonColor: "#fc8181"
       });
@@ -863,11 +863,11 @@ export function initMeetingForm() {
   await scheduleRender.renderScheduleTable();
   window.scrollTo({ top: 0, behavior: "smooth" });
   
-  console.log('✅✅✅ ALL MEETING FORM DATA CLEARED SUCCESSFULLY ✅✅✅');
+  console.log(' ALL MEETING FORM DATA CLEARED SUCCESSFULLY');
 } else {
         Swal.fire({
           icon: "error",
-          title: "❌ Gagal",
+          title: "Gagal",
           html: `
             <p>${result.message || "Terjadi kesalahan"}</p>
             ${result.error ? `<small style="color: #718096;">${result.error}</small>` : ''}
@@ -877,10 +877,10 @@ export function initMeetingForm() {
       }
     } catch (err) {
       Swal.close();
-      console.error('❌ Request Error:', err);
+      console.error(' Request Error:', err);
       Swal.fire({
         icon: "error",
-        title: "❌ Koneksi Gagal",
+        title: " Koneksi Gagal",
         text: "Tidak dapat terhubung ke server. Silakan coba lagi.",
         confirmButtonColor: "#fc8181"
       });
