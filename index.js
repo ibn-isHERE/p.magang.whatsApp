@@ -321,6 +321,7 @@ app.get("/get-all-schedules", (req, res) => {
     datetime(end_epoch / 1000, 'unixepoch', 'localtime') as meetingEndTime,
     selectedGroups,
     groupInfo,
+    deliveryResult,  -- ✅ INCLUDE deliveryResult
     'meeting' as type
   FROM meetings`;
   
@@ -349,7 +350,7 @@ app.get("/get-all-schedules", (req, res) => {
       }
 
       try {
-        // ✅ Process schedules dengan groupInfo
+        // ✅ Process schedules dengan deliveryResult
         const processedSchedules = scheduleRows.map((row) => {
           return {
             id: row.id,
@@ -361,11 +362,12 @@ app.get("/get-all-schedules", (req, res) => {
             status: row.status,
             type: "message",
             selectedGroups: row.selectedGroups ? JSON.parse(row.selectedGroups) : null,
-            groupInfo: row.groupInfo ? JSON.parse(row.groupInfo) : null
+            groupInfo: row.groupInfo ? JSON.parse(row.groupInfo) : null,
+            deliveryResult: row.deliveryResult  // ✅ Include deliveryResult
           };
         });
 
-        // ✅ Process meetings dengan groupInfo
+        // ✅ Process meetings dengan deliveryResult
         const processedMeetings = meetingRows.map((row) => {
           return {
             id: row.id,
@@ -383,7 +385,8 @@ app.get("/get-all-schedules", (req, res) => {
             startTime: row.startTime,
             endTime: row.endTime,
             selectedGroups: row.selectedGroups ? JSON.parse(row.selectedGroups) : null,
-            groupInfo: row.groupInfo ? JSON.parse(row.groupInfo) : null
+            groupInfo: row.groupInfo ? JSON.parse(row.groupInfo) : null,
+            deliveryResult: row.deliveryResult  // ✅ Include deliveryResult
           };
         });
 
@@ -404,7 +407,7 @@ app.get("/get-all-schedules", (req, res) => {
           }
         });
 
-        console.log(`✅ Returned ${allSchedules.length} schedules (${processedSchedules.length} messages, ${processedMeetings.length} meetings)`);
+        console.log(`✅ Returned ${allSchedules.length} schedules with delivery results`);
         res.json(allSchedules);
         
       } catch (error) {

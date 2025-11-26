@@ -164,102 +164,83 @@ db.serialize(() => {
     // ==========================================
     // 2. SCHEDULES TABLE (Message Reminders)
     // ==========================================
-    db.run(
-        `CREATE TABLE IF NOT EXISTS schedules (
-            id TEXT PRIMARY KEY,
-            numbers TEXT NOT NULL,
-            message TEXT,
-            filesData TEXT,
-            scheduledTime TEXT NOT NULL,
-            status TEXT NOT NULL,
-            selectedGroups TEXT,
-            groupInfo TEXT,
-            createdAt TEXT DEFAULT CURRENT_TIMESTAMP
-        )`,
-        (err) => {
-            if (err) {
-                console.error("❌ Gagal membuat tabel 'schedules':", err.message);
-            } else {
-                console.log("✅ Tabel 'schedules' siap digunakan.");
+     db.run(
+    `CREATE TABLE IF NOT EXISTS schedules (
+        id TEXT PRIMARY KEY,
+        numbers TEXT NOT NULL,
+        message TEXT,
+        filesData TEXT,
+        scheduledTime TEXT NOT NULL,
+        status TEXT NOT NULL,
+        selectedGroups TEXT,
+        groupInfo TEXT,
+        deliveryResult TEXT,  -- ✅ ALREADY EXISTS
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    (err) => {
+        if (err) {
+            console.error("❌ Gagal membuat tabel 'schedules':", err.message);
+        } else {
+            console.log("✅ Tabel 'schedules' siap digunakan.");
+            
+            // ✅ AUTO MIGRATION: Add missing columns
+            db.all("PRAGMA table_info(schedules)", (pragmaErr, columns) => {
+                if (pragmaErr) return;
                 
-                // Migration: Add missing columns if needed
-                db.all("PRAGMA table_info(schedules)", (pragmaErr, columns) => {
-                    if (pragmaErr) return;
-                    
-                    const columnNames = columns.map(col => col.name);
-                    
-                    if (!columnNames.includes('selectedGroups')) {
-                        db.run(`ALTER TABLE schedules ADD COLUMN selectedGroups TEXT`, (alterErr) => {
-                            if (!alterErr) {
-                                console.log("✅ Added selectedGroups column to schedules");
-                            }
-                        });
-                    }
-                    
-                    if (!columnNames.includes('groupInfo')) {
-                        db.run(`ALTER TABLE schedules ADD COLUMN groupInfo TEXT`, (alterErr) => {
-                            if (!alterErr) {
-                                console.log("✅ Added groupInfo column to schedules");
-                            }
-                        });
-                    }
-                });
-            }
+                const columnNames = columns.map(col => col.name);
+                
+                // Check and add deliveryResult column if missing
+                if (!columnNames.includes('deliveryResult')) {
+                    db.run(`ALTER TABLE schedules ADD COLUMN deliveryResult TEXT`, (alterErr) => {
+                        if (!alterErr) console.log("🆕 Added deliveryResult column to schedules");
+                    });
+                }
+            });
         }
-    );
-
+    }
+);
     // ==========================================
     // 3. MEETINGS TABLE (Meeting Schedules)
     // ==========================================
     db.run(
-        `CREATE TABLE IF NOT EXISTS meetings (
-            id TEXT PRIMARY KEY,
-            meetingTitle TEXT NOT NULL,
-            numbers TEXT NOT NULL,
-            meetingRoom TEXT NOT NULL,
-            date TEXT NOT NULL,
-            startTime TEXT NOT NULL,
-            endTime TEXT NOT NULL,
-            status TEXT NOT NULL,
-            filesData TEXT,
-            selectedGroups TEXT,
-            groupInfo TEXT,
-            start_epoch INTEGER,
-            end_epoch INTEGER,
-            createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
-            updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
-        )`,
-        (err) => {
-            if (err) {
-                console.error("❌ Gagal membuat tabel 'meetings':", err.message);
-            } else {
-                console.log("✅ Tabel 'meetings' siap digunakan.");
+    `CREATE TABLE IF NOT EXISTS meetings (
+        id TEXT PRIMARY KEY,
+        meetingTitle TEXT NOT NULL,
+        numbers TEXT NOT NULL,
+        meetingRoom TEXT NOT NULL,
+        date TEXT NOT NULL,
+        startTime TEXT NOT NULL,
+        endTime TEXT NOT NULL,
+        status TEXT NOT NULL,
+        filesData TEXT,
+        selectedGroups TEXT,
+        groupInfo TEXT,
+        deliveryResult TEXT,  -- ✅ ALREADY EXISTS
+        start_epoch INTEGER,
+        end_epoch INTEGER,
+        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+    )`,
+    (err) => {
+        if (err) {
+            console.error("❌ Gagal membuat tabel 'meetings':", err.message);
+        } else {
+            console.log("✅ Tabel 'meetings' siap digunakan.");
+            
+            db.all("PRAGMA table_info(meetings)", (pragmaErr, columns) => {
+                if (pragmaErr) return;
                 
-                // Migration: Add missing columns if needed
-                db.all("PRAGMA table_info(meetings)", (pragmaErr, columns) => {
-                    if (pragmaErr) return;
-                    
-                    const columnNames = columns.map(col => col.name);
-                    
-                    if (!columnNames.includes('selectedGroups')) {
-                        db.run(`ALTER TABLE meetings ADD COLUMN selectedGroups TEXT`, (alterErr) => {
-                            if (!alterErr) {
-                                console.log("✅ Added selectedGroups column to meetings");
-                            }
-                        });
-                    }
-                    
-                    if (!columnNames.includes('groupInfo')) {
-                        db.run(`ALTER TABLE meetings ADD COLUMN groupInfo TEXT`, (alterErr) => {
-                            if (!alterErr) {
-                                console.log("✅ Added groupInfo column to meetings");
-                            }
-                        });
-                    }
-                });
-            }
+                const columnNames = columns.map(col => col.name);
+                
+                if (!columnNames.includes('deliveryResult')) {
+                    db.run(`ALTER TABLE meetings ADD COLUMN deliveryResult TEXT`, (alterErr) => {
+                        if (!alterErr) console.log("🆕 Added deliveryResult column to meetings");
+                    });
+                }
+            });
         }
-    );
+    }
+);
 
     // ==========================================
     // 4. CONTACTS TABLE (Contact Management)

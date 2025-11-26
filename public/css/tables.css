@@ -187,10 +187,51 @@
   min-width: 63px;
   text-align: center;
 }
-#scheduleTable th:nth-child(6),
+
+#scheduleTable th:nth-child(6){
+  text-align: center;
+  width: auto;
+}
+
 #scheduleTable td:nth-child(6) {
+  width: auto;
+}
+/* Action buttons moved to 7th column */
+#scheduleTable th:nth-child(7),
+#scheduleTable td:nth-child(7) {
   text-align: center;
   vertical-align: middle !important;
+}
+#scheduleTable th,
+#scheduleTable td{
+  padding-left: 30px;
+  
+}
+
+/* ✅ Delivery Result Cell Styling */
+.delivery-result-cell {
+  line-height: 1.4;
+  vertical-align: middle !important
+
+}
+
+.delivery-result-cell .fa-check-circle {
+  color: #48bb78;
+}
+
+.delivery-result-cell .fa-times-circle {
+  color: #f56565;
+}
+
+/* Empty state for delivery result */
+.delivery-result-cell .empty-delivery {
+  font-style: italic;
+  font-size: 11px;
+}
+
+/* Update table wrapper to accommodate new column */
+#scheduleTable {
+  min-width: 800px; /* Increase from 630px */
 }
 
 /* Contact Table Column Widths */
@@ -229,8 +270,20 @@
   text-align: center;
   vertical-align: middle !important;
 }
+#contact-management-table th:nth-child(7),
+#contact-management-table td:nth-child(7) {
+  box-sizing: initial;
+  width: 126px;
+  min-width: 126px;
+  text-align: center;
+  vertical-align: middle !important;
+}
 
 /* Group Table Column Widths */
+#group-management-table th,
+#group-management-table td {
+  font-size: 12px;
+}
 #group-management-table th:nth-child(1),
 #group-management-table td:nth-child(1) {
   width: auto;
@@ -244,6 +297,7 @@
 }
 #group-management-table th:nth-child(3),
 #group-management-table td:nth-child(3) {
+  box-sizing:initial;
   width: 126px;
   min-width: 126px;
   text-align: center;
@@ -312,8 +366,8 @@
   background-color: #007bff;
   color: white;
   box-shadow: 0 1.26px 3.15px rgba(0, 123, 255, 0.2);
+  margin-right: 10px;
 }
-
 .edit-btn:hover,
 .edit-contact-btn:hover,
 .edit-group-btn:hover {

@@ -1,4 +1,4 @@
-// schedule-render.js - FINAL FIX: Display group names correctly
+// schedule-render.js - COMPLETE: With delivery result column
 
 import { formatTimeDifference } from '../ui/ui-helpers.js';
 import { getContacts } from '../contacts/contact-manager.js';
@@ -15,7 +15,74 @@ import {
 } from './schedule-edit.js';
 
 /**
- * ✅ FINAL FIX: Format recipients display - ONLY show group names, NOT member names
+ * ✅ NEW: Format delivery result untuk ditampilkan
+ */
+function formatDeliveryResult(deliveryResultJson) {
+  if (!deliveryResultJson) {
+    return '<span style="color: #a0aec0; font-size: 12px;">Belum ada data</span>';
+  }
+
+  try {
+    const result = JSON.parse(deliveryResultJson);
+    const contacts = getContacts();
+    
+    const successCount = result.sent || 0;
+    const failedDetails = result.failed || [];
+    
+    let html = '';
+    
+    // Success count
+    if (successCount > 0) {
+      html += `<div style="color: #48bb78; margin-bottom: 4px; font-size: 12px;">
+        <strong>${successCount} Berhasil</strong>
+      </div>`;
+    }
+    
+    // Failed details
+    if (failedDetails.length > 0) {
+      html += `<div style="color: #f56565; font-size: 12px;">
+        <strong>${failedDetails.length} Gagal:</strong><br>`;
+      
+      // Show max 3 failed numbers
+      const displayFailed = failedDetails.slice(0, 999);
+      displayFailed.forEach(fail => {
+        // Cari nama kontak berdasarkan nomor
+        const contact = contacts.find(c => c.number === fail.number);
+        const displayName = contact 
+          ? `<i class="fa-solid fa-user" style="font-size: 10px;"></i> ${contact.name}` 
+          : (fail.number.length > 15 ? fail.number.substring(0, 12) + '...' : fail.number);
+        
+        html += `<span style="display: block; padding-left: 16px; color: #bb6464ff;">
+          • ${displayName}<br>
+          <small style="color: #a0aec0;">${fail.reason || 'Unknown error'}</small>
+        </span>`;
+      });
+      
+      // Show "and X more" if there are more failures
+      if (failedDetails.length > 999) {
+        html += `<span style="display: block; padding-left: 16px; color: #a0aec0; font-style: italic;">
+          ... dan ${failedDetails.length - 999} lainnya
+        </span>`;
+      }
+      
+      html += `</div>`;
+    }
+    
+    // If no result yet
+    if (successCount === 0 && failedDetails.length === 0) {
+      html = '<span style="color: #a0aec0; font-size: 12px;">Belum terkirim</span>';
+    }
+    
+    return html;
+    
+  } catch (e) {
+    console.error('Error parsing delivery result:', e);
+    return '<span style="color: #f56565; font-size: 12px;">Error parsing data</span>';
+  }
+}
+
+/**
+ * Format recipients display - ONLY show group names, NOT member names
  */
 async function formatRecipientsDisplay(numbersArray, groupInfo) {
   const contacts = getContacts();
@@ -37,7 +104,7 @@ async function formatRecipientsDisplay(numbersArray, groupInfo) {
   const displayItems = [];
   const processedNumbers = new Set();
   
-  // ✅ STEP 1: Mark all group members as processed first
+  // STEP 1: Mark all group members as processed first
   if (groupInfoArray.length > 0) {
     groupInfoArray.forEach(group => {
       if (group.members && Array.isArray(group.members)) {
@@ -48,7 +115,7 @@ async function formatRecipientsDisplay(numbersArray, groupInfo) {
     });
   }
   
-  // ✅ STEP 2: Display ONLY group names (NOT members)
+  // STEP 2: Display ONLY group names (NOT members)
   if (groupInfoArray.length > 0) {
     groupInfoArray.forEach(group => {
       displayItems.push(`<span style="color: #4299e1; font-weight: 500;">
@@ -57,7 +124,7 @@ async function formatRecipientsDisplay(numbersArray, groupInfo) {
     });
   }
   
-  // ✅ STEP 3: Display individual contacts yang BUKAN member grup
+  // STEP 3: Display individual contacts yang BUKAN member grup
   numbersArray.forEach(num => {
     if (!processedNumbers.has(num)) {
       const contact = contacts.find(c => c.number === num);
@@ -82,14 +149,8 @@ async function formatRecipientsDisplay(numbersArray, groupInfo) {
 
 const schedulesContainer = document.querySelector("#scheduleTable tbody");
 
-function getContactNameOrNumber(number) {
-  const contacts = getContacts();
-  const contact = contacts.find(c => c.number === number);
-  return contact ? `${contact.name} (${number})` : number;
-}
-
 /**
- * Creates HTML for schedule row
+ * Creates HTML for schedule row - WITH DELIVERY RESULT COLUMN
  */
 async function createScheduleRowHtml(schedule) {
   const scheduledTimeFull = new Date(schedule.scheduledTime);
@@ -129,10 +190,7 @@ async function createScheduleRowHtml(schedule) {
     return num;
   });
 
-  // ✅ FORMAT WITH GROUP DISPLAY - gunakan groupInfo dari database
   const recipientDisplay = await formatRecipientsDisplay(numbersArray, schedule.groupInfo);
-  
-  const numberOfRecipients = numbersArray.length;
   const isMeeting = schedule.type === "meeting" || schedule.meetingRoom;
 
   let statusClass = "";
@@ -317,7 +375,6 @@ async function createScheduleRowHtml(schedule) {
     }
   }
 
-  // ✅ IMPROVED: Better recipient display with group indication
   let recipientDisplayHtml = recipientDisplay.html || "-";
   let recipientSummary = `${recipientDisplay.totalRecipients} nomor`;
   
@@ -329,12 +386,17 @@ async function createScheduleRowHtml(schedule) {
     recipientSummary += ` (${recipientDisplay.individualCount} kontak)`;
   }
 
+  // ✅ NEW: Format delivery result
+  const deliveryResultHtml = formatDeliveryResult(schedule.deliveryResult);
+
+  // ✅ UPDATED: Add delivery result column (7 columns total now)
   return `
     <td data-scheduled-time="${schedule.scheduledTime}">${timeCellContent}</td>
     <td>${recipientDisplayHtml}<br><small style="color: #718096;">(${recipientSummary})</small></td>
     <td>${messageDisplay}</td>
     <td>${fileDisplay}</td>
     <td class="${statusClass}">${statusIcon} ${statusText}</td>
+    <td class="delivery-result-cell">${deliveryResultHtml}</td>
     <td class="action-buttons">${actionButtons}</td>
   `;
 }
@@ -404,7 +466,7 @@ export async function renderScheduleTable() {
     schedulesContainer.innerHTML = "";
 
     if (filteredSchedules.length === 0) {
-      schedulesContainer.innerHTML = '<tr><td colspan="6" class="text-center"><div class="empty-state" style="padding: 40px 20px;"><i class="fa-solid fa-calendar-times" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i><p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada jadwal untuk filter ini.</p></div></td></tr>';
+      schedulesContainer.innerHTML = '<tr><td colspan="7" class="text-center"><div class="empty-state" style="padding: 40px 20px;"><i class="fa-solid fa-calendar-times" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i><p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada jadwal untuk filter ini.</p></div></td></tr>';
     } else {
       const rowPromises = filteredSchedules.map(async (schedule) => {
         const newRow = document.createElement("tr");
@@ -421,7 +483,7 @@ export async function renderScheduleTable() {
     attachScheduleActionListeners();
   } catch (error) {
     console.error("Error rendering schedule table:", error);
-    schedulesContainer.innerHTML = `<tr><td colspan="6" class="text-center error-message">${error.message}</td></tr>`;
+    schedulesContainer.innerHTML = `<tr><td colspan="7" class="text-center error-message">${error.message}</td></tr>`;
   }
 }
 
@@ -536,9 +598,7 @@ export async function smartUpdateScheduleStatus() {
   }
 }
 
-/**
- * Attaches event listeners to schedule action buttons
- */
+// Continue with attachScheduleActionListeners() - keep all existing event handlers unchanged
 async function attachScheduleActionListeners() {
   const schedules = getSchedules();
 
@@ -777,3 +837,11 @@ async function attachScheduleActionListeners() {
     };
   });
 }
+
+// Export all functions
+export { 
+  formatDeliveryResult,  // ✅ Export new function
+  formatRecipientsDisplay,
+  createScheduleRowHtml,
+  attachScheduleActionListeners
+};
