@@ -1,4 +1,4 @@
-// scheduler.js - COMPLETE: With delivery result tracking for meetings
+// scheduler.js - COMPLETE: With safe delays and batching for meetings
 
 const schedule = require("node-schedule");
 const { MessageMedia } = require("whatsapp-web.js");
@@ -10,44 +10,77 @@ const { updateMeetingStatus, getDatabase } = require("./dbOperations");
 let client = null;
 let meetingJobs = {};
 
+// ⚙️ KONFIGURASI DELAY - SESUAIKAN SESUAI KEBUTUHAN
+const DELAY_CONFIG = {
+    VALIDATION_DELAY: 500,           // 0.5 detik antar validasi nomor
+    MESSAGE_DELAY_MIN: 8000,         // 8 detik minimum antar pesan
+    MESSAGE_DELAY_MAX: 15000,        // 15 detik maximum antar pesan
+    FILE_DELAY_MIN: 3000,            // 3 detik minimum antar file
+    FILE_DELAY_MAX: 6000,            // 6 detik maximum antar file
+    BATCH_SIZE: 20,                  // Kirim 20 pesan, lalu pause
+    BATCH_PAUSE: 5 * 60 * 1000       // Pause 5 menit antar batch
+};
+
+/**
+ * 🎲 Generate random delay dalam range
+ */
+function getRandomDelay(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+/**
+ * ⏱️ Sleep dengan random delay
+ */
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * 📊 Log progress pengiriman
+ */
+function logProgress(current, total, type = 'pesan') {
+    const percentage = Math.round((current / total) * 100);
+    console.log(`📈 Progress: ${current}/${total} ${type} (${percentage}%)`);
+}
+
 function setWhatsappClient(whatsappClient) {
     client = whatsappClient;
     console.log("✅ Meeting scheduler WhatsApp client set");
 }
 
 /**
- * ✅ NEW: Save meeting delivery result to database
+ * ✅ Save meeting delivery result to database
  */
 function saveMeetingDeliveryResult(meetingId, deliveryResult) {
-  const db = getDatabase();
-  
-  if (!db) {
-    console.error('❌ Database not available for saving delivery result');
-    return;
-  }
-  
-  const resultJson = JSON.stringify({
-    total: deliveryResult.total || 0,
-    sent: deliveryResult.sentSuccess || 0,
-    failed: deliveryResult.invalidNumbers || [],
-    timestamp: new Date().toISOString()
-  });
-
-  db.run(
-    `UPDATE meetings SET deliveryResult = ? WHERE id = ?`,
-    [resultJson, meetingId],
-    (err) => {
-      if (err) {
-        console.error('❌ Failed to save meeting delivery result:', err);
-      } else {
-        console.log(`✅ Meeting delivery result saved for ${meetingId}`);
-      }
+    const db = getDatabase();
+    
+    if (!db) {
+        console.error('❌ Database not available for saving delivery result');
+        return;
     }
-  );
+    
+    const resultJson = JSON.stringify({
+        total: deliveryResult.total || 0,
+        sent: deliveryResult.sentSuccess || 0,
+        failed: deliveryResult.invalidNumbers || [],
+        timestamp: new Date().toISOString()
+    });
+
+    db.run(
+        `UPDATE meetings SET deliveryResult = ? WHERE id = ?`,
+        [resultJson, meetingId],
+        (err) => {
+            if (err) {
+                console.error('❌ Failed to save meeting delivery result:', err);
+            } else {
+                console.log(`✅ Meeting delivery result saved for ${meetingId}`);
+            }
+        }
+    );
 }
 
 /**
- * ✅ ENHANCED: sendWhatsAppReminder with delivery result tracking
+ * 🚀 ENHANCED: sendWhatsAppReminder dengan safe delays dan batching
  */
 async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
     if (!client) {
@@ -62,7 +95,7 @@ async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
         `🗓️ *Judul:* ${meeting.meetingTitle}\n` +
         `📍 *Ruangan:* ${meeting.meetingRoom}\n` +
         `⏰ *Waktu:* ${meetingTimeStr}\n\n` +
-        `⏳ Rapat akan dimulai dalam *${timeLeftMessage}* lagi!`;
+        `⌛ Rapat akan dimulai dalam *${timeLeftMessage}* lagi!`;
 
     let numbersArray = [];
     try {
@@ -77,7 +110,7 @@ async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
         return false;
     }
 
-    // ✅ TRACK delivery result
+    // 📊 Track delivery result
     const deliveryResult = {
         total: numbersArray.length,
         validatedNumbers: [],
@@ -86,10 +119,12 @@ async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
         sentFailed: 0
     };
 
-    // ✅ STEP 1: Validasi nomor dulu
+    // ✅ STEP 1: Validasi nomor dengan delay aman
     console.log(`\n📋 Memvalidasi ${numbersArray.length} nomor untuk meeting ${meeting.id}...`);
+    console.log(`⏱️ Estimasi waktu validasi: ~${Math.round((numbersArray.length * DELAY_CONFIG.VALIDATION_DELAY) / 1000)} detik\n`);
 
-    for (const num of numbersArray) {
+    for (let i = 0; i < numbersArray.length; i++) {
+        const num = numbersArray[i];
         const formattedNum = formatNumber(num);
         
         if (!formattedNum) {
@@ -103,17 +138,20 @@ async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
             
             if (isRegistered) {
                 deliveryResult.validatedNumbers.push({ original: num, formatted: formattedNum });
-                console.log(`✅ ${num} - Valid & Terdaftar`);
+                console.log(`✅ [${i+1}/${numbersArray.length}] ${num} - Valid & Terdaftar`);
             } else {
                 deliveryResult.invalidNumbers.push({ number: num, reason: 'Tidak terdaftar di WhatsApp' });
-                console.warn(`⚠️ ${num} - Tidak terdaftar di WhatsApp`);
+                console.warn(`⚠️ [${i+1}/${numbersArray.length}] ${num} - Tidak terdaftar di WhatsApp`);
             }
         } catch (error) {
-            console.error(`❌ Error validasi ${num}:`, error.message);
+            console.error(`❌ [${i+1}/${numbersArray.length}] Error validasi ${num}:`, error.message);
             deliveryResult.invalidNumbers.push({ number: num, reason: `Error: ${error.message}` });
         }
 
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        // Delay antar validasi
+        if (i < numbersArray.length - 1) {
+            await sleep(DELAY_CONFIG.VALIDATION_DELAY);
+        }
     }
 
     console.log(`\n📊 Hasil Validasi Meeting ${meeting.id}:`);
@@ -122,10 +160,7 @@ async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
 
     if (deliveryResult.validatedNumbers.length === 0) {
         console.error(`❌ Semua nomor tidak valid untuk meeting ${meeting.id}`);
-        
-        // ✅ Save delivery result even if all failed
         saveMeetingDeliveryResult(meeting.id, deliveryResult);
-        
         return false;
     }
 
@@ -138,6 +173,7 @@ async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
                 if (fs.existsSync(file.path)) {
                     const media = MessageMedia.fromFilePath(file.path);
                     medias.push(media);
+                    console.log(`📎 File dimuat: ${file.name}`);
                 } else {
                     console.warn(`⚠️ File not found: ${file.path}`);
                 }
@@ -147,37 +183,94 @@ async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
         }
     }
 
-    // ✅ STEP 3: Kirim hanya ke nomor yang valid
+    // ✅ STEP 3: Kirim dengan safe delays dan batching
     console.log(`\n📤 Mengirim reminder meeting ke ${deliveryResult.validatedNumbers.length} nomor valid...`);
+    
+    const totalRecipients = deliveryResult.validatedNumbers.length;
+    const avgDelay = (DELAY_CONFIG.MESSAGE_DELAY_MIN + DELAY_CONFIG.MESSAGE_DELAY_MAX) / 2 / 1000;
+    const totalBatches = Math.ceil(totalRecipients / DELAY_CONFIG.BATCH_SIZE);
+    const estimatedTime = (totalRecipients * avgDelay) + ((totalBatches - 1) * DELAY_CONFIG.BATCH_PAUSE / 1000);
+    
+    console.log(`⏱️ Estimasi waktu pengiriman: ~${Math.round(estimatedTime / 60)} menit`);
+    console.log(`📦 Total batch: ${totalBatches} (${DELAY_CONFIG.BATCH_SIZE} pesan/batch)\n`);
 
-    for (const { original, formatted } of deliveryResult.validatedNumbers) {
+    for (let i = 0; i < deliveryResult.validatedNumbers.length; i++) {
+        const { original, formatted } = deliveryResult.validatedNumbers[i];
+        const recipientNum = i + 1;
+
         try {
+            // Kirim pesan teks
             await client.sendMessage(formatted, message);
-            console.log(`✅ Reminder terkirim ke: ${original}`);
+            console.log(`✅ [${recipientNum}/${totalRecipients}] Reminder terkirim ke: ${original}`);
             
-            for (const media of medias) {
-                await client.sendMessage(formatted, media, { 
-                    caption: `Dokumen untuk rapat: ${meeting.meetingTitle}` 
-                });
-                console.log(`✅ File terkirim ke: ${original}`);
+            // Delay antar file yang lebih pendek
+            if (medias.length > 0) {
+                for (let j = 0; j < medias.length; j++) {
+                    const media = medias[j];
+                    const fileDelay = getRandomDelay(DELAY_CONFIG.FILE_DELAY_MIN, DELAY_CONFIG.FILE_DELAY_MAX);
+                    
+                    await sleep(fileDelay);
+                    
+                    await client.sendMessage(formatted, media, { 
+                        caption: `Dokumen untuk rapat: ${meeting.meetingTitle}` 
+                    });
+                    console.log(`   📎 File ${j+1}/${medias.length} terkirim ke: ${original}`);
+                }
             }
             
             deliveryResult.sentSuccess++;
-            await new Promise((resolve) => setTimeout(resolve, 3000));
+            
+            // Log progress setiap 10 pesan
+            if (recipientNum % 10 === 0) {
+                logProgress(recipientNum, totalRecipients);
+            }
+            
+            // 🔄 BATCH PAUSE: Pause setiap N pesan
+            if (recipientNum % DELAY_CONFIG.BATCH_SIZE === 0 && recipientNum < totalRecipients) {
+                const remainingBatches = Math.ceil((totalRecipients - recipientNum) / DELAY_CONFIG.BATCH_SIZE);
+                console.log(`\n⏸️ === BATCH PAUSE ===`);
+                console.log(`   📊 Terkirim: ${recipientNum}/${totalRecipients}`);
+                console.log(`   ⏳ Pause ${DELAY_CONFIG.BATCH_PAUSE / 60000} menit...`);
+                console.log(`   📦 Sisa batch: ${remainingBatches}\n`);
+                
+                await sleep(DELAY_CONFIG.BATCH_PAUSE);
+                
+                console.log(`▶️ Melanjutkan pengiriman...\n`);
+            }
+            // Random delay antar pesan (jika bukan akhir batch)
+            else if (recipientNum < totalRecipients) {
+                const messageDelay = getRandomDelay(
+                    DELAY_CONFIG.MESSAGE_DELAY_MIN, 
+                    DELAY_CONFIG.MESSAGE_DELAY_MAX
+                );
+                await sleep(messageDelay);
+            }
             
         } catch (err) {
-            console.error(`❌ Gagal kirim reminder ke ${original}:`, err.message);
+            console.error(`❌ [${recipientNum}/${totalRecipients}] Gagal kirim ke ${original}:`, err.message);
+            
             deliveryResult.sentFailed++;
             deliveryResult.invalidNumbers.push({ 
                 number: original, 
                 reason: `Send error: ${err.message}` 
             });
+            
+            // Delay lebih lama setelah error
+            await sleep(DELAY_CONFIG.MESSAGE_DELAY_MAX);
         }
     }
 
-    console.log(`\n📊 Hasil Pengiriman Meeting Reminder ${meeting.id}:`);
-    console.log(`   ✅ Berhasil: ${deliveryResult.sentSuccess} nomor`);
-    console.log(`   ❌ Gagal: ${deliveryResult.sentFailed + deliveryResult.invalidNumbers.length} nomor`);
+    const totalFailed = deliveryResult.sentFailed + deliveryResult.invalidNumbers.filter(
+        item => !item.reason.includes('Tidak terdaftar')
+    ).length;
+
+    console.log(`\n📊 ========== HASIL PENGIRIMAN ==========`);
+    console.log(`📧 Meeting ID: ${meeting.id}`);
+    console.log(`✅ Berhasil: ${deliveryResult.sentSuccess} nomor`);
+    console.log(`❌ Gagal: ${totalFailed} nomor`);
+    console.log(`⚠️ Tidak terdaftar: ${deliveryResult.invalidNumbers.filter(i => i.reason.includes('Tidak terdaftar')).length} nomor`);
+    console.log(`📊 Total: ${deliveryResult.total} nomor`);
+    console.log(`=======================================\n`);
 
     // ✅ SAVE delivery result to database
     saveMeetingDeliveryResult(meeting.id, deliveryResult);
@@ -188,7 +281,6 @@ async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
         updateMeetingStatus(meeting.id, 'terkirim');
         
         if (global.emitMeetingStatusUpdate) {
-            const totalFailed = deliveryResult.sentFailed + deliveryResult.invalidNumbers.length;
             const statusMessage = totalFailed > 0
                 ? `Reminder terkirim ke ${deliveryResult.sentSuccess} peserta, ${totalFailed} gagal`
                 : `Reminder terkirim ke ${deliveryResult.sentSuccess} peserta`;
@@ -317,7 +409,7 @@ function loadAndScheduleExistingMeetings() {
 }
 
 /**
- * ✅ ENHANCED: Validasi nomor untuk notifikasi pembatalan dengan tracking
+ * 🚀 ENHANCED: Notifikasi pembatalan dengan safe delays
  */
 async function sendCancellationNotification(meeting) {
     if (!client) {
@@ -343,44 +435,77 @@ async function sendCancellationNotification(meeting) {
 
     if (!Array.isArray(numbersArray) || numbersArray.length === 0) return;
 
-    // ✅ Track cancellation delivery
+    // 📊 Track cancellation delivery
     const deliveryResult = {
         total: numbersArray.length,
+        validatedNumbers: [],
         sentSuccess: 0,
         invalidNumbers: []
     };
 
     console.log(`\n📋 Memvalidasi ${numbersArray.length} nomor untuk notifikasi pembatalan...`);
+    console.log(`⏱️ Estimasi waktu: ~${Math.round((numbersArray.length * (DELAY_CONFIG.VALIDATION_DELAY + DELAY_CONFIG.MESSAGE_DELAY_MIN)) / 1000)} detik\n`);
 
-    for (const num of numbersArray) {
+    for (let i = 0; i < numbersArray.length; i++) {
+        const num = numbersArray[i];
+        const recipientNum = i + 1;
+        
         const formattedNum = formatNumber(num);
         if (!formattedNum) {
+            console.warn(`⚠️ [${recipientNum}/${numbersArray.length}] Format nomor tidak valid: ${num}`);
             deliveryResult.invalidNumbers.push({ number: num, reason: 'Format tidak valid' });
             continue;
         }
 
         try {
+            // Validasi + delay
+            await sleep(DELAY_CONFIG.VALIDATION_DELAY);
+            
             const isRegistered = await client.isRegisteredUser(formattedNum);
             
             if (isRegistered) {
+                deliveryResult.validatedNumbers.push({ original: num, formatted: formattedNum });
+                
+                // Random delay sebelum kirim
+                const sendDelay = getRandomDelay(
+                    DELAY_CONFIG.MESSAGE_DELAY_MIN, 
+                    DELAY_CONFIG.MESSAGE_DELAY_MAX
+                );
+                await sleep(sendDelay);
+                
                 await client.sendMessage(formattedNum, message);
-                console.log(`✅ Notifikasi pembatalan terkirim ke: ${num}`);
+                console.log(`✅ [${recipientNum}/${numbersArray.length}] Notifikasi pembatalan terkirim ke: ${num}`);
                 deliveryResult.sentSuccess++;
+                
+                // Log progress
+                if (recipientNum % 10 === 0) {
+                    logProgress(recipientNum, numbersArray.length, 'notifikasi');
+                }
+                
+                // Batch pause untuk notifikasi pembatalan
+                if (recipientNum % DELAY_CONFIG.BATCH_SIZE === 0 && recipientNum < numbersArray.length) {
+                    console.log(`\n⏸️ Batch pause ${DELAY_CONFIG.BATCH_PAUSE / 60000} menit...\n`);
+                    await sleep(DELAY_CONFIG.BATCH_PAUSE);
+                }
+                
             } else {
-                console.warn(`⚠️ ${num} - Tidak terdaftar (skip)`);
+                console.warn(`⚠️ [${recipientNum}/${numbersArray.length}] ${num} - Tidak terdaftar (skip)`);
                 deliveryResult.invalidNumbers.push({ number: num, reason: 'Tidak terdaftar di WhatsApp' });
             }
         } catch (err) {
-            console.error(`❌ Gagal kirim notifikasi ke ${num}:`, err.message);
+            console.error(`❌ [${recipientNum}/${numbersArray.length}] Gagal kirim notifikasi ke ${num}:`, err.message);
             deliveryResult.invalidNumbers.push({ number: num, reason: `Send error: ${err.message}` });
+            
+            await sleep(DELAY_CONFIG.MESSAGE_DELAY_MAX);
         }
-
-        await new Promise((resolve) => setTimeout(resolve, 300));
     }
 
-    console.log(`\n📊 Hasil Notifikasi Pembatalan:`);
-    console.log(`   ✅ Berhasil: ${deliveryResult.sentSuccess} nomor`);
-    console.log(`   ❌ Gagal/Skip: ${deliveryResult.invalidNumbers.length} nomor`);
+    console.log(`\n📊 ========== HASIL NOTIFIKASI PEMBATALAN ==========`);
+    console.log(`📧 Meeting ID: ${meeting.id}`);
+    console.log(`✅ Berhasil: ${deliveryResult.sentSuccess} nomor`);
+    console.log(`❌ Gagal/Skip: ${deliveryResult.invalidNumbers.length} nomor`);
+    console.log(`📊 Total: ${deliveryResult.total} nomor`);
+    console.log(`==================================================\n`);
     
     // ✅ Save cancellation delivery result
     saveMeetingDeliveryResult(meeting.id, deliveryResult);
@@ -393,5 +518,6 @@ module.exports = {
     cancelMeetingJob,
     loadAndScheduleExistingMeetings,
     sendCancellationNotification,
-    saveMeetingDeliveryResult
+    saveMeetingDeliveryResult,
+    DELAY_CONFIG // Export untuk testing/debugging
 };

@@ -1,4 +1,4 @@
-// scheduler.js - WITH DELIVERY RESULT TRACKING
+// scheduler.js - WITH SAFE DELAYS AND BATCHING
 
 const schedule = require("node-schedule");
 const { MessageMedia } = require("whatsapp-web.js");
@@ -9,6 +9,39 @@ const { cleanupFiles } = require("./fileHandler");
 let jobs = {};
 let client = null;
 let db = null;
+
+// ⚙️ KONFIGURASI DELAY - SESUAIKAN SESUAI KEBUTUHAN
+const DELAY_CONFIG = {
+  VALIDATION_DELAY: 500,           // 0.5 detik antar validasi nomor
+  MESSAGE_DELAY_MIN: 8000,         // 8 detik minimum antar pesan
+  MESSAGE_DELAY_MAX: 15000,        // 15 detik maximum antar pesan
+  FILE_DELAY_MIN: 3000,            // 3 detik minimum antar file
+  FILE_DELAY_MAX: 6000,            // 6 detik maximum antar file
+  BATCH_SIZE: 20,                  // Kirim 20 pesan, lalu pause
+  BATCH_PAUSE: 5 * 60 * 1000       // Pause 5 menit antar batch
+};
+
+/**
+ * 🎲 Generate random delay dalam range
+ */
+function getRandomDelay(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+/**
+ * ⏱️ Sleep dengan delay
+ */
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * 📊 Log progress pengiriman
+ */
+function logProgress(current, total, type = 'pesan') {
+  const percentage = Math.round((current / total) * 100);
+  console.log(`📈 Progress: ${current}/${total} ${type} (${percentage}%)`);
+}
 
 function setWhatsappClient(whatsappClient) {
   client = whatsappClient;
@@ -68,7 +101,7 @@ async function scheduleMessage(scheduleData) {
 }
 
 /**
- * ✅ ENHANCED: Execute dengan tracking delivery result
+ * 🚀 ENHANCED: Execute dengan safe delays, batching, dan tracking delivery result
  */
 async function executeScheduledMessage(id, numbers, message, filesData) {
   if (!client) {
@@ -132,8 +165,9 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
     return;
   }
 
-  // ✅ ENHANCED: Track detail per nomor
-  console.log(`\n🔍 Memvalidasi ${targetNumbers.length} nomor untuk pesan ID ${id}...`);
+  // 📊 Track detail per nomor
+  console.log(`\n📋 Memvalidasi ${targetNumbers.length} nomor untuk pesan ID ${id}...`);
+  console.log(`⏱️ Estimasi waktu validasi: ~${Math.round((targetNumbers.length * DELAY_CONFIG.VALIDATION_DELAY) / 1000)} detik\n`);
   
   const deliveryResult = {
     total: targetNumbers.length,
@@ -142,12 +176,13 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
     notRegistered: []
   };
 
-  // STEP 1: Validasi semua nomor dulu
-  for (const num of targetNumbers) {
+  // STEP 1: Validasi semua nomor dulu dengan delay aman
+  for (let i = 0; i < targetNumbers.length; i++) {
+    const num = targetNumbers[i];
     const formattedNum = formatNumber(num);
     
     if (!formattedNum) {
-      console.warn(`⚠️ Format nomor tidak valid: ${num}`);
+      console.warn(`⚠️ [${i+1}/${targetNumbers.length}] Format nomor tidak valid: ${num}`);
       deliveryResult.failed.push({
         number: num,
         reason: 'Format tidak valid'
@@ -164,23 +199,26 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
           formatted: formattedNum,
           status: 'pending'
         });
-        console.log(`✅ ${num} - Valid & Terdaftar`);
+        console.log(`✅ [${i+1}/${targetNumbers.length}] ${num} - Valid & Terdaftar`);
       } else {
         deliveryResult.notRegistered.push({
           number: num,
           reason: 'Tidak terdaftar di WhatsApp'
         });
-        console.warn(`⚠️ ${num} - Tidak terdaftar di WhatsApp`);
+        console.warn(`⚠️ [${i+1}/${targetNumbers.length}] ${num} - Tidak terdaftar di WhatsApp`);
       }
     } catch (error) {
-      console.error(`❌ Error validasi ${num}:`, error.message);
+      console.error(`❌ [${i+1}/${targetNumbers.length}] Error validasi ${num}:`, error.message);
       deliveryResult.failed.push({
         number: num,
         reason: `Error: ${error.message}`
       });
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // Delay antar validasi
+    if (i < targetNumbers.length - 1) {
+      await sleep(DELAY_CONFIG.VALIDATION_DELAY);
+    }
   }
 
   console.log(`\n📊 Hasil Validasi:`);
@@ -193,47 +231,88 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
     const failureReason = `Semua nomor tidak valid (${deliveryResult.failed.length + deliveryResult.notRegistered.length} nomor gagal)`;
     console.error(`❌ ${failureReason}`);
     
-    // ✅ Save delivery result to database
     saveDeliveryResult(id, deliveryResult);
-    
     handleFailedMessage(id, filesData, failureReason);
     return;
   }
 
-  // STEP 2: Kirim hanya ke nomor yang valid
+  // STEP 2: Kirim dengan safe delays dan batching
   console.log(`\n📤 Mengirim pesan ke ${deliveryResult.success.length} nomor valid...`);
+  
+  const totalRecipients = deliveryResult.success.length;
+  const avgDelay = (DELAY_CONFIG.MESSAGE_DELAY_MIN + DELAY_CONFIG.MESSAGE_DELAY_MAX) / 2 / 1000;
+  const totalBatches = Math.ceil(totalRecipients / DELAY_CONFIG.BATCH_SIZE);
+  const estimatedTime = (totalRecipients * avgDelay) + ((totalBatches - 1) * DELAY_CONFIG.BATCH_PAUSE / 1000);
+  
+  console.log(`⏱️ Estimasi waktu pengiriman: ~${Math.round(estimatedTime / 60)} menit`);
+  console.log(`📦 Total batch: ${totalBatches} (${DELAY_CONFIG.BATCH_SIZE} pesan/batch)\n`);
   
   const actualSent = [];
   const sentErrors = [];
 
-  for (const contact of deliveryResult.success) {
+  for (let i = 0; i < deliveryResult.success.length; i++) {
+    const contact = deliveryResult.success[i];
+    const recipientNum = i + 1;
+
     try {
       // Kirim pesan teks
       if (message && message.trim() !== "") {
         await client.sendMessage(contact.formatted, message.trim());
-        console.log(`✅ Pesan teks terkirim ke ${contact.number}`);
+        console.log(`✅ [${recipientNum}/${totalRecipients}] Pesan teks terkirim ke ${contact.number}`);
       }
 
-      // Kirim file
+      // Kirim file dengan delay lebih pendek
       if (medias.length > 0) {
-        for (const media of medias) {
+        for (let j = 0; j < medias.length; j++) {
+          const media = medias[j];
+          const fileDelay = getRandomDelay(DELAY_CONFIG.FILE_DELAY_MIN, DELAY_CONFIG.FILE_DELAY_MAX);
+          
+          await sleep(fileDelay);
+          
           await client.sendMessage(contact.formatted, media);
-          console.log(`✅ File ${media.filename} terkirim ke ${contact.number}`);
+          console.log(`   📎 File ${j+1}/${medias.length} (${media.filename}) terkirim ke ${contact.number}`);
         }
       }
 
       actualSent.push(contact.number);
       contact.status = 'sent';
 
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      // Log progress setiap 10 pesan
+      if (recipientNum % 10 === 0) {
+        logProgress(recipientNum, totalRecipients);
+      }
+
+      // 🔄 BATCH PAUSE: Pause setiap N pesan
+      if (recipientNum % DELAY_CONFIG.BATCH_SIZE === 0 && recipientNum < totalRecipients) {
+        const remainingBatches = Math.ceil((totalRecipients - recipientNum) / DELAY_CONFIG.BATCH_SIZE);
+        console.log(`\n⏸️ === BATCH PAUSE ===`);
+        console.log(`   📊 Terkirim: ${recipientNum}/${totalRecipients}`);
+        console.log(`   ⏳ Pause ${DELAY_CONFIG.BATCH_PAUSE / 60000} menit...`);
+        console.log(`   📦 Sisa batch: ${remainingBatches}\n`);
+        
+        await sleep(DELAY_CONFIG.BATCH_PAUSE);
+        
+        console.log(`▶️ Melanjutkan pengiriman...\n`);
+      }
+      // Random delay antar pesan (jika bukan akhir batch)
+      else if (recipientNum < totalRecipients) {
+        const messageDelay = getRandomDelay(
+          DELAY_CONFIG.MESSAGE_DELAY_MIN, 
+          DELAY_CONFIG.MESSAGE_DELAY_MAX
+        );
+        await sleep(messageDelay);
+      }
       
     } catch (err) {
-      console.error(`❌ Gagal mengirim ke ${contact.number}:`, err.message);
+      console.error(`❌ [${recipientNum}/${totalRecipients}] Gagal mengirim ke ${contact.number}:`, err.message);
       sentErrors.push({
         number: contact.number,
         reason: err.message
       });
       contact.status = 'error';
+      
+      // Delay lebih lama setelah error
+      await sleep(DELAY_CONFIG.MESSAGE_DELAY_MAX);
     }
   }
 
@@ -242,9 +321,15 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
   deliveryResult.failed = [...deliveryResult.failed, ...sentErrors];
   deliveryResult.allFailed = [...deliveryResult.notRegistered, ...deliveryResult.failed];
 
-  console.log(`\n📊 Hasil Pengiriman Pesan ID ${id}:`);
-  console.log(`   ✅ Berhasil: ${actualSent.length} nomor`);
-  console.log(`   ❌ Gagal: ${deliveryResult.allFailed.length} nomor`);
+  const totalFailed = sentErrors.length + deliveryResult.notRegistered.length;
+
+  console.log(`\n📊 ========== HASIL PENGIRIMAN ==========`);
+  console.log(`📧 Schedule ID: ${id}`);
+  console.log(`✅ Berhasil: ${actualSent.length} nomor`);
+  console.log(`❌ Gagal: ${totalFailed} nomor`);
+  console.log(`⚠️ Tidak terdaftar: ${deliveryResult.notRegistered.length} nomor`);
+  console.log(`📊 Total: ${deliveryResult.total} nomor`);
+  console.log(`========================================\n`);
   
   // Cleanup files
   cleanupFiles(filesData);
@@ -265,7 +350,7 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
 }
 
 /**
- * ✅ NEW: Save delivery result to database
+ * ✅ Save delivery result to database
  */
 function saveDeliveryResult(scheduleId, deliveryResult) {
   const resultJson = JSON.stringify({
@@ -372,5 +457,6 @@ module.exports = {
   executeScheduledMessage,
   loadAndScheduleExistingMessages,
   cancelScheduleJob,
-  saveDeliveryResult
+  saveDeliveryResult,
+  DELAY_CONFIG // Export untuk testing/debugging
 };
