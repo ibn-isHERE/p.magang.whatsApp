@@ -239,7 +239,7 @@ function createContactsRouter(db) {
         groupValue,
       ]);
 
-      console.log(`✅ Kontak ditambahkan: ${name.trim()} | Instansi: ${normalizedInstansi} | Jabatan: ${normalizedJabatan}`);
+      console.log(`Kontak ditambahkan: ${name.trim()} | Instansi: ${normalizedInstansi} | Jabatan: ${normalizedJabatan}`);
 
       // Respond with success
       res.json({ 

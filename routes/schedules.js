@@ -42,7 +42,7 @@ setDatabase(db);
 // ===== ROUTES =====
 
 /**
- * ✅ FIXED: Endpoint untuk menambah pesan terjadwal - SAVE groupInfo
+ * FIXED: Endpoint untuk menambah pesan terjadwal - SAVE groupInfo
  */
 router.post("/add-reminder", (req, res) => {
   upload(req, res, async (err) => {
@@ -100,12 +100,12 @@ router.post("/add-reminder", (req, res) => {
       // Persiapkan data file
       const filesData = prepareFilesData(uploadedFiles);
 
-      // ✅ PARSE groupInfo dari frontend
+      // PARSE groupInfo dari frontend
       let groupInfoData = null;
       if (groupInfo) {
         try {
           groupInfoData = typeof groupInfo === 'string' ? groupInfo : JSON.stringify(groupInfo);
-          console.log('📋 Group info received:', groupInfoData);
+          console.log('Group info received:', groupInfoData);
         } catch (e) {
           console.warn('Failed to parse groupInfo:', e);
         }
@@ -113,7 +113,7 @@ router.post("/add-reminder", (req, res) => {
 
       const scheduleId = generateScheduleId();
 
-      // ✅ FIXED: Simpan ke database DENGAN groupInfo
+      // FIXED: Simpan ke database DENGAN groupInfo
       db.run(
         `INSERT INTO schedules (id, numbers, message, filesData, scheduledTime, status, groupInfo) VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
@@ -134,9 +134,9 @@ router.post("/add-reminder", (req, res) => {
               .json({ error: "Gagal menyimpan jadwal pesan ke database." });
           }
 
-          console.log(`✅ Jadwal pesan baru disimpan dengan ID: ${scheduleId}`);
+          console.log(`Jadwal pesan baru disimpan dengan ID: ${scheduleId}`);
           if (groupInfoData) {
-            console.log(`✅ Group info saved:`, groupInfoData);
+            console.log(`Group info saved:`, groupInfoData);
           }
 
           // Jadwalkan pesan
@@ -150,7 +150,7 @@ router.post("/add-reminder", (req, res) => {
             groupInfo: groupInfoData
           });
 
-          // ✅ EMIT SOCKET EVENT - Schedule Created
+          // EMIT SOCKET EVENT - Schedule Created
           if (global.emitScheduleCreated) {
             global.emitScheduleCreated({
               id: scheduleId,
@@ -181,7 +181,7 @@ router.post("/add-reminder", (req, res) => {
 });
 
 /**
- * ✅ FIXED: Endpoint untuk mendapatkan jadwal pesan - INCLUDE groupInfo
+ * FIXED: Endpoint untuk mendapatkan jadwal pesan - INCLUDE groupInfo
  */
 router.get("/get-schedules", (req, res) => {
   const { status } = req.query;
@@ -212,7 +212,7 @@ router.get("/get-schedules", (req, res) => {
           filesMetadata = [filesMetadata];
         }
 
-        // ✅ INCLUDE groupInfo
+        // INCLUDE groupInfo
         let groupInfoParsed = null;
         if (row.groupInfo) {
           groupInfoParsed = safeJsonParse(row.groupInfo, null);
@@ -294,7 +294,7 @@ router.delete("/cancel-schedule/:id", (req, res) => {
               .send("Gagal memperbarui status jadwal pesan di database.");
           }
           
-          // ✅ EMIT SOCKET EVENT
+          // EMIT SOCKET EVENT
           if (global.emitScheduleStatusUpdate) {
             global.emitScheduleStatusUpdate(id, 'dibatalkan', 'Jadwal dibatalkan oleh user');
           }
@@ -357,7 +357,7 @@ router.delete("/delete-history/:id", (req, res) => {
         }
         console.log(`Riwayat pesan ID ${id} berhasil dihapus.`);
         
-        // ✅ EMIT SOCKET EVENT
+        // EMIT SOCKET EVENT
         if (global.emitScheduleDeleted) {
           global.emitScheduleDeleted(id);
         }
@@ -369,7 +369,7 @@ router.delete("/delete-history/:id", (req, res) => {
 });
 
 /**
- * ✅ FIXED: Endpoint untuk edit jadwal pesan - PRESERVE groupInfo
+ * FIXED: Endpoint untuk edit jadwal pesan - PRESERVE groupInfo
  */
 router.put("/edit-schedule/:id", (req, res) => {
   upload(req, res, async (err) => {
@@ -408,7 +408,7 @@ router.put("/edit-schedule/:id", (req, res) => {
       keepExistingNames = [];
     }
 
-    console.log(`📝 Edit Schedule ID ${id}:`, {
+    console.log(`Edit Schedule ID ${id}:`, {
       hasNewFiles: newFiles && newFiles.length > 0,
       newFilesCount: newFiles ? newFiles.length : 0,
       keepExistingCount: keepExistingNames.length,
@@ -524,7 +524,7 @@ router.put("/edit-schedule/:id", (req, res) => {
           );
       }
 
-      // ✅ CRITICAL FIX: Properly handle groupInfo
+      // CRITICAL FIX: Properly handle groupInfo
       const finalGroupInfo = (() => {
         // Check if groupInfo was sent from frontend
         if (groupInfo !== undefined && groupInfo !== null && groupInfo !== 'undefined' && groupInfo !== 'null') {
@@ -534,32 +534,32 @@ router.put("/edit-schedule/:id", (req, res) => {
             
             // If it's an empty array, user wants to CLEAR all groups
             if (Array.isArray(parsed) && parsed.length === 0) {
-              console.log('🗑️ Clearing all groups (received empty array)');
+              console.log('Clearing all groups (received empty array)');
               return null; // Set to null to clear groups
             }
             
             // If it's a valid non-empty array, update with new groups
             if (Array.isArray(parsed) && parsed.length > 0) {
-              console.log(`✅ Updating with ${parsed.length} groups`);
+              console.log(`Updating with ${parsed.length} groups`);
               return JSON.stringify(parsed);
             }
             
             // If it's not an array or invalid, set to null
-            console.warn('⚠️ Invalid groupInfo format, clearing groups');
+            console.warn('Invalid groupInfo format, clearing groups');
             return null;
           } catch (e) {
-            console.warn('⚠️ Failed to parse groupInfo, clearing groups:', e);
+            console.warn('Failed to parse groupInfo, clearing groups:', e);
             return null;
           }
         }
         
         // If groupInfo was not sent at all, preserve old value
         // This should rarely happen with the frontend fix
-        console.warn('⚠️ groupInfo not sent, preserving old value');
+        console.warn('groupInfo not sent, preserving old value');
         return oldSchedule.groupInfo || null;
       })();
 
-      console.log('🔄 Group info update:', {
+      console.log('Group info update:', {
         received: groupInfo,
         old: oldSchedule.groupInfo,
         final: finalGroupInfo,
@@ -569,7 +569,7 @@ router.put("/edit-schedule/:id", (req, res) => {
       // Batalkan job lama
       cancelScheduleJob(id);
 
-      // ✅ Update database DENGAN groupInfo yang sudah di-fix
+      // Update database DENGAN groupInfo yang sudah di-fix
       db.run(
         `UPDATE schedules SET numbers = ?, message = ?, filesData = ?, scheduledTime = ?, status = ?, groupInfo = ? WHERE id = ?`,
         [
@@ -591,7 +591,7 @@ router.put("/edit-schedule/:id", (req, res) => {
             return res.status(500).send("Gagal memperbarui jadwal pesan.");
           }
 
-          console.log(`✅ Jadwal pesan ID ${id} berhasil diperbarui.`);
+          console.log(`Jadwal pesan ID ${id} berhasil diperbarui.`);
           
           // Jadwalkan ulang
           scheduleMessage({
@@ -604,7 +604,7 @@ router.put("/edit-schedule/:id", (req, res) => {
             groupInfo: finalGroupInfo
           });
           
-          // ✅ EMIT SOCKET EVENT dengan info file changes
+          // EMIT SOCKET EVENT dengan info file changes
           if (global.emitScheduleUpdated) {
             const hasFileChanges = 
               (newFiles && newFiles.length > 0) || 

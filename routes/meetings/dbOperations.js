@@ -134,14 +134,7 @@ function insertMeeting(meetingData) {
             groupInfo        // ✅ Detail grup dengan members
         } = meetingData;
 
-        console.log("📝 Inserting meeting:", {
-            id,
-            meetingTitle,
-            numbersCount: numbers ? JSON.parse(numbers).length : 0,
-            hasSelectedGroups: !!selectedGroups,
-            hasGroupInfo: !!groupInfo,
-            hasFiles: !!filesData
-        });
+        // ✅ CONSOLE LOG DIHAPUS - Tidak perlu log detail insert
 
         // ✅ Query dengan selectedGroups DAN groupInfo
         const query = `
@@ -176,7 +169,6 @@ function insertMeeting(meetingData) {
                 reject(err);
             } else {
                 console.log(`✅ Meeting ${id} inserted successfully`);
-                console.log(`   Rows affected: ${this.changes}`);
                 resolve(this);
             }
         });
@@ -207,14 +199,6 @@ function updateMeeting(id, meetingData) {
             selectedGroups,  // ✅ Preserve selectedGroups
             groupInfo        // ✅ Preserve groupInfo
         } = meetingData;
-
-        console.log("📝 Updating meeting:", {
-            id,
-            meetingTitle,
-            hasSelectedGroups: !!selectedGroups,
-            hasGroupInfo: !!groupInfo,
-            hasFiles: !!filesData
-        });
 
         // ✅ Query dengan selectedGroups DAN groupInfo
         const query = `
@@ -256,7 +240,6 @@ function updateMeeting(id, meetingData) {
                 reject(err);
             } else {
                 console.log(`✅ Meeting ${id} updated successfully`);
-                console.log(`   Rows affected: ${this.changes}`);
                 resolve(this);
             }
         });

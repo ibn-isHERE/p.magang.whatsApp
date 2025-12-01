@@ -1,4 +1,4 @@
-// auth-routes.js - Activity-Based Session (7 days idle timeout)
+// auth-routes.js - Simplified Session (No Last Login Tracking)
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
@@ -9,8 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-producti
 
 // ⚙️ Session Configuration
 const SESSION_CONFIG = {
-  IDLE_TIMEOUT: 7 * 24 * 60 * 60 * 1000, // 7 hari dalam milliseconds
-  TOKEN_EXPIRY: "7d" // Token JWT tetap long-lived (untuk refresh capability)
+  TOKEN_EXPIRY: "7d" // Token JWT 7 hari
 };
 
 // Middleware untuk verifikasi token
@@ -94,20 +93,12 @@ router.post("/login", async (req, res) => {
 
       console.log('✅ Login successful:', user.email);
 
-      // ✅ Update last_login dengan timestamp saat ini
-      const now = Date.now();
-      db.run(
-        'UPDATE users SET last_login = ? WHERE id = ?',
-        [now, user.id]
-      );
-
-      // ✅ Generate JWT token (long-lived untuk support activity tracking)
+      // Generate JWT token
       const token = jwt.sign(
         {
           id: user.id,
           email: user.email,
-          role: user.role,
-          lastActivity: now // Track activity di token
+          role: user.role
         },
         JWT_SECRET,
         { expiresIn: SESSION_CONFIG.TOKEN_EXPIRY }
@@ -119,7 +110,6 @@ router.post("/login", async (req, res) => {
         email: user.email,
         name: user.name,
         role: user.role,
-        lastActivity: now, // Send ke frontend untuk tracking
         created_at: user.created_at,
       };
 
@@ -127,10 +117,7 @@ router.post("/login", async (req, res) => {
         success: true,
         message: "Login berhasil",
         token: token,
-        user: userData,
-        sessionConfig: {
-          idleTimeout: SESSION_CONFIG.IDLE_TIMEOUT
-        }
+        user: userData
       });
     });
   } catch (error) {
@@ -150,57 +137,11 @@ router.post("/logout", authenticateToken, (req, res) => {
   });
 });
 
-// ✅ NEW: Refresh Activity - Update last activity timestamp
-router.post("/refresh-activity", authenticateToken, (req, res) => {
-  try {
-    const now = Date.now();
-    
-    // Update last_login di database sebagai last activity
-    db.run(
-      'UPDATE users SET last_login = ? WHERE id = ?',
-      [now, req.user.id],
-      (err) => {
-        if (err) {
-          console.error('❌ Error updating activity:', err);
-          return res.status(500).json({
-            success: false,
-            message: 'Gagal update activity'
-          });
-        }
-
-        // Generate token baru dengan lastActivity yang diupdate
-        const newToken = jwt.sign(
-          {
-            id: req.user.id,
-            email: req.user.email,
-            role: req.user.role,
-            lastActivity: now
-          },
-          JWT_SECRET,
-          { expiresIn: SESSION_CONFIG.TOKEN_EXPIRY }
-        );
-
-        res.json({
-          success: true,
-          token: newToken,
-          lastActivity: now
-        });
-      }
-    );
-  } catch (error) {
-    console.error('❌ Refresh activity error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Terjadi kesalahan server'
-    });
-  }
-});
-
-// Verify Token - Check if session is still valid
+// Verify Token - Check if token is still valid
 router.get("/verify", authenticateToken, (req, res) => {
   // Cek apakah user masih aktif di database
   db.get(
-    'SELECT last_login, is_active FROM users WHERE id = ?',
+    'SELECT is_active FROM users WHERE id = ?',
     [req.user.id],
     (err, user) => {
       if (err || !user || !user.is_active) {
@@ -210,24 +151,9 @@ router.get("/verify", authenticateToken, (req, res) => {
         });
       }
 
-      const now = Date.now();
-      const lastActivity = req.user.lastActivity || user.last_login;
-      const idleTime = now - lastActivity;
-
-      // ✅ Cek apakah sudah idle lebih dari 7 hari
-      if (idleTime > SESSION_CONFIG.IDLE_TIMEOUT) {
-        return res.status(401).json({
-          success: false,
-          message: 'Session expired karena tidak aktif selama 7 hari',
-          reason: 'IDLE_TIMEOUT'
-        });
-      }
-
       res.json({
         success: true,
-        user: req.user,
-        lastActivity: lastActivity,
-        idleTime: idleTime
+        user: req.user
       });
     }
   );
@@ -238,7 +164,7 @@ router.get("/verify", authenticateToken, (req, res) => {
 // Get all users (Admin only)
 router.get("/users", authenticateToken, requireAdmin, (req, res) => {
   const query = `
-    SELECT id, email, name, role, is_active, created_at, last_login 
+    SELECT id, email, name, role, is_active, created_at 
     FROM users 
     ORDER BY created_at DESC
   `;
@@ -259,7 +185,7 @@ router.get("/users", authenticateToken, requireAdmin, (req, res) => {
   });
 });
 
-// Create new user (Admin only) - FIXED VERSION
+// Create new user (Admin only)
 router.post("/users", authenticateToken, requireAdmin, async (req, res) => {
   console.log("🔵 POST /users - Creating new user");
   console.log("📦 Request body:", req.body);
@@ -309,7 +235,6 @@ router.post("/users", authenticateToken, requireAdmin, async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         console.log("✅ Password hashed");
 
-        // ✅ FIX: Determine is_active value (default to true if not provided)
         const isActiveValue = is_active !== undefined ? (is_active ? 1 : 0) : 1;
         console.log("📝 is_active value:", isActiveValue);
 
@@ -319,12 +244,10 @@ router.post("/users", authenticateToken, requireAdmin, async (req, res) => {
           VALUES (?, ?, ?, ?, ?, datetime('now'))
         `;
 
-        // ✅ FIX: Include is_active in parameters
         db.run(insertQuery, [email, hashedPassword, name, role, isActiveValue], function (err) {
           if (err) {
             console.error("❌ Database error (insert):", err);
             
-            // ✅ Handle UNIQUE constraint error specifically
             if (err.code === 'SQLITE_CONSTRAINT' && err.message.includes('email')) {
               return res.status(400).json({
                 success: false,

@@ -10,7 +10,7 @@ let jobs = {};
 let client = null;
 let db = null;
 
-// ⚙️ KONFIGURASI DELAY - SESUAIKAN SESUAI KEBUTUHAN
+// KONFIGURASI DELAY - SESUAIKAN SESUAI KEBUTUHAN
 const DELAY_CONFIG = {
   VALIDATION_DELAY: 500,           // 0.5 detik antar validasi nomor
   MESSAGE_DELAY_MIN: 8000,         // 8 detik minimum antar pesan
@@ -22,25 +22,25 @@ const DELAY_CONFIG = {
 };
 
 /**
- * 🎲 Generate random delay dalam range
+ * Generate random delay dalam range
  */
 function getRandomDelay(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 /**
- * ⏱️ Sleep dengan delay
+ * Sleep dengan delay
  */
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /**
- * 📊 Log progress pengiriman
+ * Log progress pengiriman
  */
 function logProgress(current, total, type = 'pesan') {
   const percentage = Math.round((current / total) * 100);
-  console.log(`📈 Progress: ${current}/${total} ${type} (${percentage}%)`);
+  console.log(`Progress: ${current}/${total} ${type} (${percentage}%)`);
 }
 
 function setWhatsappClient(whatsappClient) {
@@ -101,11 +101,11 @@ async function scheduleMessage(scheduleData) {
 }
 
 /**
- * 🚀 ENHANCED: Execute dengan safe delays, batching, dan tracking delivery result
+ * ENHANCED: Execute dengan safe delays, batching, dan tracking delivery result
  */
 async function executeScheduledMessage(id, numbers, message, filesData) {
   if (!client) {
-    console.error(`❌ Client WhatsApp tidak tersedia untuk pesan ID ${id}`);
+    console.error(`Client WhatsApp tidak tersedia untuk pesan ID ${id}`);
     handleFailedMessage(id, filesData, "Client WhatsApp tidak tersedia");
     return;
   }
@@ -128,21 +128,21 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
                 file.name
               );
               medias.push(media);
-              console.log(`✅ MessageMedia berhasil dibuat untuk file ${file.name}`);
+              console.log(`MessageMedia berhasil dibuat untuk file ${file.name}`);
             } catch (mediaErr) {
-              console.error(`❌ Gagal membuat MessageMedia:`, mediaErr);
+              console.error(`Gagal membuat MessageMedia:`, mediaErr);
               allFilesReady = false;
               break;
             }
           } else {
-            console.error(`❌ File ${file.path} tidak ditemukan`);
+            console.error(`File ${file.path} tidak ditemukan`);
             allFilesReady = false;
             break;
           }
         }
       }
     } catch (parseErr) {
-      console.error(`❌ Gagal mengurai filesData:`, parseErr);
+      console.error(`Gagal mengurai filesData:`, parseErr);
       allFilesReady = false;
     }
   }
@@ -160,14 +160,14 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
       throw new Error("Format numbers tidak valid");
     }
   } catch (parseErr) {
-    console.error(`❌ Gagal mengurai numbers:`, parseErr);
+    console.error(`Gagal mengurai numbers:`, parseErr);
     handleFailedMessage(id, filesData, "Format nomor tidak valid");
     return;
   }
 
-  // 📊 Track detail per nomor
-  console.log(`\n📋 Memvalidasi ${targetNumbers.length} nomor untuk pesan ID ${id}...`);
-  console.log(`⏱️ Estimasi waktu validasi: ~${Math.round((targetNumbers.length * DELAY_CONFIG.VALIDATION_DELAY) / 1000)} detik\n`);
+  // Track detail per nomor
+  console.log(`\nMemvalidasi ${targetNumbers.length} nomor untuk pesan ID ${id}...`);
+  console.log(`Estimasi waktu validasi: ~${Math.round((targetNumbers.length * DELAY_CONFIG.VALIDATION_DELAY) / 1000)} detik\n`);
   
   const deliveryResult = {
     total: targetNumbers.length,
@@ -182,7 +182,7 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
     const formattedNum = formatNumber(num);
     
     if (!formattedNum) {
-      console.warn(`⚠️ [${i+1}/${targetNumbers.length}] Format nomor tidak valid: ${num}`);
+      console.warn(`[${i+1}/${targetNumbers.length}] Format nomor tidak valid: ${num}`);
       deliveryResult.failed.push({
         number: num,
         reason: 'Format tidak valid'
@@ -199,16 +199,16 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
           formatted: formattedNum,
           status: 'pending'
         });
-        console.log(`✅ [${i+1}/${targetNumbers.length}] ${num} - Valid & Terdaftar`);
+        console.log(`[${i+1}/${targetNumbers.length}] ${num} - Valid & Terdaftar`);
       } else {
         deliveryResult.notRegistered.push({
           number: num,
           reason: 'Tidak terdaftar di WhatsApp'
         });
-        console.warn(`⚠️ [${i+1}/${targetNumbers.length}] ${num} - Tidak terdaftar di WhatsApp`);
+        console.warn(`[${i+1}/${targetNumbers.length}] ${num} - Tidak terdaftar di WhatsApp`);
       }
     } catch (error) {
-      console.error(`❌ [${i+1}/${targetNumbers.length}] Error validasi ${num}:`, error.message);
+      console.error(`[${i+1}/${targetNumbers.length}] Error validasi ${num}:`, error.message);
       deliveryResult.failed.push({
         number: num,
         reason: `Error: ${error.message}`
@@ -221,15 +221,15 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
     }
   }
 
-  console.log(`\n📊 Hasil Validasi:`);
-  console.log(`   ✅ Valid: ${deliveryResult.success.length} nomor`);
-  console.log(`   ❌ Not Registered: ${deliveryResult.notRegistered.length} nomor`);
-  console.log(`   ❌ Error: ${deliveryResult.failed.length} nomor`);
+  console.log(`\nHasil Validasi:`);
+  console.log(`   Valid: ${deliveryResult.success.length} nomor`);
+  console.log(`   Not Registered: ${deliveryResult.notRegistered.length} nomor`);
+  console.log(`   Error: ${deliveryResult.failed.length} nomor`);
 
   // Jika semua nomor invalid
   if (deliveryResult.success.length === 0) {
     const failureReason = `Semua nomor tidak valid (${deliveryResult.failed.length + deliveryResult.notRegistered.length} nomor gagal)`;
-    console.error(`❌ ${failureReason}`);
+    console.error(failureReason);
     
     saveDeliveryResult(id, deliveryResult);
     handleFailedMessage(id, filesData, failureReason);
@@ -237,15 +237,15 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
   }
 
   // STEP 2: Kirim dengan safe delays dan batching
-  console.log(`\n📤 Mengirim pesan ke ${deliveryResult.success.length} nomor valid...`);
+  console.log(`\nMengirim pesan ke ${deliveryResult.success.length} nomor valid...`);
   
   const totalRecipients = deliveryResult.success.length;
   const avgDelay = (DELAY_CONFIG.MESSAGE_DELAY_MIN + DELAY_CONFIG.MESSAGE_DELAY_MAX) / 2 / 1000;
   const totalBatches = Math.ceil(totalRecipients / DELAY_CONFIG.BATCH_SIZE);
   const estimatedTime = (totalRecipients * avgDelay) + ((totalBatches - 1) * DELAY_CONFIG.BATCH_PAUSE / 1000);
   
-  console.log(`⏱️ Estimasi waktu pengiriman: ~${Math.round(estimatedTime / 60)} menit`);
-  console.log(`📦 Total batch: ${totalBatches} (${DELAY_CONFIG.BATCH_SIZE} pesan/batch)\n`);
+  console.log(`Estimasi waktu pengiriman: ~${Math.round(estimatedTime / 60)} menit`);
+  console.log(`Total batch: ${totalBatches} (${DELAY_CONFIG.BATCH_SIZE} pesan/batch)\n`);
   
   const actualSent = [];
   const sentErrors = [];
@@ -258,7 +258,7 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
       // Kirim pesan teks
       if (message && message.trim() !== "") {
         await client.sendMessage(contact.formatted, message.trim());
-        console.log(`✅ [${recipientNum}/${totalRecipients}] Pesan teks terkirim ke ${contact.number}`);
+        console.log(`[${recipientNum}/${totalRecipients}] Pesan teks terkirim ke ${contact.number}`);
       }
 
       // Kirim file dengan delay lebih pendek
@@ -270,7 +270,7 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
           await sleep(fileDelay);
           
           await client.sendMessage(contact.formatted, media);
-          console.log(`   📎 File ${j+1}/${medias.length} (${media.filename}) terkirim ke ${contact.number}`);
+          console.log(`   File ${j+1}/${medias.length} (${media.filename}) terkirim ke ${contact.number}`);
         }
       }
 
@@ -282,17 +282,17 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
         logProgress(recipientNum, totalRecipients);
       }
 
-      // 🔄 BATCH PAUSE: Pause setiap N pesan
+      // BATCH PAUSE: Pause setiap N pesan
       if (recipientNum % DELAY_CONFIG.BATCH_SIZE === 0 && recipientNum < totalRecipients) {
         const remainingBatches = Math.ceil((totalRecipients - recipientNum) / DELAY_CONFIG.BATCH_SIZE);
-        console.log(`\n⏸️ === BATCH PAUSE ===`);
-        console.log(`   📊 Terkirim: ${recipientNum}/${totalRecipients}`);
-        console.log(`   ⏳ Pause ${DELAY_CONFIG.BATCH_PAUSE / 60000} menit...`);
-        console.log(`   📦 Sisa batch: ${remainingBatches}\n`);
+        console.log(`\n=== BATCH PAUSE ===`);
+        console.log(`   Terkirim: ${recipientNum}/${totalRecipients}`);
+        console.log(`   Pause ${DELAY_CONFIG.BATCH_PAUSE / 60000} menit...`);
+        console.log(`   Sisa batch: ${remainingBatches}\n`);
         
         await sleep(DELAY_CONFIG.BATCH_PAUSE);
         
-        console.log(`▶️ Melanjutkan pengiriman...\n`);
+        console.log(`Melanjutkan pengiriman...\n`);
       }
       // Random delay antar pesan (jika bukan akhir batch)
       else if (recipientNum < totalRecipients) {
@@ -304,7 +304,7 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
       }
       
     } catch (err) {
-      console.error(`❌ [${recipientNum}/${totalRecipients}] Gagal mengirim ke ${contact.number}:`, err.message);
+      console.error(`[${recipientNum}/${totalRecipients}] Gagal mengirim ke ${contact.number}:`, err.message);
       sentErrors.push({
         number: contact.number,
         reason: err.message
@@ -322,19 +322,11 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
   deliveryResult.allFailed = [...deliveryResult.notRegistered, ...deliveryResult.failed];
 
   const totalFailed = sentErrors.length + deliveryResult.notRegistered.length;
-
-  console.log(`\n📊 ========== HASIL PENGIRIMAN ==========`);
-  console.log(`📧 Schedule ID: ${id}`);
-  console.log(`✅ Berhasil: ${actualSent.length} nomor`);
-  console.log(`❌ Gagal: ${totalFailed} nomor`);
-  console.log(`⚠️ Tidak terdaftar: ${deliveryResult.notRegistered.length} nomor`);
-  console.log(`📊 Total: ${deliveryResult.total} nomor`);
-  console.log(`========================================\n`);
   
   // Cleanup files
   cleanupFiles(filesData);
 
-  // ✅ SAVE delivery result to database
+  // SAVE delivery result to database
   saveDeliveryResult(id, deliveryResult);
 
   // Update status di database
@@ -345,12 +337,12 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
   const jobId = `message_${id}`;
   if (jobs[jobId]) {
     delete jobs[jobId];
-    console.log(`🗑️ Job pesan ID ${jobId} dihapus dari memori.`);
+    console.log(`Job pesan ID ${jobId} dihapus dari memori.`);
   }
 }
 
 /**
- * ✅ Save delivery result to database
+ * Save delivery result to database
  */
 function saveDeliveryResult(scheduleId, deliveryResult) {
   const resultJson = JSON.stringify({
@@ -365,16 +357,16 @@ function saveDeliveryResult(scheduleId, deliveryResult) {
     [resultJson, scheduleId],
     (err) => {
       if (err) {
-        console.error('❌ Failed to save delivery result:', err);
+        console.error('Failed to save delivery result:', err);
       } else {
-        console.log(`✅ Delivery result saved for schedule ${scheduleId}`);
+        console.log(`Delivery result saved for schedule ${scheduleId}`);
       }
     }
   );
 }
 
 function handleFailedMessage(id, filesData, reason) {
-  console.error(`❌ Pesan ID ${id} gagal: ${reason}`);
+  console.error(`Pesan ID ${id} gagal: ${reason}`);
 
   db.run(`UPDATE schedules SET status = ? WHERE id = ?`, ["gagal", id], (err) => {
     if (err) {
@@ -390,7 +382,7 @@ function handleFailedMessage(id, filesData, reason) {
 }
 
 /**
- * ✅ ENHANCED: Update with delivery result
+ * ENHANCED: Update with delivery result
  */
 function updateMessageStatus(id, status, deliveryResult) {
   const sent = deliveryResult.actualSent || 0;
@@ -412,7 +404,7 @@ function updateMessageStatus(id, status, deliveryResult) {
     if (err) {
       console.error("Gagal memperbarui status:", err.message);
     } else {
-      console.log(`✅ Status pesan ID ${id} diperbarui: ${status}`);
+      console.log(`Status pesan ID ${id} diperbarui: ${status}`);
       
       if (global.emitScheduleStatusUpdate) {
         global.emitScheduleStatusUpdate(id, status, statusMessage, deliveryResult);

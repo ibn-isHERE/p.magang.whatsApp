@@ -116,11 +116,11 @@ client.on("ready", () => {
     
     // Inisialisasi message handler setelah client ready
     messageHandler = new MessageHandler(db, client, io, mediaDir);
-    console.log("✅ Message Handler initialized");
+    console.log("Message Handler initialized");
     
     // PENTING: Set messageHandler ke app agar bisa diakses dari routes
     app.set('messageHandler', messageHandler);
-    console.log("✅ MessageHandler set to app");
+    console.log("MessageHandler set to app");
     
     // Set client ke schedules module
     schedulesModule.setWhatsappClient(client);
@@ -139,7 +139,7 @@ client.on("ready", () => {
 // ========================================
 client.on('message', async (message) => {
     if (!messageHandler) {
-        console.warn('⚠️ Message handler belum siap');
+        console.warn('Message handler belum siap');
         return;
     }
     
@@ -283,19 +283,19 @@ app.post('/api/chats/send-media', uploadChatMedia.single('media'), async (req, r
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-    console.log('👤 Admin connected:', socket.id);
+    console.log('Admin connected:', socket.id);
     
     socket.on('test', (data) => {
-        console.log('🧪 Test event received from frontend:', data);
+        console.log('Test event received from frontend:', data);
         socket.emit('testResponse', { message: 'Backend received test' });
     });
     
     socket.on('disconnect', () => {
-        console.log('👤 Admin disconnected:', socket.id);
+        console.log('Admin disconnected:', socket.id);
     });
     
     socket.onAny((eventName, ...args) => {
-        console.log('📡 Socket event from client:', eventName, args);
+        console.log('Socket event from client:', eventName, args);
     });
 });
 
@@ -321,7 +321,7 @@ app.get("/get-all-schedules", (req, res) => {
     datetime(end_epoch / 1000, 'unixepoch', 'localtime') as meetingEndTime,
     selectedGroups,
     groupInfo,
-    deliveryResult,  -- ✅ INCLUDE deliveryResult
+    deliveryResult,
     'meeting' as type
   FROM meetings`;
   
@@ -350,7 +350,7 @@ app.get("/get-all-schedules", (req, res) => {
       }
 
       try {
-        // ✅ Process schedules dengan deliveryResult
+        // Process schedules dengan deliveryResult
         const processedSchedules = scheduleRows.map((row) => {
           return {
             id: row.id,
@@ -363,11 +363,11 @@ app.get("/get-all-schedules", (req, res) => {
             type: "message",
             selectedGroups: row.selectedGroups ? JSON.parse(row.selectedGroups) : null,
             groupInfo: row.groupInfo ? JSON.parse(row.groupInfo) : null,
-            deliveryResult: row.deliveryResult  // ✅ Include deliveryResult
+            deliveryResult: row.deliveryResult
           };
         });
 
-        // ✅ Process meetings dengan deliveryResult
+        // Process meetings dengan deliveryResult
         const processedMeetings = meetingRows.map((row) => {
           return {
             id: row.id,
@@ -386,7 +386,7 @@ app.get("/get-all-schedules", (req, res) => {
             endTime: row.endTime,
             selectedGroups: row.selectedGroups ? JSON.parse(row.selectedGroups) : null,
             groupInfo: row.groupInfo ? JSON.parse(row.groupInfo) : null,
-            deliveryResult: row.deliveryResult  // ✅ Include deliveryResult
+            deliveryResult: row.deliveryResult
           };
         });
 
@@ -407,7 +407,6 @@ app.get("/get-all-schedules", (req, res) => {
           }
         });
 
-        console.log(`✅ Returned ${allSchedules.length} schedules with delivery results`);
         res.json(allSchedules);
         
       } catch (error) {
@@ -620,12 +619,12 @@ app.post('/api/import', upload.single('contactFile'), async (req, res) => {
         const groupMemberMap = {};
 
         try {
-            console.log("📋 STEP 1: Validating contacts...");
+            console.log("STEP 1: Validating contacts...");
             
             for (let index = 0; index < contacts.length; index++) {
                 const contact = contacts[index];
                 
-                console.log(`\n🔍 Baris ${index + 1}:`, {
+                console.log(`\nBaris ${index + 1}:`, {
                     name: contact.name,
                     number: contact.number,
                     instansi: contact.instansi,
@@ -661,11 +660,11 @@ app.post('/api/import', upload.single('contactFile'), async (req, res) => {
 
                     if (existingContact) {
                         skipped++;
-                        console.log(`⏭️  Nomor ${normalizedNumber} sudah ada - skip`);
+                        console.log(`  Nomor ${normalizedNumber} sudah ada - skip`);
                         continue;
                     }
 
-                    // 🔥 AUTO TITLE CASE untuk instansi dan jabatan
+                    // AUTO TITLE CASE untuk instansi dan jabatan
                     const normalizedInstansi = contact.instansi && String(contact.instansi).trim() 
                         ? toTitleCase(String(contact.instansi).trim()) 
                         : null;
@@ -674,13 +673,13 @@ app.post('/api/import', upload.single('contactFile'), async (req, res) => {
                         ? toTitleCase(String(contact.jabatan).trim()) 
                         : null;
 
-                    // 🔥 PARSE GROUPS dan NORMALIZE ke Title Case
+                    // PARSE GROUPS dan NORMALIZE ke Title Case
                     const grupArrayRaw = parseGroupsFromImport(contact.grup);
-                    const grupArrayNormalized = grupArrayRaw.map(g => toTitleCase(g)); // ✅ Title Case untuk setiap grup
+                    const grupArrayNormalized = grupArrayRaw.map(g => toTitleCase(g));
                     
-                    console.log(`👥 Groups (normalized):`, grupArrayNormalized);
+                    console.log(`  Groups (normalized):`, grupArrayNormalized);
 
-                    console.log(`✅ Akan menyimpan:`, {
+                    console.log(`  Akan menyimpan:`, {
                         name: contact.name.trim(),
                         number: normalizedNumber,
                         instansi: normalizedInstansi,
@@ -695,15 +694,15 @@ app.post('/api/import', upload.single('contactFile'), async (req, res) => {
                             [
                                 contact.name.trim(), 
                                 normalizedNumber, 
-                                normalizedInstansi,  // 🔥 Title Case
-                                normalizedJabatan,   // 🔥 Title Case
-                                grupArrayNormalized.length > 0 ? JSON.stringify(grupArrayNormalized) : null // 🔥 Grup juga Title Case
+                                normalizedInstansi,
+                                normalizedJabatan,
+                                grupArrayNormalized.length > 0 ? JSON.stringify(grupArrayNormalized) : null
                             ],
                             function(err) {
                                 if (err) reject(err);
                                 else {
                                     imported++;
-                                    console.log(`✅ Kontak disimpan: ${contact.name.trim()} | Instansi: ${normalizedInstansi} | Jabatan: ${normalizedJabatan} | Grup: ${grupArrayNormalized.join(', ')}`);
+                                    console.log(`  Kontak disimpan: ${contact.name.trim()} | Instansi: ${normalizedInstansi} | Jabatan: ${normalizedJabatan} | Grup: ${grupArrayNormalized.join(', ')}`);
                                     resolve(this.lastID);
                                 }
                             }
@@ -723,21 +722,21 @@ app.post('/api/import', upload.single('contactFile'), async (req, res) => {
                 } catch (error) {
                     skipped++;
                     errors.push(`Baris ${index + 1}: ${error.message}`);
-                    console.error(`❌ Error pada baris ${index + 1}:`, error);
+                    console.error(`Error pada baris ${index + 1}:`, error);
                 }
             }
 
-            console.log("\n📊 STEP 1 Complete - Summary:");
-            console.log(`  ✅ Imported: ${imported}`);
-            console.log(`  ⏭️  Skipped: ${skipped}`);
-            console.log(`  👥 Groups to sync: ${Array.from(groupsToCreate).length}`);
+            console.log("\nSTEP 1 Complete - Summary:");
+            console.log(`  Imported: ${imported}`);
+            console.log(`  Skipped: ${skipped}`);
+            console.log(`  Groups to sync: ${Array.from(groupsToCreate).length}`);
 
             // STEP 2: Sync ke existing groups (CASE-INSENSITIVE matching)
-            console.log("\n📋 STEP 2: Syncing with existing groups (case-insensitive)...");
+            console.log("\nSTEP 2: Syncing with existing groups (case-insensitive)...");
             
             for (const groupName of groupsToCreate) {
                 try {
-                    // 🔥 CASE-INSENSITIVE: Gunakan LOWER() untuk matching
+                    // CASE-INSENSITIVE: Gunakan LOWER() untuk matching
                     const existingGroup = await new Promise((resolve, reject) => {
                         db.get(
                             'SELECT id, name, members FROM groups WHERE LOWER(name) = LOWER(?)', 
@@ -782,22 +781,22 @@ app.post('/api/import', upload.single('contactFile'), async (req, res) => {
                             );
                         });
 
-                        console.log(`🔄 Updated grup "${existingGroup.name}" (dicari: "${groupName}") dengan ${memberNumbers.length} member baru`);
+                        console.log(`  Updated grup "${existingGroup.name}" (dicari: "${groupName}") dengan ${memberNumbers.length} member baru`);
                         groupsSynced++;
                     } else {
-                        console.log(`⏸️  Grup "${groupName}" belum ada di database - kontak sudah masuk tapi grup perlu dibuat manual`);
+                        console.log(`  Grup "${groupName}" belum ada di database - kontak sudah masuk tapi grup perlu dibuat manual`);
                     }
 
                 } catch (syncError) {
-                    console.error(`❌ Error syncing grup "${groupName}":`, syncError);
+                    console.error(`Error syncing grup "${groupName}":`, syncError);
                     errors.push(`Group sync error: ${groupName}`);
                 }
             }
 
             fs.unlinkSync(filePath);
 
-            console.log("\n✅ Import Complete!");
-            console.log(`📊 Final Stats:`);
+            console.log("\nImport Complete!");
+            console.log(`Final Stats:`);
             console.log(`   - Imported: ${imported}`);
             console.log(`   - Skipped: ${skipped}`);
             console.log(`   - Groups synced: ${groupsSynced}/${Array.from(groupsToCreate).length}`);
@@ -886,7 +885,7 @@ function emitScheduleStatusUpdate(scheduleId, newStatus, message = null) {
       message,
       timestamp: new Date().toISOString()
     });
-    console.log(`📡 Emitted schedule-status-updated: ${scheduleId} -> ${newStatus}`);
+    console.log(`Emitted schedule-status-updated: ${scheduleId} -> ${newStatus}`);
   }
 }
 
@@ -901,7 +900,7 @@ function emitMeetingStatusUpdate(scheduleId, newStatus, message = null) {
       message,
       timestamp: new Date().toISOString()
     });
-    console.log(`📡 Emitted meeting-status-updated: ${scheduleId} -> ${newStatus}`);
+    console.log(`Emitted meeting-status-updated: ${scheduleId} -> ${newStatus}`);
   }
 }
 
@@ -914,7 +913,7 @@ function emitScheduleCreated(scheduleData) {
       schedule: scheduleData,
       timestamp: new Date().toISOString()
     });
-    console.log(`📡 Emitted schedule-created: ${scheduleData.id}`);
+    console.log(`Emitted schedule-created: ${scheduleData.id}`);
   }
 }
 
@@ -925,7 +924,7 @@ function emitScheduleUpdated(updateData) {
       timestamp: new Date().toISOString(),
       forceRefresh: true // Always force refresh untuk edit
     });
-    console.log(`📡 Emitted schedule-updated: ${updateData.scheduleId}`, {
+    console.log(`Emitted schedule-updated: ${updateData.scheduleId}`, {
       hasGroupInfo: !!updateData.groupInfo,
       forceRefresh: true
     });
@@ -942,7 +941,7 @@ function emitScheduleDeleted(scheduleId) {
       scheduleId,
       timestamp: new Date().toISOString()
     });
-    console.log(`📡 Emitted schedule-deleted: ${scheduleId}`);
+    console.log(`Emitted schedule-deleted: ${scheduleId}`);
   }
 }
 
@@ -956,7 +955,7 @@ global.emitScheduleDeleted = emitScheduleDeleted;
 // Juga set io ke global untuk akses mudah
 global.io = io;
 
-console.log("✅ Socket.IO helper functions registered globally");
+console.log("Socket.IO helper functions registered globally");
 
 // Error handling middleware
 app.use((error, req, res, next) => {
@@ -1005,8 +1004,8 @@ server.listen(port, () => {
     console.log(`Socket.IO server ready`);
     console.log(`Media folder: ${mediaDir}`);
     console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-    console.log('✅ Auth system enabled at /api/auth');
-    console.log('🔐 Login page: http://localhost:${port}/index.html');
+    console.log('Auth system enabled at /api/auth');
+    console.log('Login page: http://localhost:${port}/index.html');
     console.log("=".repeat(50));
 });
 

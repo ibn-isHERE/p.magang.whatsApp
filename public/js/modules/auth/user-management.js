@@ -32,7 +32,7 @@ async function loadUsersList() {
 
   tbody.innerHTML = `
     <tr>
-      <td colspan="6" style="text-align: center; padding: 40px">
+      <td colspan="5" style="text-align: center; padding: 40px">
         <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #4299e1"></i>
         <p style="color: #a0aec0; margin-top: 12px">Memuat data users...</p>
       </td>
@@ -86,7 +86,7 @@ async function loadUsersList() {
     if (users.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="6" style="text-align: center; padding: 40px">
+          <td colspan="5" style="text-align: center; padding: 40px">
             <i class="fa-solid fa-users" style="font-size: 48px; color: #cbd5e0"></i>
             <p style="color: #a0aec0; margin-top: 12px">Belum ada user terdaftar</p>
           </td>
@@ -112,7 +112,6 @@ async function loadUsersList() {
               ${user.is_active ? "Aktif" : "Nonaktif"}
             </span>
           </td>
-          <td>${formatLastLogin(user.last_login)}</td>
           <td>
             <div class="action-buttons">
               <button class="btn-action btn-edit" onclick="openEditUserModal(${user.id})">
@@ -131,7 +130,7 @@ async function loadUsersList() {
     console.error("❌ Error loading users:", error);
     tbody.innerHTML = `
       <tr>
-        <td colspan="6" style="text-align: center; padding: 40px; color: #fc8181;">
+        <td colspan="5" style="text-align: center; padding: 40px; color: #fc8181;">
           <i class="fa-solid fa-exclamation-triangle" style="font-size: 32px;"></i>
           <p style="margin-top: 12px">Gagal memuat data: ${escapeHtml(error.message)}</p>
           <button class="btn-action btn-edit" onclick="loadUsersList()" style="margin-top: 12px;">
@@ -141,29 +140,6 @@ async function loadUsersList() {
       </tr>
     `;
   }
-}
-
-// Format Last Login
-function formatLastLogin(lastLogin) {
-  if (!lastLogin) return "Belum pernah login";
-
-  const date = new Date(lastLogin);
-  const now = new Date();
-  const diffMs = now - date;
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return "Baru saja";
-  if (diffMins < 60) return `${diffMins} menit yang lalu`;
-  if (diffHours < 24) return `${diffHours} jam yang lalu`;
-  if (diffDays < 7) return `${diffDays} hari yang lalu`;
-
-  return date.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 // Escape HTML to prevent XSS
@@ -567,18 +543,15 @@ function initPasswordToggle() {
   passwordInput.style.paddingRight = '40px';
 }
 
-// ✅ CRITICAL FIX: Handle Add New User - PREVENT ALL REFRESH
+// Handle Add New User
 async function handleAddUserSubmit(e) {
-  // ✅ TRIPLE PREVENTION
   if (e) {
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
   }
 
-  // ✅ Log to console IMMEDIATELY (sebelum apapun)
-  console.log("%c🚀 FORM SUBMIT TRIGGERED!", "color: green; font-size: 20px; font-weight: bold;");
-  console.log("Event:", e);
+  console.log("🚀 FORM SUBMIT TRIGGERED!");
 
   if (!checkAuthentication()) {
     console.log("❌ Authentication failed");
@@ -590,8 +563,6 @@ async function handleAddUserSubmit(e) {
   const password = document.getElementById("user-crud-password").value;
   const role = document.getElementById("user-crud-role").value;
   const isActive = document.getElementById("user-crud-active").checked;
-
-  console.log("📝 Form data:", { name, email, password: password ? "***" : "", role, isActive });
 
   // Validation
   if (!name || !email || !role || !password) {
@@ -630,11 +601,8 @@ async function handleAddUserSubmit(e) {
     is_active: isActive,
   };
 
-  console.log("📤 Sending data:", userData);
-
   try {
     const token = getAuthToken();
-    console.log("🔑 Using token:", token ? "YES" : "NO");
 
     const response = await fetch("/api/auth/users", {
       method: "POST",
@@ -644,8 +612,6 @@ async function handleAddUserSubmit(e) {
       },
       body: JSON.stringify(userData),
     });
-
-    console.log("📡 Response status:", response.status);
 
     if (response.status === 401 || response.status === 403) {
       sessionStorage.removeItem("token");
@@ -665,7 +631,6 @@ async function handleAddUserSubmit(e) {
     }
 
     const result = await response.json();
-    console.log("📦 Response data:", result);
 
     if (!response.ok) {
       throw new Error(result.message || "Terjadi kesalahan saat menambahkan user");
@@ -680,10 +645,9 @@ async function handleAddUserSubmit(e) {
     });
 
     resetUserCrudForm();
-    console.log("🔄 Reloading user list...");
     await loadUsersList();
 
-    return false; // ✅ PREVENT DEFAULT LAGI
+    return false;
 
   } catch (error) {
     console.error("❌ Error adding user:", error);
@@ -696,11 +660,10 @@ async function handleAddUserSubmit(e) {
   }
 }
 
-// ✅ INITIALIZE - RUN AS EARLY AS POSSIBLE
+// INITIALIZE
 (function() {
   console.log("🎯 USER MANAGEMENT MODULE LOADING...");
   
-  // ✅ Wait for DOM or run immediately
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initUserManagement);
   } else {
@@ -710,7 +673,6 @@ async function handleAddUserSubmit(e) {
 
 function initUserManagement() {
   console.log("🎯 INITIALIZING USER MANAGEMENT");
-  console.log("Document ready state:", document.readyState);
 
   const userCrudForm = document.getElementById("user-crud-form");
   
@@ -722,28 +684,21 @@ function initUserManagement() {
 
   console.log("✅ Form found:", userCrudForm);
   
-  // ✅ REMOVE action and method attributes from form
   userCrudForm.removeAttribute('action');
   userCrudForm.removeAttribute('method');
   
-  // ✅ Set onsubmit directly
   userCrudForm.onsubmit = function(e) {
-    console.log("%c⚡ ONSUBMIT FIRED!", "color: red; font-size: 18px;");
     return handleAddUserSubmit(e);
   };
   
-  // ✅ ALSO add event listener as backup
   userCrudForm.addEventListener('submit', function(e) {
-    console.log("%c⚡ EVENTLISTENER FIRED!", "color: blue; font-size: 18px;");
     return handleAddUserSubmit(e);
-  }, true); // Use capture phase
+  }, true);
   
   console.log("✅ Form handlers attached");
   
-  // Initialize password toggle
   setTimeout(initPasswordToggle, 100);
 
-  // Cancel button
   const cancelBtn = document.getElementById("user-crud-cancel");
   if (cancelBtn) {
     cancelBtn.onclick = function(e) {
@@ -753,19 +708,15 @@ function initUserManagement() {
     };
   }
 
-  // Observe sidebar menu clicks
   const userManagementBtn = document.querySelector('[data-form="user"]');
   if (userManagementBtn) {
     userManagementBtn.addEventListener("click", function () {
-      console.log("🔄 Loading users list...");
       setTimeout(() => loadUsersList(), 100);
     });
   }
 
-  // Check if User Management tab is already active on page load
   const userContainer = document.getElementById("userManagementMainContainer");
   if (userContainer && userContainer.style.display !== "none") {
-    console.log("🔄 User Management already active, loading users...");
     setTimeout(() => loadUsersList(), 100);
   }
 }

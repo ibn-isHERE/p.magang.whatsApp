@@ -1,22 +1,18 @@
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 
-// Menentukan path ke file database agar tidak salah lokasi
 const DB_PATH = path.join(__dirname, "reminders.db");
 
-// Membuat koneksi ke database. File akan dibuat jika belum ada.
 const db = new sqlite3.Database(DB_PATH, (err) => {
     if (err) {
-        console.error("❌ Gagal membuka database:", err.message);
+        console.error("Gagal membuka database:", err.message);
     } else {
-        console.log("✅ Terhubung ke database SQLite.");
+        console.log("Terhubung ke database SQLite.");
     }
 });
 
-// Menggunakan db.serialize() untuk memastikan semua perintah pembuatan tabel
-// dijalankan secara berurutan satu per satu.
 db.serialize(() => {
-    console.log("🔧 Creating database tables...\n");
+    console.log("Creating database tables...\n");
 
     // ==========================================
     // 1. USERS TABLE (Authentication & Authorization)
@@ -29,120 +25,28 @@ db.serialize(() => {
             name TEXT NOT NULL,
             role TEXT NOT NULL CHECK(role IN ('admin', 'operator')) DEFAULT 'operator',
             is_active INTEGER DEFAULT 1,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            last_login INTEGER DEFAULT NULL
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         )`,
         (err) => {
             if (err) {
-                console.error("❌ Gagal membuat tabel 'users':", err.message);
+                console.error("Gagal membuat tabel 'users':", err.message);
             } else {
-                console.log("✅ Tabel 'users' siap digunakan.");
-                
-                // ✅ AUTO MIGRATION: Check if last_login needs migration from TEXT to INTEGER
-                db.all("PRAGMA table_info(users)", (pragmaErr, columns) => {
-                    if (pragmaErr) {
-                        console.error("❌ Error checking users table:", pragmaErr);
-                        return;
-                    }
-                    
-                    const lastLoginCol = columns.find(c => c.name === 'last_login');
-                    
-                    // If last_login exists and is TEXT type, migrate to INTEGER
-                    if (lastLoginCol && lastLoginCol.type === 'TEXT') {
-                        console.log("🔄 Migrating last_login from TEXT to INTEGER...");
-                        
-                        db.serialize(() => {
-                            // Step 1: Create new table with INTEGER last_login
-                            db.run(`
-                                CREATE TABLE users_new (
-                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                    email TEXT NOT NULL UNIQUE,
-                                    password TEXT NOT NULL,
-                                    name TEXT NOT NULL,
-                                    role TEXT NOT NULL CHECK(role IN ('admin', 'operator')) DEFAULT 'operator',
-                                    is_active INTEGER DEFAULT 1,
-                                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                                    last_login INTEGER DEFAULT NULL
-                                )
-                            `, (createErr) => {
-                                if (createErr) {
-                                    console.error("❌ Failed to create users_new:", createErr);
-                                    return;
-                                }
-                                
-                                // Step 2: Copy data, convert TEXT timestamp to INTEGER milliseconds
-                                db.run(`
-                                    INSERT INTO users_new (id, email, password, name, role, is_active, created_at, last_login)
-                                    SELECT 
-                                        id, 
-                                        email, 
-                                        password, 
-                                        name, 
-                                        role, 
-                                        is_active, 
-                                        created_at,
-                                        CASE 
-                                            WHEN last_login IS NULL THEN NULL
-                                            WHEN last_login LIKE '%-%' THEN CAST(strftime('%s', last_login) * 1000 AS INTEGER)
-                                            ELSE CAST(last_login AS INTEGER)
-                                        END
-                                    FROM users
-                                `, (insertErr) => {
-                                    if (insertErr) {
-                                        console.error("❌ Failed to copy data:", insertErr);
-                                        return;
-                                    }
-                                    
-                                    // Step 3: Drop old table
-                                    db.run(`DROP TABLE users`, (dropErr) => {
-                                        if (dropErr) {
-                                            console.error("❌ Failed to drop old users table:", dropErr);
-                                            return;
-                                        }
-                                        
-                                        // Step 4: Rename new table
-                                        db.run(`ALTER TABLE users_new RENAME TO users`, (renameErr) => {
-                                            if (renameErr) {
-                                                console.error("❌ Failed to rename table:", renameErr);
-                                                return;
-                                            }
-                                            
-                                            console.log("✅ Migration complete! last_login is now INTEGER (milliseconds)");
-                                            
-                                            // Recreate indexes after migration
-                                            createUserIndexes();
-                                            insertDefaultAdmin();
-                                        });
-                                    });
-                                });
-                            });
-                        });
-                    } else {
-                        // No migration needed
-                        console.log("✅ last_login column type is correct (INTEGER)");
-                        createUserIndexes();
-                        insertDefaultAdmin();
-                    }
-                });
+                console.log("Tabel 'users' siap digunakan.");
+                createUserIndexes();
+                insertDefaultAdmin();
             }
         }
     );
     
-    // Helper function to create user indexes
     function createUserIndexes() {
         db.run("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)");
         db.run("CREATE INDEX IF NOT EXISTS idx_users_role ON users(role)");
         db.run("CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active)");
-        db.run("CREATE INDEX IF NOT EXISTS idx_users_last_login ON users(last_login)", (err) => {
-            if (!err) console.log("✅ Index pada users.last_login siap digunakan.");
-        });
     }
     
-    // Helper function to insert default admin
     function insertDefaultAdmin() {
         db.get("SELECT COUNT(*) as count FROM users WHERE email = ?", ['admin@example.com'], (countErr, row) => {
             if (!countErr && row.count === 0) {
-                // Password: bps123
                 const defaultAdminHash = '$2b$10$/yjPYz.a9oIDA04jYR0/S.PXjms64xjEnb9goqOCbbaYaJSnGBTCq';
                 
                 db.run(
@@ -151,12 +55,12 @@ db.serialize(() => {
                     ['admin@example.com', defaultAdminHash, 'Administrator', 'admin', 1],
                     (insertErr) => {
                         if (!insertErr) {
-                            console.log("✅ Default admin account created (admin@example.com / bps123)");
+                            console.log("Default admin account created (admin@example.com / bps123)");
                         }
                     }
                 );
             } else {
-                console.log("ℹ️  Admin account already exists");
+                console.log("Admin account already exists");
             }
         });
     }
@@ -174,31 +78,30 @@ db.serialize(() => {
         status TEXT NOT NULL,
         selectedGroups TEXT,
         groupInfo TEXT,
-        deliveryResult TEXT,  -- ✅ ALREADY EXISTS
+        deliveryResult TEXT,
         createdAt TEXT DEFAULT CURRENT_TIMESTAMP
     )`,
     (err) => {
         if (err) {
-            console.error("❌ Gagal membuat tabel 'schedules':", err.message);
+            console.error("Gagal membuat tabel 'schedules':", err.message);
         } else {
-            console.log("✅ Tabel 'schedules' siap digunakan.");
+            console.log("Tabel 'schedules' siap digunakan.");
             
-            // ✅ AUTO MIGRATION: Add missing columns
             db.all("PRAGMA table_info(schedules)", (pragmaErr, columns) => {
                 if (pragmaErr) return;
                 
                 const columnNames = columns.map(col => col.name);
                 
-                // Check and add deliveryResult column if missing
                 if (!columnNames.includes('deliveryResult')) {
                     db.run(`ALTER TABLE schedules ADD COLUMN deliveryResult TEXT`, (alterErr) => {
-                        if (!alterErr) console.log("🆕 Added deliveryResult column to schedules");
+                        if (!alterErr) console.log("Added deliveryResult column to schedules");
                     });
                 }
             });
         }
     }
 );
+
     // ==========================================
     // 3. MEETINGS TABLE (Meeting Schedules)
     // ==========================================
@@ -215,7 +118,7 @@ db.serialize(() => {
         filesData TEXT,
         selectedGroups TEXT,
         groupInfo TEXT,
-        deliveryResult TEXT,  -- ✅ ALREADY EXISTS
+        deliveryResult TEXT,
         start_epoch INTEGER,
         end_epoch INTEGER,
         createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -223,9 +126,9 @@ db.serialize(() => {
     )`,
     (err) => {
         if (err) {
-            console.error("❌ Gagal membuat tabel 'meetings':", err.message);
+            console.error("Gagal membuat tabel 'meetings':", err.message);
         } else {
-            console.log("✅ Tabel 'meetings' siap digunakan.");
+            console.log("Tabel 'meetings' siap digunakan.");
             
             db.all("PRAGMA table_info(meetings)", (pragmaErr, columns) => {
                 if (pragmaErr) return;
@@ -234,7 +137,7 @@ db.serialize(() => {
                 
                 if (!columnNames.includes('deliveryResult')) {
                     db.run(`ALTER TABLE meetings ADD COLUMN deliveryResult TEXT`, (alterErr) => {
-                        if (!alterErr) console.log("🆕 Added deliveryResult column to meetings");
+                        if (!alterErr) console.log("Added deliveryResult column to meetings");
                     });
                 }
             });
@@ -257,20 +160,18 @@ db.serialize(() => {
         )`,
         (err) => {
             if (err) {
-                console.error("❌ Gagal membuat tabel 'contacts':", err.message);
+                console.error("Gagal membuat tabel 'contacts':", err.message);
             } else {
-                console.log("✅ Tabel 'contacts' siap digunakan.");
+                console.log("Tabel 'contacts' siap digunakan.");
                 
-                // Migration: Make instansi & jabatan optional (if they were NOT NULL before)
                 db.all("PRAGMA table_info(contacts)", (pragmaErr, columns) => {
                     if (pragmaErr) return;
                     
                     const instansiCol = columns.find(c => c.name === 'instansi');
                     const jabatanCol = columns.find(c => c.name === 'jabatan');
                     
-                    // If columns are NOT NULL, we need to recreate table
                     if ((instansiCol && instansiCol.notnull === 1) || (jabatanCol && jabatanCol.notnull === 1)) {
-                        console.log("🔄 Migrating contacts table schema...");
+                        console.log("Migrating contacts table schema...");
                         
                         db.serialize(() => {
                             db.run(`CREATE TABLE contacts_new (
@@ -288,7 +189,7 @@ db.serialize(() => {
                             
                             db.run(`ALTER TABLE contacts_new RENAME TO contacts`, (err) => {
                                 if (!err) {
-                                    console.log("✅ Migration berhasil! instansi & jabatan sekarang optional.");
+                                    console.log("Migration berhasil! instansi & jabatan sekarang optional.");
                                 }
                             });
                         });
@@ -310,9 +211,9 @@ db.serialize(() => {
         )`,
         (err) => {
             if (err) {
-                console.error("❌ Gagal membuat tabel 'groups':", err.message);
+                console.error("Gagal membuat tabel 'groups':", err.message);
             } else {
-                console.log("✅ Tabel 'groups' siap digunakan.");
+                console.log("Tabel 'groups' siap digunakan.");
             }
         }
     );
@@ -337,14 +238,13 @@ db.serialize(() => {
         )`,
         (err) => {
             if (err) {
-                console.error("❌ Gagal membuat tabel 'chats':", err.message);
+                console.error("Gagal membuat tabel 'chats':", err.message);
             } else {
-                console.log("✅ Tabel 'chats' siap digunakan.");
+                console.log("Tabel 'chats' siap digunakan.");
                 
-                // Migration: Add columns if they don't exist
                 db.all("PRAGMA table_info(chats)", (pragmaErr, columns) => {
                     if (pragmaErr) {
-                        console.error("❌ Error checking chats table structure:", pragmaErr);
+                        console.error("Error checking chats table structure:", pragmaErr);
                         return;
                     }
                     
@@ -354,13 +254,13 @@ db.serialize(() => {
                         if (!columnNames.includes(columnName)) {
                             db.run(`ALTER TABLE chats ADD COLUMN ${columnDefinition}`, (alterErr) => {
                                 if (alterErr) {
-                                    console.error(`❌ Error adding ${columnName} column:`, alterErr);
+                                    console.error(`Error adding ${columnName} column:`, alterErr);
                                 } else {
-                                    console.log(`✅ Added ${columnName} column to chats table`);
+                                    console.log(`Added ${columnName} column to chats table`);
                                 }
                             });
                         } else {
-                            console.log(`✔ Column ${columnName} already exists in chats`);
+                            console.log(`Column ${columnName} already exists in chats`);
                         }
                     };
 
@@ -381,49 +281,49 @@ db.serialize(() => {
     // ==========================================
     db.run("CREATE INDEX IF NOT EXISTS idx_chats_fromNumber ON chats(fromNumber)", (err) => {
         if (err) {
-            console.error("❌ Error creating fromNumber index:", err);
+            console.error("Error creating fromNumber index:", err);
         } else {
-            console.log("✅ Index pada fromNumber siap digunakan.");
+            console.log("Index pada fromNumber siap digunakan.");
         }
     });
 
     db.run("CREATE INDEX IF NOT EXISTS idx_chats_timestamp ON chats(timestamp)", (err) => {
         if (err) {
-            console.error("❌ Error creating timestamp index:", err);
+            console.error("Error creating timestamp index:", err);
         } else {
-            console.log("✅ Index pada timestamp siap digunakan.");
+            console.log("Index pada timestamp siap digunakan.");
         }
     });
 
     db.run("CREATE INDEX IF NOT EXISTS idx_chats_direction_isRead ON chats(direction, isRead)", (err) => {
         if (err) {
-            console.error("❌ Error creating direction_isRead index:", err);
+            console.error("Error creating direction_isRead index:", err);
         } else {
-            console.log("✅ Index pada direction dan isRead siap digunakan.");
+            console.log("Index pada direction dan isRead siap digunakan.");
         }
     });
 
     db.run("CREATE INDEX IF NOT EXISTS idx_chats_messageType ON chats(messageType)", (err) => {
         if (err) {
-            console.error("❌ Error creating messageType index:", err);
+            console.error("Error creating messageType index:", err);
         } else {
-            console.log("✅ Index pada messageType siap digunakan.");
+            console.log("Index pada messageType siap digunakan.");
         }
     });
 
     db.run("CREATE INDEX IF NOT EXISTS idx_schedules_status ON schedules(status)", (err) => {
         if (err) {
-            console.error("❌ Error creating schedules status index:", err);
+            console.error("Error creating schedules status index:", err);
         } else {
-            console.log("✅ Index pada schedules.status siap digunakan.");
+            console.log("Index pada schedules.status siap digunakan.");
         }
     });
 
     db.run("CREATE INDEX IF NOT EXISTS idx_meetings_status ON meetings(status)", (err) => {
         if (err) {
-            console.error("❌ Error creating meetings status index:", err);
+            console.error("Error creating meetings status index:", err);
         } else {
-            console.log("✅ Index pada meetings.status siap digunakan.");
+            console.log("Index pada meetings.status siap digunakan.");
         }
     });
 
@@ -441,11 +341,10 @@ db.serialize(() => {
         )`,
         (err) => {
             if (err) {
-                console.error("❌ Gagal membuat tabel 'instansi':", err.message);
+                console.error("Gagal membuat tabel 'instansi':", err.message);
             } else {
-                console.log("✅ Tabel 'instansi' siap digunakan.");
+                console.log("Tabel 'instansi' siap digunakan.");
                 
-                // Insert data default jika tabel kosong
                 db.get("SELECT COUNT(*) as count FROM instansi", (countErr, row) => {
                     if (!countErr && row.count === 0) {
                         const defaultInstansi = [
@@ -469,7 +368,7 @@ db.serialize(() => {
                         });
                         stmt.finalize();
                         
-                        console.log("✅ Data default instansi berhasil ditambahkan.");
+                        console.log("Data default instansi berhasil ditambahkan.");
                     }
                 });
             }
@@ -490,11 +389,10 @@ db.serialize(() => {
         )`,
         (err) => {
             if (err) {
-                console.error("❌ Gagal membuat tabel 'jabatan':", err.message);
+                console.error("Gagal membuat tabel 'jabatan':", err.message);
             } else {
-                console.log("✅ Tabel 'jabatan' siap digunakan.");
+                console.log("Tabel 'jabatan' siap digunakan.");
                 
-                // Insert data default jika tabel kosong
                 db.get("SELECT COUNT(*) as count FROM jabatan", (countErr, row) => {
                     if (!countErr && row.count === 0) {
                         const defaultJabatan = [
@@ -511,39 +409,37 @@ db.serialize(() => {
                         });
                         stmt.finalize();
                         
-                        console.log("✅ Data default jabatan berhasil ditambahkan.");
+                        console.log("Data default jabatan berhasil ditambahkan.");
                     }
                 });
             }
         }
     );
 
-    // Create indexes for performance
     db.run("CREATE INDEX IF NOT EXISTS idx_instansi_aktif ON instansi(aktif)", (err) => {
-        if (!err) console.log("✅ Index pada instansi.aktif siap digunakan.");
+        if (!err) console.log("Index pada instansi.aktif siap digunakan.");
     });
 
     db.run("CREATE INDEX IF NOT EXISTS idx_jabatan_aktif ON jabatan(aktif)", (err) => {
-        if (!err) console.log("✅ Index pada jabatan.aktif siap digunakan.");
+        if (!err) console.log("Index pada jabatan.aktif siap digunakan.");
     });
 
-    console.log("\n🎉 Database initialization complete!\n");
+    console.log("\nDatabase initialization complete!\n");
 });
 
 // ==========================================
 // GRACEFUL SHUTDOWN
 // ==========================================
 process.on('SIGINT', () => {
-    console.log('\n⚠️ Shutting down gracefully...');
+    console.log('\nShutting down gracefully...');
     db.close((err) => {
         if (err) {
-            console.error('❌ Error closing database:', err.message);
+            console.error('Error closing database:', err.message);
         } else {
-            console.log('✅ Database connection closed.');
+            console.log('Database connection closed.');
         }
         process.exit(0);
     });
 });
 
-// Export database instance
 module.exports = db;
