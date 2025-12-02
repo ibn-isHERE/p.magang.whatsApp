@@ -1,4 +1,4 @@
-// chat-client.js - Chat System Module
+// chat-client.js - Chat System Module dengan Edit & Delete
 
 import { playNotificationSound, showBrowserNotification } from '../ui/ui-helpers.js';
 
@@ -45,6 +45,17 @@ export function initSocketConnection() {
     loadChatConversations();
   });
 
+  // New socket listeners for edit and delete
+  socket.on("messageEdited", (data) => {
+    console.log("✏️ Message edited:", data);
+    handleMessageEdited(data);
+  });
+
+  socket.on("messageDeleted", (data) => {
+    console.log("🗑️ Message deleted:", data);
+    handleMessageDeleted(data);
+  });
+
   socket.on("testResponse", (data) => {
     console.log("🧪 Test response received:", data);
   });
@@ -52,6 +63,53 @@ export function initSocketConnection() {
   socket.onAny((eventName, ...args) => {
     console.log("📡 Socket event received:", eventName, args);
   });
+
+  socket.on("messageUnsent", (data) => {
+  console.log("🔄 Message unsent:", data);
+  if (currentChatNumber === data.fromNumber) {
+    loadChatHistory(data.fromNumber);
+  }
+  loadChatConversations(activeChatTab);
+});
+}
+
+/**
+ * Handle message edited event
+ */
+function handleMessageEdited(data) {
+  const { messageId, fromNumber, newMessage } = data;
+  
+  // Update in current chat view if it's open
+  if (currentChatNumber === fromNumber) {
+    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (messageElement) {
+      const textContent = messageElement.querySelector('.text-content');
+      if (textContent) {
+        textContent.innerHTML = newMessage + ' <span class="edited-label">(diedit)</span>';
+      }
+    }
+  }
+  
+  // Refresh conversation list to update last message
+  loadChatConversations(activeChatTab);
+}
+
+/**
+ * Handle message deleted event
+ */
+function handleMessageDeleted(data) {
+  const { messageId, fromNumber } = data;
+  
+  // Remove from current chat view if it's open
+  if (currentChatNumber === fromNumber) {
+    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (messageElement) {
+      messageElement.remove();
+    }
+  }
+  
+  // Refresh conversation list to update last message
+  loadChatConversations(activeChatTab);
 }
 
 /**
@@ -110,15 +168,25 @@ function initChatEventListeners() {
     sendReplyBtn.addEventListener("click", sendReply);
   }
 
-  const replyInput = document.getElementById("replyInput");
-  if (replyInput) {
-    replyInput.addEventListener("keypress", function (e) {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendReply();
-      }
-    });
-  }
+const replyInput = document.getElementById("replyInput");
+if (replyInput) {
+  // Set initial height
+  replyInput.style.height = "42px"; // Tinggi awal 2 baris
+  
+  // Kirim dengan Enter, baris baru dengan Shift+Enter
+  replyInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendReply();
+    }
+  });
+
+// Auto-resize textarea
+    replyInput.addEventListener("input", function () {
+    this.style.height = "42px"; // Reset ke tinggi minimal (2 baris)
+    this.style.height = Math.min(this.scrollHeight, 105) + "px"; // Max 105px
+  });
+}
 
   const refreshChatBtn = document.getElementById("refreshChatBtn");
   if (refreshChatBtn) {
@@ -358,6 +426,155 @@ async function loadChatHistory(phoneNumber) {
 }
 
 /**
+ * Edit message function
+ */
+async function editMessage(messageId, currentText) {
+  const { value: formValues } = await Swal.fire({
+    title: 'Edit Pesan',
+    html: `
+      <textarea id="swal-input1" class="swal2-textarea" style="height: 100px;">${currentText}</textarea>
+      <div style="margin-top: 15px;">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" id="swal-input2" checked>
+          <span>Kirim notifikasi koreksi ke user via WhatsApp</span>
+        </label>
+        <small style="color: #666; display: block; margin-top: 5px;">
+          ✓ User akan menerima pesan koreksi di WhatsApp<br>
+          ✗ Hanya update di dashboard admin
+        </small>
+      </div>
+    `,
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: 'Simpan',
+    cancelButtonText: 'Batal',
+    preConfirm: () => {
+      const newText = document.getElementById('swal-input1').value;
+      const sendNotification = document.getElementById('swal-input2').checked;
+      
+      if (!newText || newText.trim() === '') {
+        Swal.showValidationMessage('Pesan tidak boleh kosong!');
+        return false;
+      }
+      
+      return {
+        newText: newText.trim(),
+        sendNotification: sendNotification
+      };
+    }
+  });
+
+  if (formValues) {
+    try {
+      let response;
+      
+      if (formValues.sendNotification) {
+        // Edit dengan kirim notifikasi ke user
+        response = await fetch(`/api/chats/message/${messageId}/with-notification`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newMessage: formValues.newText })
+        });
+      } else {
+        // Edit hanya di database (dashboard only)
+        response = await fetch(`/api/chats/message/${messageId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newMessage: formValues.newText })
+        });
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil!',
+          text: formValues.sendNotification 
+            ? 'Pesan berhasil diedit dan koreksi terkirim ke user via WhatsApp' 
+            : 'Pesan berhasil diedit di dashboard',
+          timer: 3000
+        });
+        loadChatHistory(currentChatNumber);
+      } else {
+        Swal.fire('Gagal!', result.message || 'Gagal mengedit pesan', 'error');
+      }
+    } catch (error) {
+      console.error('Error editing message:', error);
+      Swal.fire('Error!', 'Terjadi kesalahan saat mengedit pesan', 'error');
+    }
+  }
+}
+
+
+/**
+ * Delete message function - Updated untuk sistem baru
+ */
+async function deleteMessage(messageId) {
+  const result = await Swal.fire({
+    title: 'Hapus Pesan?',
+    html: `
+      <div style="text-align: left; margin: 15px 0;">
+        <p><strong>Sistem akan mencoba:</strong></p>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+          <li>✅ Hapus pesan dari WhatsApp user (jika masih fresh)</li>
+          <li>📤 Jika gagal: kirim notifikasi pembatalan ke user</li>
+          <li>🗑️ Hapus dari database admin</li>
+        </ul>
+        <small style="color: #666;">
+          ℹ️ Pesan yang baru dikirim bisa dihapus langsung dari WhatsApp user.<br>
+          Pesan lama akan dikirim notifikasi pembatalan.
+        </small>
+      </div>
+    `,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Ya, Hapus',
+    confirmButtonColor: '#d33',
+    cancelButtonText: 'Batal'
+  });
+
+  if (result.isConfirmed) {
+    try {
+      const response = await fetch(`/api/chats/message/${messageId}`, {
+        method: 'DELETE'
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        let successMessage = '';
+        let iconType = 'success';
+        
+        if (data.deletedFromWhatsApp) {
+          successMessage = '✅ Pesan berhasil dihapus dari WhatsApp user dan database!';
+          iconType = 'success';
+        } else {
+          successMessage = '📤 Pesan dihapus dari database dan notifikasi pembatalan terkirim ke user.';
+          iconType = 'info';
+        }
+        
+        Swal.fire({
+          icon: iconType,
+          title: 'Berhasil!',
+          text: successMessage,
+          timer: 3000,
+          timerProgressBar: true
+        });
+        
+        loadChatHistory(currentChatNumber);
+        loadChatConversations(activeChatTab);
+      } else {
+        Swal.fire('Gagal!', data.message || 'Gagal menghapus pesan', 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      Swal.fire('Error!', 'Terjadi kesalahan saat menghapus pesan', 'error');
+    }
+  }
+}
+
+/**
  * Renders chat messages
  */
 function renderChatMessages(messages) {
@@ -394,6 +611,7 @@ function renderChatMessages(messages) {
 
     const messageDiv = document.createElement("div");
     messageDiv.className = `message ${message.direction === "in" ? "incoming" : "outgoing"}`;
+    messageDiv.setAttribute("data-message-id", message.id);
 
     const messageTime = new Date(message.timestamp).toLocaleString("id-ID", {
       hour: "2-digit",
@@ -403,6 +621,19 @@ function renderChatMessages(messages) {
     });
 
     let messageBubbleContent = "";
+    
+    // Add message actions (edit/delete) for outgoing chat messages
+    const canEditDelete = message.direction === "out" && mtype === "chat";
+    const messageActions = canEditDelete ? `
+      <div class="message-actions">
+        <button class="message-action-btn edit-btn" onclick="window.editChatMessage(${message.id}, '${(typeof payload === 'string' ? payload : '').replace(/'/g, "\\'")}')">
+          <i class="fa-solid fa-edit"></i>
+        </button>
+        <button class="message-action-btn delete-btn" onclick="window.deleteChatMessage(${message.id})">
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </div>
+    ` : '';
 
     if (mtype === "image" && mediaUrl) {
       messageBubbleContent = `
@@ -432,14 +663,32 @@ function renderChatMessages(messages) {
         <div class="message-time">${messageTime}</div>
       `;
     } else {
-      const text = typeof payload === "object"
-        ? payload.caption || payload.originalname || JSON.stringify(payload)
-        : payload || "";
-      messageBubbleContent = `
-        <div class="text-content">${text}</div>
-        <div class="message-time">${messageTime}</div>
-      `;
-    }
+  const text = typeof payload === "object"
+    ? payload.caption || payload.originalname || JSON.stringify(payload)
+    : payload || "";
+  
+  // Cek apakah pesan diedit
+  const editedLabel = message.editedAt ? ' <span class="edited-label">(diedit)</span>' : '';
+  
+  // Cek apakah ini pesan dari user (incoming) atau admin (outgoing)
+  const showActions = message.direction === "out" && mtype === "chat";
+  const messageActions = showActions ? `
+    <div class="message-actions">
+      <button class="message-action-btn edit-btn" onclick="window.editChatMessage(${message.id}, '${(typeof payload === 'string' ? payload : '').replace(/'/g, "\\'")}')">
+        <i class="fa-solid fa-edit"></i>
+      </button>
+      <button class="message-action-btn delete-btn" onclick="window.deleteChatMessage(${message.id})">
+        <i class="fa-solid fa-trash"></i>
+      </button>
+    </div>
+  ` : '';
+  
+  messageBubbleContent = `
+    ${messageActions}
+    <div class="text-content">${text}${editedLabel}</div>
+    <div class="message-time">${messageTime}</div>
+  `;
+}
 
     messageDiv.innerHTML = `<div class="message-bubble">${messageBubbleContent}</div>`;
     chatMessages.appendChild(messageDiv);
@@ -447,6 +696,10 @@ function renderChatMessages(messages) {
 
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }
+
+// Make functions available globally for onclick handlers
+window.editChatMessage = editMessage;
+window.deleteChatMessage = deleteMessage;
 
 /**
  * Sends a reply message
@@ -500,6 +753,7 @@ async function sendReply() {
     }
 
     replyInput.value = "";
+    replyInput.style.height = "42px";
     chatFileInput.value = "";
     const selectedFilePreviewEl = document.querySelector(".chat-selected-file");
     if (selectedFilePreviewEl) selectedFilePreviewEl.remove();

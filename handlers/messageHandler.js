@@ -15,12 +15,181 @@ class MessageHandler {
         // State management
         this.userState = {};
         
+        // Track message IDs (WhatsApp ID -> Database ID)
+        this.messageIdMap = new Map();
+        
         // Initialize handlers
         this.registrationHandler = new RegistrationHandler(db, client);
         this.menuHandler = new MenuHandler(db, client, io, this.saveNewMessage.bind(this));
         
         // PENTING: Set reference userState ke menuHandler
         this.menuHandler.setUserStateReference(this.userState);
+        
+        // Setup WhatsApp event listeners
+        this.setupWhatsAppListeners();
+    }
+
+    /**
+     * Setup WhatsApp event listeners untuk message_revoke dan message_edit
+     */
+    setupWhatsAppListeners() {
+        // Listener untuk pesan yang dihapus (revoked)
+        this.client.on('message_revoke_everyone', async (after, before) => {
+            try {
+                if (before) {
+                    console.log('🗑️ Message revoked by user:', before.id._serialized);
+                    await this.handleMessageRevoke(before);
+                }
+            } catch (error) {
+                console.error('❌ Error handling message revoke:', error);
+            }
+        });
+
+        // Listener untuk pesan yang diedit
+        this.client.on('message_edit', async (message, newBody, prevBody) => {
+            try {
+                console.log('✏️ Message edited by user');
+                console.log('Previous:', prevBody);
+                console.log('New:', newBody);
+                await this.handleMessageEdit(message, newBody, prevBody);
+            } catch (error) {
+                console.error('❌ Error handling message edit:', error);
+            }
+        });
+
+        console.log('✅ WhatsApp event listeners for edit/delete initialized');
+    }
+
+    /**
+     * Handle pesan yang dihapus oleh user
+     */
+    async handleMessageRevoke(message) {
+        const fromNumber = message.from.replace('@c.us', '');
+        const waMessageId = message.id._serialized;
+
+        console.log(`🗑️ Processing revoked message from ${fromNumber}, WA ID: ${waMessageId}`);
+
+        // Cari di database berdasarkan timestamp dan fromNumber
+        // WhatsApp message biasanya punya timestamp yang bisa kita gunakan
+        const timestamp = new Date(message.timestamp * 1000).toISOString();
+        
+        return new Promise((resolve, reject) => {
+            // Query untuk mencari pesan berdasarkan fromNumber dan timestamp yang mendekati
+            const query = `
+                SELECT id, message, timestamp 
+                FROM chats 
+                WHERE fromNumber = ? 
+                AND direction = 'in'
+                AND datetime(timestamp) BETWEEN datetime(?, '-5 seconds') AND datetime(?, '+5 seconds')
+                ORDER BY ABS(julianday(timestamp) - julianday(?))
+                LIMIT 1
+            `;
+
+            this.db.get(query, [fromNumber, timestamp, timestamp, timestamp], (err, row) => {
+                if (err) {
+                    console.error('❌ Error finding revoked message:', err);
+                    reject(err);
+                    return;
+                }
+
+                if (row) {
+                    console.log(`✅ Found message in DB (ID: ${row.id}), deleting...`);
+                    
+                    // Hapus pesan dari database
+                    this.db.run('DELETE FROM chats WHERE id = ?', [row.id], (deleteErr) => {
+                        if (deleteErr) {
+                            console.error('❌ Error deleting revoked message:', deleteErr);
+                            reject(deleteErr);
+                            return;
+                        }
+
+                        console.log(`✅ Message ${row.id} deleted from database`);
+
+                        // Emit socket event untuk update real-time di admin dashboard
+                        this.io.emit('messageDeleted', {
+                            messageId: row.id,
+                            fromNumber: fromNumber
+                        });
+
+                        resolve({ deleted: true, messageId: row.id });
+                    });
+                } else {
+                    console.log('⚠️ Revoked message not found in database');
+                    resolve({ deleted: false });
+                }
+            });
+        });
+    }
+
+    /**
+     * Handle pesan yang diedit oleh user
+     */
+    async handleMessageEdit(message, newBody, prevBody) {
+        const fromNumber = message.from.replace('@c.us', '');
+        const timestamp = new Date(message.timestamp * 1000).toISOString();
+
+        console.log(`✏️ Processing edited message from ${fromNumber}`);
+        console.log(`Previous: "${prevBody}" -> New: "${newBody}"`);
+
+        return new Promise((resolve, reject) => {
+            // Cari pesan berdasarkan fromNumber dan konten lama
+            const query = `
+                SELECT id, message, timestamp 
+                FROM chats 
+                WHERE fromNumber = ? 
+                AND direction = 'in'
+                AND message = ?
+                AND datetime(timestamp) BETWEEN datetime(?, '-10 seconds') AND datetime(?, '+10 seconds')
+                ORDER BY ABS(julianday(timestamp) - julianday(?))
+                LIMIT 1
+            `;
+
+            this.db.get(query, [fromNumber, prevBody, timestamp, timestamp, timestamp], (err, row) => {
+                if (err) {
+                    console.error('❌ Error finding edited message:', err);
+                    reject(err);
+                    return;
+                }
+
+                if (row) {
+                    console.log(`✅ Found message in DB (ID: ${row.id}), updating...`);
+                    
+                    const editedAt = new Date().toISOString();
+                    
+                    // Update pesan di database
+                    this.db.run(
+                        'UPDATE chats SET message = ?, editedAt = ? WHERE id = ?',
+                        [newBody, editedAt, row.id],
+                        (updateErr) => {
+                            if (updateErr) {
+                                console.error('❌ Error updating edited message:', updateErr);
+                                reject(updateErr);
+                                return;
+                            }
+
+                            console.log(`✅ Message ${row.id} updated in database`);
+
+                            // Emit socket event untuk update real-time
+                            this.io.emit('messageEdited', {
+                                messageId: row.id,
+                                fromNumber: fromNumber,
+                                newMessage: newBody,
+                                editedAt: editedAt
+                            });
+
+                            resolve({ 
+                                updated: true, 
+                                messageId: row.id,
+                                newMessage: newBody 
+                            });
+                        }
+                    );
+                } else {
+                    console.log('⚠️ Edited message not found in database');
+                    resolve({ updated: false });
+                }
+            });
+        });
     }
 
     /**

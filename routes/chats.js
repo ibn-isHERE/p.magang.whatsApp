@@ -7,6 +7,22 @@ const { MessageMedia } = require("whatsapp-web.js");
 function createChatsRouter(db, whatsappClient, io) {
   const router = express.Router();
 
+  // ==========================================
+// CACHE untuk menyimpan message objects dari WhatsApp
+// ==========================================
+const messageCache = new Map();
+const MAX_CACHE_SIZE = 1000;
+
+// Cleanup cache secara periodik (setiap 1 jam)
+setInterval(() => {
+  if (messageCache.size > MAX_CACHE_SIZE) {
+    const entriesToDelete = messageCache.size - MAX_CACHE_SIZE;
+    const keys = Array.from(messageCache.keys()).slice(0, entriesToDelete);
+    keys.forEach(key => messageCache.delete(key));
+    console.log(`🧹 Cache cleaned: removed ${entriesToDelete} old entries`);
+  }
+}, 3600000);
+
   // --- Multer setup untuk menyimpan media chat ---
   const uploadDir = path.join(__dirname, "..", "uploads", "chat_media");
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -254,103 +270,104 @@ function createChatsRouter(db, whatsappClient, io) {
 
   // ⭐ ENDPOINT DIPERBAIKI: Mengirim pesan balasan + Aktivasi Session
   router.post("/send", async (req, res) => {
-    const { to, message } = req.body;
+  const { to, message } = req.body;
 
-    if (!to || !message) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "Nomor tujuan dan pesan harus diisi",
-        });
+  if (!to || !message) {
+    return res.status(400).json({
+      success: false,
+      message: "Nomor tujuan dan pesan harus diisi",
+    });
+  }
+
+  try {
+    if (!whatsappClient || !whatsappClient.info) {
+      return res.status(500).json({
+        success: false,
+        message: "WhatsApp client tidak tersedia atau tidak terhubung",
+      });
     }
 
-    try {
-      if (!whatsappClient || !whatsappClient.info) {
-        return res
-          .status(500)
-          .json({
-            success: false,
-            message: "WhatsApp client tidak tersedia atau tidak terhubung",
-          });
-      }
+    const formattedNumber = to.includes("@c.us") ? to : `${to}@c.us`;
+    
+    // 🆕 SIMPAN return value dari sendMessage
+    const sentMessage = await whatsappClient.sendMessage(formattedNumber, message);
 
-      const formattedNumber = to.includes("@c.us") ? to : `${to}@c.us`;
-      await whatsappClient.sendMessage(formattedNumber, message);
+    // 🆕 SIMPAN MESSAGE OBJECT ke cache untuk keperluan delete nanti
+    if (sentMessage && sentMessage.id) {
+      messageCache.set(sentMessage.id.id, sentMessage);
+      console.log(`📦 Message cached: ${sentMessage.id.id}`);
+    }
 
-      const dbResult = await new Promise((resolve, reject) => {
-        const timestamp = new Date().toISOString();
-        const query = `
-                    INSERT INTO chats (fromNumber, message, direction, timestamp, messageType, isRead)
-                    VALUES (?, ?, 'out', ?, 'chat', TRUE)
-                `;
-
-        db.run(query, [to, message, timestamp], function (err) {
-          if (err) {
-            console.error("Error menyimpan pesan keluar:", err);
-            return reject(
-              new Error("Pesan terkirim tapi gagal disimpan ke database")
-            );
-          }
-          resolve({
-            id: this.lastID,
-            timestamp: timestamp,
-          });
+    const dbResult = await new Promise((resolve, reject) => {
+      const timestamp = new Date().toISOString();
+      const query = `
+        INSERT INTO chats (fromNumber, message, direction, timestamp, messageType, isRead, waMessageId)
+        VALUES (?, ?, 'out', ?, 'chat', 1, ?)
+      `;
+      
+      const waMessageId = sentMessage && sentMessage.id ? sentMessage.id.id : null;
+      
+      db.run(query, [to, message, timestamp, waMessageId], function (err) {
+        if (err) {
+          console.error("Error menyimpan pesan keluar:", err);
+          return reject(new Error("Pesan terkirim tapi gagal disimpan ke database"));
+        }
+        resolve({
+          id: this.lastID,
+          timestamp: timestamp,
+          waMessageId: waMessageId
         });
       });
+    });
 
-      const messageData = {
-        id: dbResult.id,
-        fromNumber: to,
-        message: message,
-        direction: "out",
-        timestamp: dbResult.timestamp,
-        messageType: "chat",
-        isRead: true,
-      };
+    const messageData = {
+      id: dbResult.id,
+      fromNumber: to,
+      message: message,
+      direction: "out",
+      timestamp: dbResult.timestamp,
+      messageType: "chat",
+      isRead: true,
+    };
 
-      // ⭐ TAMBAHAN BARU: Aktifkan chat session jika user dalam CHATTING_WAITING
-      const messageHandler = req.app.get('messageHandler');
-      if (messageHandler) {
-        const fromNumberClean = to.replace("@c.us", "");
-        const userState = messageHandler.getUserState(fromNumberClean);
-        
-        if (userState === 'CHATTING_WAITING') {
-          const activated = messageHandler.activateChatSessionForNumber(fromNumberClean);
-          if (activated) {
-            console.log(`✅ Chat session ACTIVATED untuk ${fromNumberClean} - Admin telah reply! Timer dimulai.`);
-          }
-        } else if (userState === 'CHATTING_ACTIVE') {
-          console.log(`🔄 User ${fromNumberClean} sudah dalam CHATTING_ACTIVE, timer akan di-reset saat user reply.`);
+    // ⭐ Aktifkan chat session jika user dalam CHATTING_WAITING
+    const messageHandler = req.app.get('messageHandler');
+    if (messageHandler) {
+      const fromNumberClean = to.replace("@c.us", "");
+      const userState = messageHandler.getUserState(fromNumberClean);
+      
+      if (userState === 'CHATTING_WAITING') {
+        const activated = messageHandler.activateChatSessionForNumber(fromNumberClean);
+        if (activated) {
+          console.log(`✅ Chat session ACTIVATED untuk ${fromNumberClean} - Admin telah reply!`);
         }
       }
+    }
 
-      io.emit("messageSent", messageData);
+    io.emit("messageSent", messageData);
 
-      res.json({
-        success: true,
-        message: "Pesan berhasil dikirim dan disimpan",
-        data: messageData,
-      });
-    } catch (error) {
-      console.error("Error dalam proses mengirim pesan:", error.message);
+    res.json({
+      success: true,
+      message: "Pesan berhasil dikirim dan disimpan",
+      data: messageData,
+    });
+  } catch (error) {
+    console.error("Error dalam proses mengirim pesan:", error.message);
 
-      if (
-        error.message &&
-        error.message.includes("phone number is not registered")
-      ) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Nomor WhatsApp tidak terdaftar" });
-      }
-
-      res.status(500).json({
-        success: false,
-        message: "Gagal mengirim pesan",
-        details: error.message,
+    if (error.message && error.message.includes("phone number is not registered")) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Nomor WhatsApp tidak terdaftar" 
       });
     }
-  });
+
+    res.status(500).json({
+      success: false,
+      message: "Gagal mengirim pesan",
+      details: error.message,
+    });
+  }
+});
 
   // ⭐ ENDPOINT DIPERBAIKI: Mengirim media + Aktivasi Session
   router.post("/send-media", upload.array("media", 12), async (req, res) => {
@@ -391,7 +408,14 @@ function createChatsRouter(db, whatsappClient, io) {
         const options = { caption };
         if (mtype === "document") options.sendMediaAsDocument = true;
 
-        await whatsappClient.sendMessage(formattedNumber, media, options);
+        // 🆕 SIMPAN RETURN VALUE dari sendMessage
+        const sentMessage = await whatsappClient.sendMessage(formattedNumber, media, options);
+
+        // 🆕 SIMPAN MESSAGE OBJECT ke cache
+        if (sentMessage && sentMessage.id) {
+          messageCache.set(sentMessage.id.id, sentMessage);
+          console.log(`📦 Media message cached: ${sentMessage.id.id}`);
+        }
 
         const messageObj = {
           url: publicUrl,
@@ -404,13 +428,14 @@ function createChatsRouter(db, whatsappClient, io) {
 
         const dbResult = await new Promise((resolve, reject) => {
           const timestamp = new Date().toISOString();
+          // 🆕 TAMBAHKAN waMessageId ke query
           const query = `
-          INSERT INTO chats (fromNumber, message, direction, timestamp, messageType, isRead)
-          VALUES (?, ?, 'out', ?, ?, TRUE)
-        `;
+            INSERT INTO chats (fromNumber, message, direction, timestamp, messageType, isRead, waMessageId)
+            VALUES (?, ?, 'out', ?, ?, TRUE, ?)
+          `;
           db.run(
             query,
-            [to, JSON.stringify(messageObj), timestamp, mtype],
+            [to, JSON.stringify(messageObj), timestamp, mtype, sentMessage.id.id], // 🆕 tambah parameter
             function (err) {
               if (err) return reject(err);
               resolve({ id: this.lastID, timestamp });
@@ -604,48 +629,6 @@ function createChatsRouter(db, whatsappClient, io) {
     });
   });
 
-  router.delete("/message/:messageId", (req, res) => {
-    const messageId = req.params.messageId;
-
-    db.get(
-      "SELECT fromNumber FROM chats WHERE id = ?",
-      [messageId],
-      (err, messageData) => {
-        if (err) {
-          console.error("Error getting message data:", err);
-          res.status(500).json({ error: err.message });
-          return;
-        }
-
-        if (!messageData) {
-          return res.status(404).json({ error: "Pesan tidak ditemukan" });
-        }
-
-        db.run(
-          "DELETE FROM chats WHERE id = ?",
-          [messageId],
-          function (deleteErr) {
-            if (deleteErr) {
-              console.error("Error deleting message:", deleteErr);
-              res.status(500).json({ error: deleteErr.message });
-              return;
-            }
-
-            io.emit("messageDeleted", {
-              messageId: messageId,
-              fromNumber: messageData.fromNumber,
-            });
-
-            res.json({
-              success: true,
-              message: "Pesan berhasil dihapus",
-            });
-          }
-        );
-      }
-    );
-  });
-
   router.get("/contact-info/:number", (req, res) => {
     const number = req.params.number;
 
@@ -771,7 +754,366 @@ function createChatsRouter(db, whatsappClient, io) {
     });
   });
 
+  router.put("/message/:messageId", (req, res) => {
+    const messageId = req.params.messageId;
+    const { newMessage } = req.body;
+
+    if (!newMessage || newMessage.trim() === "") {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Pesan baru harus diisi" 
+      });
+    }
+
+    // Get message data first
+    db.get(
+      "SELECT fromNumber, direction FROM chats WHERE id = ?",
+      [messageId],
+      (err, messageData) => {
+        if (err) {
+          console.error("Error getting message data:", err);
+          return res.status(500).json({ error: err.message });
+        }
+
+        if (!messageData) {
+          return res.status(404).json({ error: "Pesan tidak ditemukan" });
+        }
+
+        // Update message
+        db.run(
+          "UPDATE chats SET message = ?, editedAt = ? WHERE id = ?",
+          [newMessage.trim(), new Date().toISOString(), messageId],
+          function (updateErr) {
+            if (updateErr) {
+              console.error("Error updating message:", updateErr);
+              return res.status(500).json({ error: updateErr.message });
+            }
+
+            // Emit socket event
+            io.emit("messageEdited", {
+              messageId: messageId,
+              fromNumber: messageData.fromNumber,
+              newMessage: newMessage.trim(),
+              editedAt: new Date().toISOString()
+            });
+
+            res.json({
+              success: true,
+              message: "Pesan berhasil diupdate",
+              data: {
+                messageId: messageId,
+                newMessage: newMessage.trim()
+              }
+            });
+          }
+        );
+      }
+    );
+  });
+
+  // Update existing delete message endpoint untuk emit yang lebih baik
+  router.delete("/message/:messageId", async (req, res) => {
+  const messageId = req.params.messageId;
+
+  try {
+    // Get message data
+    const messageData = await new Promise((resolve, reject) => {
+      db.get(
+        "SELECT fromNumber, direction, messageType, waMessageId, message FROM chats WHERE id = ?",
+        [messageId],
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        }
+      );
+    });
+
+    if (!messageData) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Pesan tidak ditemukan" 
+      });
+    }
+
+    let deletedFromWhatsApp = false;
+
+    // Coba hapus dari WhatsApp jika pesan outgoing dan ada waMessageId
+    if (messageData.direction === 'out' && messageData.waMessageId) {
+      const cachedMessage = messageCache.get(messageData.waMessageId);
+      
+      if (cachedMessage) {
+        try {
+          await cachedMessage.delete(true); // true = delete for everyone
+          deletedFromWhatsApp = true;
+          messageCache.delete(messageData.waMessageId);
+          console.log(`✅ Pesan berhasil dihapus dari WhatsApp (ID: ${messageData.waMessageId})`);
+        } catch (deleteErr) {
+          console.error('❌ Gagal hapus dari WhatsApp:', deleteErr.message);
+          
+          // Fallback: kirim notifikasi jika gagal hapus
+          const fromNumber = messageData.fromNumber;
+          const formattedNumber = fromNumber.includes('@c.us') ? fromNumber : `${fromNumber}@c.us`;
+          const notificationText = `🗑️ *Pesan Dihapus oleh Admin*\n\nPesan: "${messageData.message}"\n\nMohon abaikan pesan tersebut.`;
+          
+          try {
+            await whatsappClient.sendMessage(formattedNumber, notificationText);
+            console.log(`📤 Notifikasi penghapusan terkirim ke ${fromNumber}`);
+          } catch (notifErr) {
+            console.error('❌ Gagal kirim notifikasi:', notifErr);
+          }
+        }
+      } else {
+        console.log(`⚠️ Message object tidak ditemukan di cache (ID: ${messageData.waMessageId})`);
+        
+        // Kirim notifikasi sebagai fallback
+        const fromNumber = messageData.fromNumber;
+        const formattedNumber = fromNumber.includes('@c.us') ? fromNumber : `${fromNumber}@c.us`;
+        const notificationText = `🗑️ *Pesan Dihapus oleh Admin*\n\nPesan: "${messageData.message}"\n\nMohon abaikan pesan tersebut.`;
+        
+        try {
+          await whatsappClient.sendMessage(formattedNumber, notificationText);
+          console.log(`📤 Notifikasi penghapusan terkirim (fallback) ke ${fromNumber}`);
+        } catch (notifErr) {
+          console.error('❌ Gagal kirim notifikasi:', notifErr);
+        }
+      }
+    }
+
+    // Hapus dari database
+    await new Promise((resolve, reject) => {
+      db.run("DELETE FROM chats WHERE id = ?", [messageId], function (err) {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
+    io.emit("messageDeleted", {
+      messageId: messageId,
+      fromNumber: messageData.fromNumber,
+      deletedFromWhatsApp: deletedFromWhatsApp
+    });
+
+    res.json({
+      success: true,
+      message: deletedFromWhatsApp 
+        ? "Pesan berhasil dihapus dari WhatsApp dan database" 
+        : "Pesan dihapus dari database (notifikasi terkirim ke user)",
+      deletedFromWhatsApp: deletedFromWhatsApp
+    });
+
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    res.status(500).json({
+      success: false,
+      message: "Gagal menghapus pesan",
+      details: error.message
+    });
+  }
+});
+
+
+   router.post("/unsend/:messageId", async (req, res) => {
+    const messageId = req.params.messageId;
+
+    try {
+      // Get message data
+      const messageData = await new Promise((resolve, reject) => {
+        db.get(
+          "SELECT fromNumber, message, direction FROM chats WHERE id = ?",
+          [messageId],
+          (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+          }
+        );
+      });
+
+      if (!messageData) {
+        return res.status(404).json({
+          success: false,
+          message: "Pesan tidak ditemukan"
+        });
+      }
+
+      // Hanya bisa unsend pesan outgoing (dari admin)
+      if (messageData.direction !== 'out') {
+        return res.status(400).json({
+          success: false,
+          message: "Hanya pesan admin yang bisa di-unsend"
+        });
+      }
+
+      const fromNumber = messageData.fromNumber;
+      const formattedNumber = fromNumber.includes('@c.us') ? fromNumber : `${fromNumber}@c.us`;
+
+      // Kirim notifikasi pembatalan ke user
+      const notificationText = `❌ *Pesan Dibatalkan*\n\nPesan sebelumnya: "${messageData.message}"\n\nMohon abaikan pesan tersebut.`;
+
+      // Kirim ke WhatsApp
+      await whatsappClient.sendMessage(formattedNumber, notificationText);
+
+      // Simpan notifikasi ke database
+      const timestamp = new Date().toISOString();
+      await new Promise((resolve, reject) => {
+        db.run(
+          `INSERT INTO chats (fromNumber, message, direction, timestamp, messageType, isRead)
+           VALUES (?, ?, 'out', ?, 'chat', TRUE)`,
+          [fromNumber, notificationText, timestamp],
+          function(err) {
+            if (err) reject(err);
+            else resolve(this.lastID);
+          }
+        );
+      });
+
+      // Update pesan original dengan status unsent
+      await new Promise((resolve, reject) => {
+        db.run(
+          "UPDATE chats SET message = ?, editedAt = ? WHERE id = ?",
+          [
+            `[DIBATALKAN] ${messageData.message}`,
+            new Date().toISOString(),
+            messageId
+          ],
+          (err) => {
+            if (err) reject(err);
+            else resolve();
+          }
+        );
+      });
+
+      // Emit socket event
+      io.emit("messageUnsent", {
+        messageId: messageId,
+        fromNumber: fromNumber
+      });
+
+      res.json({
+        success: true,
+        message: "Pesan berhasil dibatalkan dan notifikasi terkirim ke user",
+        data: {
+          messageId: messageId
+        }
+      });
+
+    } catch (error) {
+      console.error('Error unsending message:', error);
+      res.status(500).json({
+        success: false,
+        message: "Gagal membatalkan pesan",
+        details: error.message
+      });
+    }
+  });
+
+  // ==========================================
+  // ENDPOINT: Edit Message dengan Notifikasi ke User
+  // ==========================================
+  router.put("/message/:messageId/with-notification", async (req, res) => {
+    const messageId = req.params.messageId;
+    const { newMessage } = req.body;
+
+    if (!newMessage || newMessage.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Pesan baru harus diisi"
+      });
+    }
+
+    try {
+      // Get message data
+      const messageData = await new Promise((resolve, reject) => {
+        db.get(
+          "SELECT fromNumber, message, direction, messageType FROM chats WHERE id = ?",
+          [messageId],
+          (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+          }
+        );
+      });
+
+      if (!messageData) {
+        return res.status(404).json({
+          success: false,
+          message: "Pesan tidak ditemukan"
+        });
+      }
+
+      // Only allow editing outgoing text messages
+      if (messageData.direction !== 'out' || messageData.messageType !== 'chat') {
+        return res.status(400).json({
+          success: false,
+          message: "Hanya pesan teks admin yang bisa diedit"
+        });
+      }
+
+      const fromNumber = messageData.fromNumber;
+      const formattedNumber = fromNumber.includes('@c.us') ? fromNumber : `${fromNumber}@c.us`;
+
+      // Kirim notifikasi koreksi ke user
+      const correctionText = `🔄 *Koreksi Pesan*\n\n❌ Pesan sebelumnya:\n"${messageData.message}"\n\n✅ Yang benar:\n"${newMessage.trim()}"`;
+      
+      await whatsappClient.sendMessage(formattedNumber, correctionText);
+
+      // Update di database
+      const editedAt = new Date().toISOString();
+      await new Promise((resolve, reject) => {
+        db.run(
+          "UPDATE chats SET message = ?, editedAt = ? WHERE id = ?",
+          [newMessage.trim(), editedAt, messageId],
+          (err) => {
+            if (err) reject(err);
+            else resolve();
+          }
+        );
+      });
+
+      // Simpan pesan koreksi juga ke database
+      const timestamp = new Date().toISOString();
+      await new Promise((resolve, reject) => {
+        db.run(
+          `INSERT INTO chats (fromNumber, message, direction, timestamp, messageType, isRead)
+           VALUES (?, ?, 'out', ?, 'chat', TRUE)`,
+          [fromNumber, correctionText, timestamp],
+          function(err) {
+            if (err) reject(err);
+            else resolve(this.lastID);
+          }
+        );
+      });
+
+      // Emit socket event
+      io.emit("messageEdited", {
+        messageId: messageId,
+        fromNumber: fromNumber,
+        newMessage: newMessage.trim(),
+        editedAt: editedAt,
+        notificationSent: true
+      });
+
+      res.json({
+        success: true,
+        message: "Pesan berhasil diupdate dan koreksi terkirim ke user",
+        data: {
+          messageId: messageId,
+          newMessage: newMessage.trim(),
+          editedAt: editedAt
+        }
+      });
+
+    } catch (error) {
+      console.error('Error editing message with notification:', error);
+      res.status(500).json({
+        success: false,
+        message: "Gagal mengedit pesan",
+        details: error.message
+      });
+    }
+  });
+
   return router;
+
 }
 
 module.exports = createChatsRouter;

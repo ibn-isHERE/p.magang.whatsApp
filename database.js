@@ -424,6 +424,59 @@ db.serialize(() => {
         if (!err) console.log("Index pada jabatan.aktif siap digunakan.");
     });
 
+    // ==========================================
+    // 10. MIGRATION: Add editedAt column to chats
+    // ==========================================
+    db.all("PRAGMA table_info(chats)", [], (err, columns) => {
+        if (err) {
+            console.error("Error checking chats table schema:", err);
+            return;
+        }
+
+        const hasEditedAt = columns.some(col => col.name === 'editedAt');
+        
+        if (!hasEditedAt) {
+            db.run(
+                "ALTER TABLE chats ADD COLUMN editedAt TEXT",
+                (err) => {
+                    if (err) {
+                        console.error("Error adding editedAt column:", err);
+                    } else {
+                        console.log("✅ Column 'editedAt' added to chats table");
+                    }
+                }
+            );
+        } else {
+            console.log("Column 'editedAt' already exists in chats");
+        }
+    });
+    // ==========================================
+// 11. MIGRATION: Add waMessageId column to chats
+// ==========================================
+db.all("PRAGMA table_info(chats)", [], (err, columns) => {
+    if (err) {
+        console.error("Error checking chats table schema:", err);
+        return;
+    }
+
+    const hasWaMessageId = columns.some(col => col.name === 'waMessageId');
+    
+    if (!hasWaMessageId) {
+        db.run(
+            "ALTER TABLE chats ADD COLUMN waMessageId TEXT",
+            (err) => {
+                if (err) {
+                    console.error("Error adding waMessageId column:", err);
+                } else {
+                    console.log("✅ Column 'waMessageId' added to chats table");
+                }
+            }
+        );
+    } else {
+        console.log("Column 'waMessageId' already exists in chats");
+    }
+});
+
     console.log("\nDatabase initialization complete!\n");
 });
 

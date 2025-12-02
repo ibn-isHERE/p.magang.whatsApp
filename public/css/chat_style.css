@@ -297,6 +297,8 @@
 
 .text-content {
     font-size: 13px;
+    white-space: pre-wrap; /* Preserve newlines and spaces */
+    word-wrap: break-word; /* Break long words */
 }
 
 .message.incoming .message-time {
@@ -308,7 +310,9 @@
     color: #607d8b;
 }
 
-/* FIXED: Area Input Balasan dengan posisi tetap di bawah */
+/* ========================================================== */
+/* === AREA INPUT CHAT (UPDATED UNTUK TEXTAREA) === */
+/* ========================================================== */
 .chat-input-area {
     padding: 10.5px 14px; /* 15px 20px *0.7 */
     border-top: 1px solid #ddd;
@@ -319,22 +323,50 @@
 .chat-input-container {
     display: flex;
     gap: 7px; /* 10 *0.7 */
-    align-items: center;
+    align-items: flex-end; /* Ubah dari center ke flex-end agar button tetap di bawah */
 }
 
-.chat-input-container input {
+/* UPDATED: Ganti styling untuk textarea */
+#replyInput {
     flex: 1;
     padding: 8.4px 10.5px; /* 12px 15px *0.7 */
     border: 1px solid #ccc;
     border-radius: 17.5px; /* 25 *0.7 */
     font-size: 9.8px; /* 14 *0.7 */
+    font-family: inherit;
+    line-height: 1.5; /* Ubah dari 1.4 ke 1.5 */
     outline: none;
+    resize: none;
+    overflow-y: auto;
+    min-height: 42px; /* Ubah dari 31.5px ke 42px - lebih tinggi */
+    max-height: 105px; /* Ubah dari 84px ke 105px - lebih banyak ruang */
     box-shadow: inset 0 0.7px 1.4px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.chat-input-container input:focus {
+#replyInput:focus {
     border-color: #007bff;
-    box-shadow: inset 0 0.7px 1.4px rgba(0, 0, 0, 0.05), 0 0 0 0.14rem rgba(0, 123, 255, 0.25); /* 0.2rem ~ scaled visual */
+    box-shadow: inset 0 0.7px 1.4px rgba(0, 0, 0, 0.05), 
+                0 0 0 0.14rem rgba(0, 123, 255, 0.25);
+}
+
+/* Custom scrollbar untuk textarea */
+#replyInput::-webkit-scrollbar {
+    width: 3.5px; /* 5 *0.7 */
+}
+
+#replyInput::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 7px; /* 10 *0.7 */
+}
+
+#replyInput::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 7px; /* 10 *0.7 */
+}
+
+#replyInput::-webkit-scrollbar-thumb:hover {
+    background: #999;
 }
 
 .chat-input-container button {
@@ -356,8 +388,20 @@
     background: #0056b3;
     transform: scale(1.05);
 }
+
 .chat-input-container button:active {
     transform: scale(0.95);
+}
+
+/* Button khusus untuk attach file */
+#attachFileBtn {
+    background: #f0f0f0;
+    color: #666;
+}
+
+#attachFileBtn:hover {
+    background: #e0e0e0;
+    color: #333;
 }
 
 /* ========================================================== */
@@ -638,5 +682,166 @@
     .chat-input-area {
         padding: 7px 10.5px; /* 10px 15px *0.7 */
         min-height: 42px; /* 60 *0.7 */
+    }
+}
+/* ========================================================== */
+/* === MESSAGE ACTIONS (EDIT & DELETE BUTTONS) === */
+/* ========================================================== */
+.message-actions {
+  position: absolute;
+  top: -8px;
+  right: 10px;
+  display: none;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 4px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.message.outgoing:hover .message-actions {
+  display: flex;
+}
+
+.message-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  color: #666;
+  font-size: 14px;
+}
+
+.message-action-btn:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.message-action-btn.edit-btn:hover {
+  color: #0084ff;
+  background: #e7f3ff;
+}
+
+.message-action-btn.delete-btn:hover {
+  color: #dc3545;
+  background: #ffe5e7;
+}
+
+/* Edited label */
+.edited-label {
+  font-size: 0.75em;
+  color: #999;
+  font-style: italic;
+  margin-left: 5px;
+}
+
+/* Make message bubble position relative for absolute positioning of actions */
+.message-bubble {
+  position: relative;
+}
+
+/* Adjust for mobile */
+@media (max-width: 768px) {
+  .message-actions {
+    position: static;
+    display: flex !important;
+    margin-top: 8px;
+    justify-content: flex-end;
+  }
+  
+  .message.outgoing .message-bubble {
+    padding-bottom: 40px;
+  }
+}
+
+.message.unsent .message-bubble {
+  opacity: 0.6;
+  background: repeating-linear-gradient(
+    45deg,
+    #f0f0f0,
+    #f0f0f0 10px,
+    #e0e0e0 10px,
+    #e0e0e0 20px
+  );
+}
+
+.message.unsent .text-content {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.unsent-label {
+  display: inline-block;
+  background: #ff6b6b;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7em;
+  margin-left: 8px;
+  font-weight: 600;
+}
+
+/* Better styling for SweetAlert radio buttons */
+.swal2-html-container label {
+  text-align: left !important;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.swal2-html-container label:hover {
+  background: #f5f5f5;
+  border-color: #007bff;
+}
+
+.swal2-html-container input[type="radio"]:checked + div {
+  color: #007bff;
+}
+
+/* Notification badge untuk tombol aksi */
+.message-action-btn.has-notification::after {
+  content: '!';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #ff4444;
+  color: white;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.message-action-btn {
+  position: relative;
+}
+
+/* Mobile adjustments untuk textarea */
+@media (max-width: 768px) {
+    #replyInput {
+        font-size: 11.2px; /* 16 *0.7 - sedikit lebih besar di mobile */
+        padding: 7px 10.5px; /* 10px 15px *0.7 */
+        min-height: 28px; /* 40 *0.7 */
+        max-height: 70px; /* 100 *0.7 */
+    }
+    
+    .chat-input-container button {
+        width: 28px; /* 40 *0.7 */
+        height: 28px; /* 40 *0.7 */
+    }
+}
+
+@media (max-width: 480px) {
+    #replyInput {
+        font-size: 10.5px; /* 15 *0.7 */
+        border-radius: 14px; /* 20 *0.7 */
+        max-height: 56px; /* 80 *0.7 - lebih kecil lagi di HP */
     }
 }
