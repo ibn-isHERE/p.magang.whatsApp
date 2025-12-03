@@ -1,6 +1,4 @@
-/* ========================================
-   GROUP SELECTION
-   ======================================== */
+/*GROUP SELECTION*/
 #groupSelectionList,
 #contactList,
 #meetingGroupSelectionList {
@@ -129,9 +127,7 @@
   line-height: 18px;
 }
 
-/* ========================================
-   GROUP DETAIL VIEW
-   ======================================== */
+/*GROUP DETAIL VIEW*/
 .group-detail-view {
   width: 100%;
   animation: fadeInContent 0.4s ease;
@@ -216,9 +212,7 @@
   font-size: 18px;
 }
 
-/* ========================================
-   MEMBERS TABLE
-   ======================================== */
+/*MEMBERS TABLE*/
 .members-actions {
   display: flex;
   gap: 12px;

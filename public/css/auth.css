@@ -1,6 +1,4 @@
-/* ========================================
-   AUTH & PASSWORD INPUT STYLES
-   ======================================== */
+/*AUTH & PASSWORD INPUT STYLES*/
 
 /* Chrome, Edge, Safari - Hide password reveal buttons */
 input[type="password"]::-webkit-credentials-auto-fill-button,

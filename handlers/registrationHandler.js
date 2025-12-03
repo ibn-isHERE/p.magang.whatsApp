@@ -1,6 +1,4 @@
 // Handler untuk registrasi dan unregistrasi kontak
-// MODIFIED: Welcome message disesuaikan untuk auto-chat mode
-
 const templates = require('../config/messageTemplates');
 const { toTitleCase } = require('../utils/textHelpers');
 
@@ -171,7 +169,6 @@ class RegistrationHandler {
 
     /**
      * Kirim pesan welcome sesuai status user
-     * MODIFIED: Sekarang menampilkan menu layanan
      */
     async sendWelcomeMessage(message, fromNumber, userState) {
         try {

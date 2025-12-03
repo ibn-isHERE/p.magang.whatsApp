@@ -1,6 +1,4 @@
-/* ============================================
-   ANIMATIONS & KEYFRAMES
-   ============================================ */
+/*ANIMATIONS & KEYFRAMES*/
 
 @keyframes spin {
   to { transform: rotate(360deg); }
@@ -66,9 +64,7 @@
 }
 
 
-/* ============================================
-   ENHANCED UI COMPONENTS
-   ============================================ */
+/*ENHANCED UI COMPONENTS*/
 
 /* Selection Info Badge */
 .selection-info {
@@ -131,9 +127,7 @@
 }
 
 
-/* ============================================
-   INTERACTIVE ELEMENTS & EFFECTS
-   ============================================ */
+/*INTERACTIVE ELEMENTS & EFFECTS*/
 
 /* Smooth transitions */
 button, .tab-button, .filter-button, .quick-action-btn, .recipient-tab {
@@ -285,9 +279,7 @@ button.loading::after {
 }
 
 
-/* ============================================
-   CONTAINER STYLING
-   ============================================ */
+/*CONTAINER STYLING*/
 
 /* Form Container */
 .form-container {
@@ -301,9 +293,7 @@ button.loading::after {
 }
 
 
-/* ============================================
-   SCROLLBAR STYLING
-   ============================================ */
+/*SCROLLBAR STYLING*/
 
 .contact-checklist-box::-webkit-scrollbar,
 #groupSelectionList::-webkit-scrollbar,
@@ -342,9 +332,7 @@ button.loading::after {
 }
 
 
-/* ============================================
-   RESPONSIVE BREAKPOINTS
-   ============================================ */
+/*RESPONSIVE BREAKPOINTS*/
 
 /* Tablet & Small Desktop (≤1024px) */
 @media (max-width: 1024px) {

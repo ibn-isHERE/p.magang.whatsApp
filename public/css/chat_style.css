@@ -1,7 +1,4 @@
-/* ========================================================== */
 /* === CSS KHUSUS UNTUK FITUR CUSTOMER SERVICE CHAT === */
-/* ========================================================== */
-
 /* Notification Badge di Tombol Tab */
 .notification-badge {
     background: #ff4444;
@@ -24,9 +21,7 @@
     100% { transform: scale(1); }
 }
 
-/* ========================================================== */
 /* === STRUKTUR UTAMA KOTAK CHAT === */
-/* ========================================================== */
 #chatView {
     /* FIXED: Gunakan tinggi yang lebih tepat dan pastikan tidak overflow */
     display: flex;
@@ -51,9 +46,7 @@
     background: white;
 }
 
-/* ========================================================== */
 /* === SIDEBAR DAFTAR PERCAKAPAN === */
-/* ========================================================== */
 #chatView .chat-sidebar {
     width: 224px; /* 320 *0.7 */
     flex-shrink: 0;
@@ -178,9 +171,7 @@
     margin-left: 3.5px; /* 5 *0.7 */
 }
 
-/* ========================================================== */
 /* === AREA DETAIL CHAT (KANAN) === */
-/* ========================================================== */
 #chatView .chat-main {
     flex: 1; /* Ambil sisa ruang horizontal */
     display: flex;
@@ -310,9 +301,7 @@
     color: #607d8b;
 }
 
-/* ========================================================== */
 /* === AREA INPUT CHAT (UPDATED UNTUK TEXTAREA) === */
-/* ========================================================== */
 .chat-input-area {
     padding: 10.5px 14px; /* 15px 20px *0.7 */
     border-top: 1px solid #ddd;
@@ -404,9 +393,7 @@
     color: #333;
 }
 
-/* ========================================================== */
 /* === CHAT MAIN CONTAINER (untuk integrasi dengan layout utama) === */
-/* ========================================================== */
 .chat-main-container {
     /* FIXED: Pastikan chat main container memiliki batasan tinggi yang tepat */
     display: flex;
@@ -433,9 +420,7 @@
     flex-shrink: 0;
 }
 
-/* ========================================================== */
 /* === GAYA UNTUK MEDIA DI DALAM CHAT === */
-/* ========================================================== */
 .chat-image {
     width: 100%;
     max-width: 200px; /* ubah sesuai kebutuhan, misal 150–200px */
@@ -504,9 +489,7 @@
     cursor: pointer;
 }
 
-/* ========================================================== */
 /* === GAYA UNTUK MODAL MEDIA (POP-UP) === */
-/* ========================================================== */
 .modal {
     display: none;
     position: fixed;
@@ -611,9 +594,7 @@
     background-color: #fff;
 }
 
-/* ========================================================== */
 /* === GAYA UNTUK PEMISAH SESI CHAT === */
-/* ========================================================== */
 .session-separator {
     text-align: center;
     margin: 14px 0;
@@ -684,9 +665,7 @@
         min-height: 42px; /* 60 *0.7 */
     }
 }
-/* ========================================================== */
 /* === MESSAGE ACTIONS (EDIT & DELETE BUTTONS) === */
-/* ========================================================== */
 .message-actions {
   position: absolute;
   top: -8px;

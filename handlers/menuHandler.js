@@ -22,7 +22,6 @@ class MenuHandler {
 
     /**
      * Handle pilihan menu dari user
-     * MODIFIED: Tidak kirim pesan error jika pilihan invalid
      */
     async handleMenuChoice(message, fromNumber, choice, userState, registrationHandler) {
         const menuChoice = choice.trim();
@@ -50,7 +49,7 @@ class MenuHandler {
 
         // Cek apakah pilihan valid (1, 2, 3, 4)
         if (!templates.menuResponses[menuChoice]) {
-            // MODIFIED: Tidak kirim pesan error, hanya return invalid
+            // Tidak kirim pesan error, hanya return invalid
             // Biarkan messageHandler yang handle (akan masuk ke chat mode)
             return { valid: false };
         }

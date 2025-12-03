@@ -1,6 +1,4 @@
-/* ============================================
-   LOGIN PAGE STYLES - 90% SCALED
-   ============================================ */
+/*LOGIN PAGE STYLES - 90% SCALED*/
 
 * {
   margin: 0;
@@ -361,9 +359,7 @@ body::after {
   }
 }
 
-/* ============================================
-   RESPONSIVE BREAKPOINTS
-   ============================================ */
+/*RESPONSIVE BREAKPOINTS*/
 
 @media (max-width: 480px) {
   body {

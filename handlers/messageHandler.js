@@ -222,17 +222,13 @@ class MessageHandler {
 
       console.log(`📨 Pesan masuk dari ${fromNumber}: ${messageBody}`);
 
-      // ========================================
       // PRIORITAS 1: CEK PERINTAH UNREG
-      // ========================================
       if (messageBodyUpper === "UNREG") {
         await this.registrationHandler.handleUnreg(message, fromNumber);
         return;
       }
 
-      // ========================================
       // PRIORITAS 2: CEK TRIGGER KATA MENU (halo, hi, menu, hai)
-      // ========================================
       const menuTriggers = ["halo", "hi", "menu", "hai"];
       if (menuTriggers.includes(messageBodyLower)) {
         await this.registrationHandler.sendWelcomeMessage(
@@ -243,9 +239,7 @@ class MessageHandler {
         return;
       }
 
-      // ========================================
       // PRIORITAS 3: CEK FORMAT REG# (Untuk registrasi)
-      // ========================================
       if (messageBodyUpper.startsWith("REG#")) {
         const result = await this.registrationHandler.handleRegistration(
           message,
@@ -266,11 +260,9 @@ class MessageHandler {
         return;
       }
 
-      // ========================================
       // PRIORITAS 4: CEK APAKAH USER DI STATE MENU_UTAMA
       // Jika ya, cek apakah pilihan menu valid (1-5)
       // Jika tidak valid, langsung masuk ke chat mode dan save pesan
-      // ========================================
       if (this.userState[fromNumber] === "MENU_UTAMA") {
         const result = await this.menuHandler.handleMenuChoice(
           message,
@@ -297,10 +289,8 @@ class MessageHandler {
         return;
       }
 
-      // ========================================
       // PRIORITAS 5: SEMUA PESAN LAINNYA OTOMATIS MASUK KE CHAT
       // User langsung dalam mode CHATTING_WAITING
-      // ========================================
 
       // Jika belum punya state, set ke CHATTING_WAITING
       if (!this.userState[fromNumber]) {
