@@ -142,9 +142,6 @@ class MessageHandler {
     const fromNumber = message.from.replace("@c.us", "");
     const timestamp = new Date(message.timestamp * 1000).toISOString();
 
-    console.log(`✏️ Processing edited message from ${fromNumber}`);
-    console.log(`Previous: "${prevBody}" -> New: "${newBody}"`);
-
     return new Promise((resolve, reject) => {
       const query = `
                 SELECT id, message, timestamp 
