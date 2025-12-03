@@ -1,4 +1,5 @@
 // Handler untuk registrasi dan unregistrasi kontak
+// MODIFIED: Welcome message disesuaikan untuk auto-chat mode
 
 const templates = require('../config/messageTemplates');
 const { toTitleCase } = require('../utils/textHelpers');
@@ -36,7 +37,6 @@ class RegistrationHandler {
      */
     async checkRegistration(fromNumber) {
         return new Promise((resolve, reject) => {
-            // Normalisasi nomor untuk pengecekan
             const normalizedNumber = this.normalizePhoneNumber(fromNumber);
             
             const query = `SELECT * FROM contacts WHERE number = ?`;
@@ -76,7 +76,6 @@ class RegistrationHandler {
             const contact = await this.checkRegistration(fromNumber);
 
             if (contact) {
-                // Hapus dari database berdasarkan ID
                 await new Promise((resolve, reject) => {
                     this.db.run("DELETE FROM contacts WHERE id = ?", [contact.id], (err) => {
                         if (err) reject(err);
@@ -89,7 +88,6 @@ class RegistrationHandler {
                 
                 return { handled: true, action: 'unreg_success' };
             } else {
-                // Tidak terdaftar
                 await this.client.sendMessage(message.from, templates.unregNotFound);
                 
                 return { handled: true, action: 'unreg_not_found' };
@@ -118,7 +116,6 @@ class RegistrationHandler {
         const instansi = toTitleCase(parts[2].trim());  
         const jabatan = toTitleCase(parts[3].trim());   
 
-
         // Validasi semua field terisi
         if (!nama || !instansi || !jabatan) {
             await this.client.sendMessage(message.from, templates.registrationFormatError);
@@ -130,7 +127,6 @@ class RegistrationHandler {
             const existingContact = await this.checkRegistration(fromNumber);
             
             if (existingContact) {
-                // Nomor sudah terdaftar
                 console.log(`⚠️ Nomor ${fromNumber} sudah terdaftar sebagai ${existingContact.name}`);
                 await this.client.sendMessage(message.from, templates.alreadyRegistered);
                 return { success: false, reason: 'duplicate' };
@@ -175,6 +171,7 @@ class RegistrationHandler {
 
     /**
      * Kirim pesan welcome sesuai status user
+     * MODIFIED: Sekarang menampilkan menu layanan
      */
     async sendWelcomeMessage(message, fromNumber, userState) {
         try {
@@ -182,7 +179,7 @@ class RegistrationHandler {
             const contact = await this.checkRegistration(fromNumber);
 
             if (contact) {
-                // User sudah terdaftar - kirim pesan dengan nama
+                // User sudah terdaftar - kirim menu dengan nama
                 await this.client.sendMessage(
                     message.from, 
                     templates.welcomeRegisteredUser(contact.name, contact.instansi)
@@ -191,7 +188,7 @@ class RegistrationHandler {
                 return { registered: true, contact };
 
             } else {
-                // Cek apakah pernah chat sebelumnya
+                // User belum terdaftar - kirim menu biasa
                 const hasHistory = await this.hasChattedBefore(fromNumber);
 
                 if (hasHistory) {

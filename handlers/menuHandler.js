@@ -1,4 +1,5 @@
 // Handler untuk menu layanan BPS dan chat dengan admin
+// MODIFIED: Tidak ada pesan "pilihan tidak valid", langsung masuk chat mode
 
 const templates = require('../config/messageTemplates');
 
@@ -21,6 +22,7 @@ class MenuHandler {
 
     /**
      * Handle pilihan menu dari user
+     * MODIFIED: Tidak kirim pesan error jika pilihan invalid
      */
     async handleMenuChoice(message, fromNumber, choice, userState, registrationHandler) {
         const menuChoice = choice.trim();
@@ -46,25 +48,22 @@ class MenuHandler {
             return { valid: true, action: 'registration_guide' };
         }
 
-        // Cek apakah pilihan valid
+        // Cek apakah pilihan valid (1, 2, 3, 4)
         if (!templates.menuResponses[menuChoice]) {
-            // Pilihan tidak valid
-            const welcomeMsg = await registrationHandler.getWelcomeMessage(fromNumber);
-            await this.client.sendMessage(message.from, templates.invalidMenuChoice(welcomeMsg));
+            // MODIFIED: Tidak kirim pesan error, hanya return invalid
+            // Biarkan messageHandler yang handle (akan masuk ke chat mode)
             return { valid: false };
         }
 
         // Pilihan 4: Chat dengan admin
         if (menuChoice === '4') {
-            // PERBAIKAN: Set state ke CHATTING_WAITING (menunggu admin reply)
+            // Set state ke CHATTING_WAITING (menunggu admin reply)
             userState[fromNumber] = 'CHATTING_WAITING';
             await this.client.sendMessage(message.from, templates.chatWithAdmin);
             
             // Simpan pesan ke database
             await this.saveMessageFunction(message);
             
-            // PERBAIKAN: JANGAN set timer di sini! 
-            // Timer akan diset ketika admin reply pertama kali
             console.log(`💬 User ${fromNumber} masuk mode CHATTING_WAITING (menunggu admin)`);
 
             return { valid: true, action: 'start_chat' };
@@ -80,7 +79,7 @@ class MenuHandler {
      * Handle pesan dari user yang sedang dalam mode CHATTING
      */
     async handleChatMessage(message, fromNumber) {
-        // PERBAIKAN: Hanya reset timer jika sudah dalam mode CHATTING_ACTIVE
+        // Hanya reset timer jika sudah dalam mode CHATTING_ACTIVE
         if (this.userState && this.userState[fromNumber] === 'CHATTING_ACTIVE') {
             this.setInactivityTimer(fromNumber);
             console.log(`🔄 Timer reset untuk ${fromNumber} (user mengirim pesan)`);
@@ -127,7 +126,7 @@ class MenuHandler {
     }
 
     /**
-     * BARU: Dipanggil ketika admin mengirim reply pertama kali
+     * Dipanggil ketika admin mengirim reply pertama kali
      * Ini akan mengubah state dari CHATTING_WAITING ke CHATTING_ACTIVE
      * dan memulai timer inaktivitas
      */
@@ -186,7 +185,7 @@ class MenuHandler {
                     }
                 });
 
-                // Timer 2: Akhiri sesi 5 menit setelah peringatan
+                // Timer 2: Akhiri sesi 10 menit setelah peringatan
                 this.inactivityTimers[fromNumber].end = setTimeout(() => {
                     this.endChatSession(fromNumber);
                 }, 10 * 60 * 1000); // 10 menit
