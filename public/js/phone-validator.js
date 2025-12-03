@@ -219,30 +219,6 @@ function setupRealtimeValidation(inputId) {
     }
   });
 }
-
-/**
- * Example usage dalam form submission:
- * 
- * const validation = validatePhoneNumber(inputNumber);
- * if (!validation.valid) {
- *   Swal.fire('Error', validation.message, 'error');
- *   return;
- * }
- * // Gunakan validation.normalized untuk disimpan ke database
- */
-
-/**
- * Contoh integrasi dengan contact-manager.js:
- * 
- * Di handleContactFormSubmit:
- * const numberValidation = validatePhoneNumber(number);
- * if (!numberValidation.valid) {
- *   Swal.fire('Format Nomor Salah', numberValidation.message, 'error');
- *   return;
- * }
- * const normalizedNumber = numberValidation.normalized;
- */
-
 // Export functions
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {

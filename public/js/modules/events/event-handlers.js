@@ -2,7 +2,7 @@
 
 async function detectSelectedGroups(selectedNumbers) {
   try {
-    const response = await fetch('/api/groups'); // ✅ FIX: Ganti ke /groups
+    const response = await fetch('/api/groups'); //  FIX: Ganti ke /groups
     
     if (!response.ok) {
       console.warn('Failed to fetch groups:', response.status);
@@ -11,7 +11,7 @@ async function detectSelectedGroups(selectedNumbers) {
     
     const data = await response.json();
     
-    // ✅ FIX: Handle berbagai format response
+    //  FIX: Handle berbagai format response
     let groups = [];
     if (Array.isArray(data)) {
       groups = data;
@@ -290,7 +290,7 @@ export function initReminderForm() {
     });
   }
 
-  // ✅ FIXED SUBMIT HANDLER - COMBINE GROUPS + CONTACTS
+  //  FIXED SUBMIT HANDLER - COMBINE GROUPS + CONTACTS
   reminderForm.addEventListener("submit", async function (e) {
     e.preventDefault();
 
@@ -308,7 +308,7 @@ export function initReminderForm() {
     let finalNumbers = [];
     let groupInfoForBackend = [];
     
-    // ✅ FIXED: COMBINE groups AND individual contacts
+    //  FIXED: COMBINE groups AND individual contacts
     
     // 1. Get numbers from selected GROUPS
     const selectedGroupsInfo = contactGroups.getSelectedGroups(false);
@@ -325,7 +325,7 @@ export function initReminderForm() {
         finalNumbers.push(...(group.members || []));
       });
       
-      console.log(`✅ ${groupInfoForBackend.length} groups selected with ${finalNumbers.length} members`);
+      console.log(` ${groupInfoForBackend.length} groups selected with ${finalNumbers.length} members`);
     }
     
     // 2. Get INDIVIDUAL contacts (yang tidak termasuk dalam grup)
@@ -339,7 +339,7 @@ export function initReminderForm() {
       // Add individual contacts to finalNumbers
       finalNumbers.push(...individualContacts);
       
-      console.log(`✅ ${individualContacts.length} individual contacts (not in groups)`);
+      console.log(` ${individualContacts.length} individual contacts (not in groups)`);
     }
     
     // 3. Get MANUAL numbers
@@ -347,7 +347,7 @@ export function initReminderForm() {
     
     if (manualNumbers.length > 0) {
       finalNumbers.push(...manualNumbers);
-      console.log(`✅ ${manualNumbers.length} manual numbers`);
+      console.log(` ${manualNumbers.length} manual numbers`);
     }
     
     // Remove duplicates
@@ -403,10 +403,10 @@ export function initReminderForm() {
     formData.append("numbers", JSON.stringify(finalNumbers));
     formData.append("datetime", datetime);
     
-    // ✅ ATTACH GROUP INFO (jika ada grup yang dipilih)
+    //  ATTACH GROUP INFO (jika ada grup yang dipilih)
     if (groupInfoForBackend.length > 0) {
       formData.append("groupInfo", JSON.stringify(groupInfoForBackend));
-      console.log('✅ Sending groupInfo:', groupInfoForBackend.map(g => g.name).join(', '));
+      console.log(' Sending groupInfo:', groupInfoForBackend.map(g => g.name).join(', '));
     }
 
     if (message) {
@@ -479,30 +479,30 @@ export function initReminderForm() {
     confirmButtonText: '<i class="fa-solid fa-check"></i> OK'
   });
 
-  // ✅ STEP 1: Reset form HTML elements
+  //  STEP 1: Reset form HTML elements
   this.reset();
-  console.log('✅ Form reset called');
+  console.log(' Form reset called');
   
-  // ✅ STEP 2: Clear selected contacts
+  //  STEP 2: Clear selected contacts
   contactManager.selectedNumbers.clear();
-  console.log('✅ Selected contacts cleared');
+  console.log(' Selected contacts cleared');
   
-  // ✅ STEP 3: Clear selected groups
+  //  STEP 3: Clear selected groups
   contactGroups.clearSelectedGroups();
-  console.log('✅ Selected groups cleared');
+  console.log(' Selected groups cleared');
   
-  // ✅ STEP 4: Re-render contact and group lists
+  //  STEP 4: Re-render contact and group lists
   const contactUI = await import('../contacts/contact-ui.js');
   contactUI.renderContactList();
   contactGroups.renderGroupSelectionList();
-  console.log('✅ Contact and group lists re-rendered');
+  console.log(' Contact and group lists re-rendered');
 
-  // ✅ STEP 5: Clear files
+  //  STEP 5: Clear files
   scheduleManager.setSelectedFiles([]);
   const fileInputEl = document.getElementById("fileUpload");
   if (fileInputEl) {
     fileInputEl.value = "";
-    console.log('✅ File input cleared');
+    console.log(' File input cleared');
   }
 
   const filePreview = document.getElementById("customFilePreview");
@@ -515,27 +515,27 @@ export function initReminderForm() {
     clearAllBtn.style.display = "none";
   }
   
-  // ✅ STEP 6: EXPLICITLY clear manual numbers input (CRITICAL!)
+  //  STEP 6: EXPLICITLY clear manual numbers input (CRITICAL!)
   const manualNumbersInput = document.getElementById("manualNumbers");
   if (manualNumbersInput) {
     manualNumbersInput.value = ""; // Force clear
-    console.log('✅ Manual numbers input cleared:', manualNumbersInput.value);
+    console.log(' Manual numbers input cleared:', manualNumbersInput.value);
   } else {
     console.warn('⚠️ Manual numbers input not found!');
   }
 
-  // ✅ STEP 7: Clear message textarea
+  //  STEP 7: Clear message textarea
   const messageTextarea = document.getElementById("message");
   if (messageTextarea) {
     messageTextarea.value = "";
-    console.log('✅ Message textarea cleared');
+    console.log(' Message textarea cleared');
   }
 
-  // ✅ STEP 8: Clear datetime input
+  //  STEP 8: Clear datetime input
   const datetimeInput = document.getElementById("datetime");
   if (datetimeInput) {
     datetimeInput.value = "";
-    console.log('✅ Datetime input cleared');
+    console.log(' Datetime input cleared');
   }
 
   await scheduleRender.renderScheduleTable();
@@ -631,7 +631,7 @@ export function initMeetingForm() {
     let allNumbers = [];
     let groupInfoForBackend = [];
     
-    // ✅ FIXED: COMBINE groups AND individual contacts
+    //  FIXED: COMBINE groups AND individual contacts
     
     // 1. Get numbers from selected GROUPS
     const selectedMeetingGroupsInfo = contactGroups.getSelectedGroups(true); // true = meeting
@@ -647,7 +647,7 @@ export function initMeetingForm() {
         allNumbers.push(...(group.members || []));
       });
       
-      console.log(`✅ ${groupInfoForBackend.length} meeting groups selected`);
+      console.log(` ${groupInfoForBackend.length} meeting groups selected`);
     }
     
     // 2. Get INDIVIDUAL contacts (yang tidak termasuk dalam grup)
@@ -659,7 +659,7 @@ export function initMeetingForm() {
       
       allNumbers.push(...individualContacts);
       
-      console.log(`✅ ${individualContacts.length} individual meeting contacts`);
+      console.log(` ${individualContacts.length} individual meeting contacts`);
     }
     
     // 3. Get MANUAL numbers
@@ -667,7 +667,7 @@ export function initMeetingForm() {
     
     if (manualNumbers.length > 0) {
       allNumbers.push(...manualNumbers);
-      console.log(`✅ ${manualNumbers.length} manual numbers`);
+      console.log(` ${manualNumbers.length} manual numbers`);
     }
     
     // Remove duplicates
@@ -709,10 +709,10 @@ export function initMeetingForm() {
     formData.append("endTime", endTime);
     formData.append("numbers", JSON.stringify(allNumbers));
 
-    // ✅ ATTACH GROUP INFO
+    //  ATTACH GROUP INFO
     if (groupInfoForBackend.length > 0) {
       formData.append("groupInfo", JSON.stringify(groupInfoForBackend));
-      console.log('✅ Sending meeting groupInfo:', groupInfoForBackend.map(g => g.name).join(', '));
+      console.log(' Sending meeting groupInfo:', groupInfoForBackend.map(g => g.name).join(', '));
     }
 
     const currentFiles = scheduleManager.getSelectedMeetingFiles() || [];
@@ -770,7 +770,7 @@ export function initMeetingForm() {
 
   await Swal.fire({
     icon: "success",
-    title: isEditing ? "✅ Jadwal Rapat Diupdate!" : "✅ Jadwal Rapat Terbuat!",
+    title: isEditing ? " Jadwal Rapat Diupdate!" : " Jadwal Rapat Terbuat!",
     html: `
       <div style="text-align: left; padding: 10px;">
         <p><strong>👥 Total Peserta:</strong> <span class="badge badge-primary">${allNumbers.length} nomor</span></p>
@@ -784,36 +784,36 @@ export function initMeetingForm() {
     confirmButtonText: '<i class="fa-solid fa-check"></i> OK'
   });
 
-  // ✅ STEP 1: Reset form
+  //  STEP 1: Reset form
   this.reset();
-  console.log('✅ Meeting form reset called');
+  console.log(' Meeting form reset called');
   
-  // ✅ STEP 2: Clear submit button edit state
+  //  STEP 2: Clear submit button edit state
   if (submitButton) {
     delete submitButton.dataset.editId;
     submitButton.innerHTML = '<i class="fa-solid fa-calendar-check"></i> Jadwalkan Rapat';
   }
   
-  // ✅ STEP 3: Clear selected meeting contacts
+  //  STEP 3: Clear selected meeting contacts
   contactManager.selectedMeetingNumbers.clear();
-  console.log('✅ Selected meeting contacts cleared');
+  console.log(' Selected meeting contacts cleared');
   
-  // ✅ STEP 4: Clear selected meeting groups
+  //  STEP 4: Clear selected meeting groups
   contactGroups.clearSelectedMeetingGroups();
-  console.log('✅ Selected meeting groups cleared');
+  console.log(' Selected meeting groups cleared');
   
-  // ✅ STEP 5: Re-render lists
+  //  STEP 5: Re-render lists
   const contactUI = await import('../contacts/contact-ui.js');
   contactUI.renderMeetingContactList();
   contactGroups.renderMeetingGroupSelectionList();
-  console.log('✅ Meeting contact and group lists re-rendered');
+  console.log(' Meeting contact and group lists re-rendered');
   
-  // ✅ STEP 6: Clear meeting files
+  //  STEP 6: Clear meeting files
   scheduleManager.setSelectedMeetingFiles([]);
   const meetingFileInputEl = document.getElementById("meetingFileUpload");
   if (meetingFileInputEl) {
     meetingFileInputEl.value = "";
-    console.log('✅ Meeting file input cleared');
+    console.log(' Meeting file input cleared');
   }
 
   const meetingFilePreview = document.getElementById("meetingFileNames");
@@ -826,38 +826,38 @@ export function initMeetingForm() {
     meetingClearAllBtn.style.display = "none";
   }
   
-  // ✅ STEP 7: EXPLICITLY clear manual numbers for MEETING (CRITICAL!)
+  //  STEP 7: EXPLICITLY clear manual numbers for MEETING (CRITICAL!)
   const meetingNumbersInput = document.getElementById("meetingNumbers");
   if (meetingNumbersInput) {
     meetingNumbersInput.value = ""; // Force clear
-    console.log('✅ Meeting manual numbers input cleared:', meetingNumbersInput.value);
+    console.log(' Meeting manual numbers input cleared:', meetingNumbersInput.value);
   } else {
     console.warn('⚠️ Meeting manual numbers input not found!');
   }
 
-  // ✅ STEP 8: Clear all meeting form fields explicitly
+  //  STEP 8: Clear all meeting form fields explicitly
   const meetingTitleInput = document.getElementById("meetingTitle");
   if (meetingTitleInput) {
     meetingTitleInput.value = "";
-    console.log('✅ Meeting title cleared');
+    console.log(' Meeting title cleared');
   }
 
   const meetingRoomSelect = document.getElementById("meetingRoom");
   if (meetingRoomSelect) {
     meetingRoomSelect.selectedIndex = 0;
-    console.log('✅ Meeting room reset');
+    console.log(' Meeting room reset');
   }
 
   const meetingStartTimeInput = document.getElementById("meetingStartTime");
   if (meetingStartTimeInput) {
     meetingStartTimeInput.value = "";
-    console.log('✅ Meeting start time cleared');
+    console.log(' Meeting start time cleared');
   }
 
   const meetingEndTimeInput = document.getElementById("meetingEndTime");
   if (meetingEndTimeInput) {
     meetingEndTimeInput.value = "";
-    console.log('✅ Meeting end time cleared');
+    console.log(' Meeting end time cleared');
   }
 
   await scheduleRender.renderScheduleTable();

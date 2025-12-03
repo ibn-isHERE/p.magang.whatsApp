@@ -28,7 +28,7 @@ class MessageHandler {
       this.saveNewMessage.bind(this)
     );
 
-    // PENTING: Set reference userState ke menuHandler
+    // Set reference userState ke menuHandler
     this.menuHandler.setUserStateReference(this.userState);
 
     // Setup WhatsApp event listeners
@@ -43,38 +43,38 @@ class MessageHandler {
     this.client.on("message_revoke_everyone", async (after, before) => {
       try {
         if (before) {
-          console.log("🗑️ Message revoked by user:", before.id._serialized);
+          console.log("Pesan dihapus oleh user:", before.id._serialized);
           await this.handleMessageRevoke(before);
         }
       } catch (error) {
-        console.error("❌ Error handling message revoke:", error);
+        console.error("Error saat menangani penghapusan pesan:", error);
       }
     });
 
     // Listener untuk pesan yang diedit
     this.client.on("message_edit", async (message, newBody, prevBody) => {
       try {
-        console.log("✏️ Message edited by user");
-        console.log("Previous:", prevBody);
-        console.log("New:", newBody);
+        console.log("Pesan diedit oleh user");
+        console.log("Sebelumnya:", prevBody);
+        console.log("Baru:", newBody);
         await this.handleMessageEdit(message, newBody, prevBody);
       } catch (error) {
-        console.error("❌ Error handling message edit:", error);
+        console.error("Error saat menangani edit pesan:", error);
       }
     });
 
-    console.log("✅ WhatsApp event listeners for edit/delete initialized");
+    console.log("WhatsApp event listeners untuk edit/delete berhasil diinisialisasi");
   }
 
   /**
-   * Handle pesan yang dihapus oleh user
+   * Menangani pesan yang dihapus oleh user
    */
   async handleMessageRevoke(message) {
     const fromNumber = message.from.replace("@c.us", "");
     const waMessageId = message.id._serialized;
 
     console.log(
-      `🗑️ Processing revoked message from ${fromNumber}, WA ID: ${waMessageId}`
+      `Memproses pesan yang dihapus dari ${fromNumber}, WA ID: ${waMessageId}`
     );
 
     const timestamp = new Date(message.timestamp * 1000).toISOString();
@@ -95,13 +95,13 @@ class MessageHandler {
         [fromNumber, timestamp, timestamp, timestamp],
         (err, row) => {
           if (err) {
-            console.error("❌ Error finding revoked message:", err);
+            console.error("Error saat mencari pesan yang dihapus:", err);
             reject(err);
             return;
           }
 
           if (row) {
-            console.log(`✅ Found message in DB (ID: ${row.id}), deleting...`);
+            console.log(`Pesan ditemukan di database (ID: ${row.id}), menghapus...`);
 
             this.db.run(
               "DELETE FROM chats WHERE id = ?",
@@ -109,14 +109,14 @@ class MessageHandler {
               (deleteErr) => {
                 if (deleteErr) {
                   console.error(
-                    "❌ Error deleting revoked message:",
+                    "Error saat menghapus pesan yang di-revoke:",
                     deleteErr
                   );
                   reject(deleteErr);
                   return;
                 }
 
-                console.log(`✅ Message ${row.id} deleted from database`);
+                console.log(`Pesan ${row.id} berhasil dihapus dari database`);
 
                 this.io.emit("messageDeleted", {
                   messageId: row.id,
@@ -127,7 +127,7 @@ class MessageHandler {
               }
             );
           } else {
-            console.log("⚠️ Revoked message not found in database");
+            console.log("Pesan yang di-revoke tidak ditemukan di database");
             resolve({ deleted: false });
           }
         }
@@ -136,7 +136,7 @@ class MessageHandler {
   }
 
   /**
-   * Handle pesan yang diedit oleh user
+   * Menangani pesan yang diedit oleh user
    */
   async handleMessageEdit(message, newBody, prevBody) {
     const fromNumber = message.from.replace("@c.us", "");
@@ -159,13 +159,13 @@ class MessageHandler {
         [fromNumber, prevBody, timestamp, timestamp, timestamp],
         (err, row) => {
           if (err) {
-            console.error("❌ Error finding edited message:", err);
+            console.error("Error saat mencari pesan yang diedit:", err);
             reject(err);
             return;
           }
 
           if (row) {
-            console.log(`✅ Found message in DB (ID: ${row.id}), updating...`);
+            console.log(`Pesan ditemukan di database (ID: ${row.id}), memperbarui...`);
 
             const editedAt = new Date().toISOString();
 
@@ -174,12 +174,12 @@ class MessageHandler {
               [newBody, editedAt, row.id],
               (updateErr) => {
                 if (updateErr) {
-                  console.error("❌ Error updating edited message:", updateErr);
+                  console.error("Error saat memperbarui pesan yang diedit:", updateErr);
                   reject(updateErr);
                   return;
                 }
 
-                console.log(`✅ Message ${row.id} updated in database`);
+                console.log(`Pesan ${row.id} berhasil diperbarui di database`);
 
                 this.io.emit("messageEdited", {
                   messageId: row.id,
@@ -196,7 +196,7 @@ class MessageHandler {
               }
             );
           } else {
-            console.log("⚠️ Edited message not found in database");
+            console.log("Pesan yang diedit tidak ditemukan di database");
             resolve({ updated: false });
           }
         }
@@ -220,15 +220,15 @@ class MessageHandler {
       const messageBodyUpper = messageBody.toUpperCase();
       const messageBodyLower = messageBody.toLowerCase();
 
-      console.log(`📨 Pesan masuk dari ${fromNumber}: ${messageBody}`);
+      console.log(`Pesan masuk dari ${fromNumber}: ${messageBody}`);
 
-      // PRIORITAS 1: CEK PERINTAH UNREG
+      // PRIORITAS 1: Cek perintah UNREG
       if (messageBodyUpper === "UNREG") {
         await this.registrationHandler.handleUnreg(message, fromNumber);
         return;
       }
 
-      // PRIORITAS 2: CEK TRIGGER KATA MENU (halo, hi, menu, hai)
+      // PRIORITAS 2: Cek trigger kata menu (halo, hi, menu, hai)
       const menuTriggers = ["halo", "hi", "menu", "hai"];
       if (menuTriggers.includes(messageBodyLower)) {
         await this.registrationHandler.sendWelcomeMessage(
@@ -239,7 +239,7 @@ class MessageHandler {
         return;
       }
 
-      // PRIORITAS 3: CEK FORMAT REG# (Untuk registrasi)
+      // PRIORITAS 3: Cek format REG# (untuk registrasi)
       if (messageBodyUpper.startsWith("REG#")) {
         const result = await this.registrationHandler.handleRegistration(
           message,
@@ -260,7 +260,7 @@ class MessageHandler {
         return;
       }
 
-      // PRIORITAS 4: CEK APAKAH USER DI STATE MENU_UTAMA
+      // PRIORITAS 4: Cek apakah user di state MENU_UTAMA
       // Jika ya, cek apakah pilihan menu valid (1-5)
       // Jika tidak valid, langsung masuk ke chat mode dan save pesan
       if (this.userState[fromNumber] === "MENU_UTAMA") {
@@ -278,10 +278,10 @@ class MessageHandler {
         }
 
         // Jika pilihan tidak valid, ubah state ke CHATTING_WAITING
-        // dan SIMPAN PESAN ke database, lalu return
+        // dan simpan pesan ke database, lalu return
         this.userState[fromNumber] = "CHATTING_WAITING";
         console.log(
-          `💬 User ${fromNumber} input bukan menu, otomatis masuk mode CHATTING_WAITING`
+          `User ${fromNumber} input bukan menu, otomatis masuk mode CHATTING_WAITING`
         );
 
         // Simpan pesan ini ke database
@@ -289,28 +289,28 @@ class MessageHandler {
         return;
       }
 
-      // PRIORITAS 5: SEMUA PESAN LAINNYA OTOMATIS MASUK KE CHAT
+      // PRIORITAS 5: Semua pesan lainnya otomatis masuk ke chat
       // User langsung dalam mode CHATTING_WAITING
 
       // Jika belum punya state, set ke CHATTING_WAITING
       if (!this.userState[fromNumber]) {
         this.userState[fromNumber] = "CHATTING_WAITING";
         console.log(
-          `💬 User ${fromNumber} otomatis masuk mode CHATTING_WAITING`
+          `User ${fromNumber} otomatis masuk mode CHATTING_WAITING`
         );
       }
 
       // Simpan pesan ke database
       await this.menuHandler.handleChatMessage(message, fromNumber);
     } catch (error) {
-      console.error("❌ Error global di message handler:", error);
+      console.error("Error global di message handler:", error);
       try {
         await this.client.sendMessage(
           message.from,
           "Maaf, terjadi kesalahan sistem. Silakan coba lagi atau hubungi admin."
         );
       } catch (sendError) {
-        console.error("❌ Error mengirim pesan error:", sendError);
+        console.error("Error saat mengirim pesan error:", sendError);
       }
     }
   }
@@ -414,13 +414,13 @@ class MessageHandler {
           };
         }
       } catch (mediaError) {
-        console.error("❌ Error mengunduh media:", mediaError);
+        console.error("Error saat mengunduh media:", mediaError);
       }
     }
 
     // Jika tidak ada konten dan tidak ada media, skip
     if (!messageContent && !mediaUrl) {
-      console.warn("⚠️ Pesan tanpa konten dan tanpa media, skip save");
+      console.warn("Pesan tanpa konten dan tanpa media, tidak disimpan");
       return;
     }
 
@@ -459,7 +459,7 @@ class MessageHandler {
         ],
         function (err) {
           if (err) {
-            console.error("❌ Error menyimpan pesan masuk:", err);
+            console.error("Error saat menyimpan pesan masuk:", err);
             reject(err);
             return;
           }
@@ -473,7 +473,7 @@ class MessageHandler {
           // Emit ke Socket.IO untuk update real-time di admin
           this.io.emit("newIncomingMessage", completeMessageData);
           console.log(
-            `✅ Pesan dari ${fromNumber} berhasil disimpan (ID: ${this.lastID})`
+            `Pesan dari ${fromNumber} berhasil disimpan (ID: ${this.lastID})`
           );
 
           resolve(completeMessageData);
@@ -483,21 +483,21 @@ class MessageHandler {
   }
 
   /**
-   * Get user state untuk nomor tertentu
+   * Mendapatkan user state untuk nomor tertentu
    */
   getUserState(fromNumber) {
     return this.userState[fromNumber] || null;
   }
 
   /**
-   * Set user state
+   * Mengatur user state
    */
   setUserState(fromNumber, state) {
     this.userState[fromNumber] = state;
   }
 
   /**
-   * Clear user state
+   * Menghapus user state
    */
   clearUserState(fromNumber) {
     delete this.userState[fromNumber];
@@ -505,7 +505,7 @@ class MessageHandler {
   }
 
   /**
-   * Get semua active states (untuk debugging)
+   * Mendapatkan semua active states (untuk debugging)
    */
   getActiveStates() {
     return { ...this.userState };

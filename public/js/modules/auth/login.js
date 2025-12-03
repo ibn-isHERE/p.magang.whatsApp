@@ -11,7 +11,7 @@ togglePassword.addEventListener("click", function () {
   this.classList.toggle("fa-eye-slash");
 });
 
-// Show alert function
+// Fungsi tampilkan alert
 function showAlert(message, type = "error") {
   const alertBox = document.getElementById("alertBox");
   alertBox.className = `alert alert-${type}`;
@@ -34,12 +34,12 @@ document.getElementById("loginForm").addEventListener("submit", async function (
   const password = document.getElementById("password").value;
   const loginBtn = document.getElementById("loginBtn");
 
-  // Disable button and show loading
+  // Disable button dan tampilkan loading
   loginBtn.disabled = true;
   loginBtn.innerHTML = '<div class="spinner"></div><span>Memproses...</span>';
 
   try {
-    console.log("📤 Sending login request...");
+    console.log("Mengirim permintaan login...");
 
     const response = await fetch("/api/auth/login", {
       method: "POST",
@@ -49,39 +49,39 @@ document.getElementById("loginForm").addEventListener("submit", async function (
       body: JSON.stringify({ email, password }),
     });
 
-    console.log("✅ Response received - Status:", response.status);
+    console.log("Response diterima - Status:", response.status);
 
     const data = await response.json();
-    console.log("📥 Response data:", { success: data.success, hasToken: !!data.token });
+    console.log("Data response:", { success: data.success, hasToken: !!data.token });
 
     if (response.ok && data.success) {
-      // ✅ SOLUSI: SELALU simpan ke localStorage agar persisten
+      // SOLUSI: SELALU simpan ke localStorage agar persisten
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       
-      // ✅ Simpan lastActivity untuk activity tracking
+      // Simpan lastActivity untuk activity tracking
       const now = Date.now();
       localStorage.setItem("lastActivity", data.user.lastActivity || now);
 
-      console.log("✅ Token saved to localStorage (persistent)");
-      console.log("✅ User data saved:", data.user.name);
-      console.log("✅ Activity tracking initialized");
+      console.log("Token berhasil disimpan ke localStorage (persisten)");
+      console.log("Data user berhasil disimpan:", data.user.name);
+      console.log("Activity tracking diinisialisasi");
 
       showAlert("Login berhasil! Mengalihkan...", "success");
 
-      // Redirect to mainpage after short delay
+      // Redirect ke mainpage setelah delay singkat
       setTimeout(() => {
-        console.log("🔄 Redirecting to mainpage...");
+        console.log("Mengalihkan ke mainpage...");
         window.location.href = "/mainpage.html";
       }, 1000);
     } else {
-      console.error("❌ Login failed:", data.message);
+      console.error("Login gagal:", data.message);
       showAlert(data.message || "Email atau password salah!", "error");
       loginBtn.disabled = false;
       loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i><span>Masuk</span>';
     }
   } catch (error) {
-    console.error("❌ Login error:", error);
+    console.error("Error login:", error);
     showAlert("Terjadi kesalahan. Silakan coba lagi.", "error");
     loginBtn.disabled = false;
     loginBtn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i><span>Masuk</span>';

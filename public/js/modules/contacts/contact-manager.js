@@ -1,10 +1,7 @@
-// contact-manager.js - Contact Management Module with Phone Validation
 
 import { showEditContactModal, closeEditContactModal } from "../ui/ui-helpers.js";
 
-// ============================================
 // STATE MANAGEMENT - EXPORTED
-// ============================================
 export let contacts = [];
 let filteredContacts = [];
 export let selectedNumbers = new Set();
@@ -13,10 +10,7 @@ export let selectedContactGroups = new Set();
 export let selectedEditContactGroups = new Set();
 export let selectedContactsToDelete = new Set();
 
-// ============================================
 // CORE FUNCTIONS
-// ============================================
-
 /**
  * Fetches contacts from server and renders them
  */
@@ -88,14 +82,14 @@ export async function showEditContactForm(id) {
     }
   }
 
-  // ✅ FETCH INSTANSI & JABATAN DARI DATABASE
+  //  FETCH INSTANSI & JABATAN DARI DATABASE
   await fetchGroupsForDropdown();
   
-  // ✅ Import instansi & jabatan manager
+  //  Import instansi & jabatan manager
   const instansiModule = await import('../settings/instansi-manager.js');
   const jabatanModule = await import('../settings/jabatan-manager.js');
   
-  // ✅ Fetch data master
+  //  Fetch data master
   await instansiModule.fetchInstansi();
   await jabatanModule.fetchJabatan();
 
@@ -151,11 +145,11 @@ export async function showEditContactForm(id) {
     </form>
   `;
 
-  // ✅ POPULATE DROPDOWNS DARI DATABASE
+  //  POPULATE DROPDOWNS DARI DATABASE
   instansiModule.updateInstansiDropdowns();
   jabatanModule.updateJabatanDropdowns();
   
-  // ✅ SET VALUE SETELAH DROPDOWN TERISI
+  //  SET VALUE SETELAH DROPDOWN TERISI
   document.getElementById("edit-contact-instansi").value = contact.instansi || '';
   document.getElementById("edit-contact-jabatan").value = contact.jabatan || '';
 
@@ -177,7 +171,7 @@ export async function showEditContactForm(id) {
 }
 
 /**
- * ✅ Setup real-time validation untuk edit form
+ *  Setup real-time validation untuk edit form
  */
 function setupEditFormValidation() {
   const numberInput = document.getElementById("edit-contact-number");
@@ -221,7 +215,7 @@ function setupEditFormValidation() {
 }
 
 /**
- * ✅ Handles edit contact form submission with validation
+ *  Handles edit contact form submission with validation
  */
 async function handleEditContactSubmit(event) {
   event.preventDefault();
@@ -232,7 +226,7 @@ async function handleEditContactSubmit(event) {
   const instansi = document.getElementById("edit-contact-instansi").value;
   const jabatan = document.getElementById("edit-contact-jabatan").value;
 
-  // ✅ VALIDASI NAMA
+  //  VALIDASI NAMA
   if (!name || name.trim().length < 2) {
     Swal.fire({
       icon: 'error',
@@ -243,7 +237,7 @@ async function handleEditContactSubmit(event) {
     return;
   }
 
-  // ✅ VALIDASI NOMOR TELEPON
+  //  VALIDASI NOMOR TELEPON
   if (!window.PhoneValidator) {
     Swal.fire({
       icon: 'error',
@@ -303,7 +297,7 @@ async function handleEditContactSubmit(event) {
 
     const result = await res.json();
     
-    // ✅ HANDLE ERROR DUPLIKASI
+    //  HANDLE ERROR DUPLIKASI
     if (res.status === 409 && result.duplicate) {
       Swal.fire({
         icon: 'error',
@@ -358,7 +352,7 @@ export async function resetContactCrudForm() {
   document.getElementById("contact-crud-cancel").style.display = "none";
   selectedContactGroups.clear();
   
-  // ✅ Reset input styling
+  //  Reset input styling
   const numberInput = document.getElementById("contact-crud-number");
   if (numberInput) {
     numberInput.style.borderColor = '#cbd5e0';
@@ -508,7 +502,7 @@ export async function handleBulkDeleteContacts() {
 }
 
 /**
- * ✅ Handles contact form submission (add/edit) with validation
+ *  Handles contact form submission (add/edit) with validation
  */
 let isSubmittingContact = false;
 
@@ -526,7 +520,7 @@ export async function handleContactFormSubmit(event) {
   const instansi = document.getElementById("contact-crud-instansi").value;
   const jabatan = document.getElementById("contact-crud-jabatan").value;
 
-  // ✅ VALIDASI NAMA
+  //  VALIDASI NAMA
   if (!name || name.trim().length < 2) {
     Swal.fire({
       icon: 'error',
@@ -537,7 +531,7 @@ export async function handleContactFormSubmit(event) {
     return;
   }
 
-  // ✅ VALIDASI NOMOR TELEPON
+  //  VALIDASI NOMOR TELEPON
   if (!window.PhoneValidator) {
     Swal.fire({
       icon: 'error',
@@ -598,7 +592,7 @@ export async function handleContactFormSubmit(event) {
     const res = await fetch(url, {
       method: method,
       headers: { "Content-Type": "application/json" },
-      // ✅ Gunakan nomor yang sudah dinormalisasi
+      //  Gunakan nomor yang sudah dinormalisasi
       body: JSON.stringify({ 
         name: name.trim(), 
         number: phoneValidation.normalized, 
@@ -610,7 +604,7 @@ export async function handleContactFormSubmit(event) {
 
     const result = await res.json();
     
-    // ✅ HANDLE ERROR DUPLIKASI
+    //  HANDLE ERROR DUPLIKASI
     if (res.status === 409 && result.duplicate) {
       Swal.fire({
         icon: 'error',
@@ -690,7 +684,7 @@ export function setFilteredContacts(filtered) {
 }
 
 /**
- * ✅ Initialize contact listeners with real-time validation
+ *  Initialize contact listeners with real-time validation
  */
 export async function initContactListeners() {
   const contactSearch = document.getElementById("contactSearch");
@@ -715,7 +709,7 @@ export async function initContactListeners() {
     cancelBtn.addEventListener("click", resetContactCrudForm);
   }
 
-  // ✅ SETUP REAL-TIME VALIDATION UNTUK INPUT NOMOR
+  //  SETUP REAL-TIME VALIDATION UNTUK INPUT NOMOR
   const numberInput = document.getElementById("contact-crud-number");
   if (numberInput) {
     // Remove existing listeners
@@ -816,7 +810,7 @@ export function initMessageFormTabs() {
       if (targetTab === "contacts") {
         document.getElementById("contactsPanel").classList.add("active");
         
-        // ✅ Enable manual numbers
+        //  Enable manual numbers
         if (manualNumbersInput) {
           manualNumbersInput.disabled = false;
           manualNumbersInput.placeholder = 'Contoh: 08123456789, 08234567890';
@@ -826,7 +820,7 @@ export function initMessageFormTabs() {
       } else if (targetTab === "groups") {
         document.getElementById("groupsPanel").classList.add("active");
         
-        // ✅ DISABLE & CLEAR manual numbers
+        //  DISABLE & CLEAR manual numbers
         if (manualNumbersInput) {
           manualNumbersInput.value = '';
           manualNumbersInput.disabled = true;
@@ -845,7 +839,7 @@ export function initMessageFormTabs() {
 export function initMeetingFormTabs() {
   const tabs = document.querySelectorAll("#meetingFormContainer .recipient-tab");
   const panels = document.querySelectorAll("#meetingFormContainer .recipient-panel");
-  const meetingNumbersInput = document.getElementById("meetingNumbers"); // ✅ Ambil input manual numbers
+  const meetingNumbersInput = document.getElementById("meetingNumbers"); //  Ambil input manual numbers
 
   tabs.forEach((tab) => {
     tab.addEventListener("click", function () {
@@ -859,25 +853,25 @@ export function initMeetingFormTabs() {
       if (targetTab === "meeting-contacts") {
         document.getElementById("meetingContactsPanel").classList.add("active");
         
-        // ✅ ENABLE manual numbers saat di tab Kontak
+        //  ENABLE manual numbers saat di tab Kontak
         if (meetingNumbersInput) {
           meetingNumbersInput.disabled = false;
           meetingNumbersInput.placeholder = 'Contoh: 081234567890, 089876543210';
           meetingNumbersInput.style.backgroundColor = '';
           meetingNumbersInput.style.color = '';
-          console.log('✅ Manual numbers ENABLED (Contacts tab)');
+          console.log(' Manual numbers ENABLED (Contacts tab)');
         }
       } else if (targetTab === "meeting-groups") {
         document.getElementById("meetingGroupsPanel").classList.add("active");
         
-        // ✅ DISABLE & CLEAR manual numbers saat di tab Grup
+        //  DISABLE & CLEAR manual numbers saat di tab Grup
         if (meetingNumbersInput) {
           meetingNumbersInput.value = ''; // Clear isi
           meetingNumbersInput.disabled = true; // Disable input
           meetingNumbersInput.placeholder = 'Tidak digunakan saat memilih grup';
           meetingNumbersInput.style.backgroundColor = '#f7fafc'; // Abu-abu muda
           meetingNumbersInput.style.color = '#a0aec0'; // Text abu-abu
-          console.log('✅ Manual numbers DISABLED & CLEARED (Groups tab)');
+          console.log(' Manual numbers DISABLED & CLEARED (Groups tab)');
         }
       }
     });

@@ -6,7 +6,7 @@ let isEditingInstansi = false;
  */
 export async function fetchInstansi() {
   try {
-    const res = await fetch('/api/instansi'); // ✅ Hapus parameter showInactive
+    const res = await fetch('/api/instansi'); //  Hapus parameter showInactive
     const result = await res.json();
 
     if (!res.ok || !result.success) {
@@ -345,7 +345,7 @@ export async function deleteInstansi(id, nama) {
       timer: 2000
     });
 
-    await fetchInstansi(); // ✅ PERBAIKAN: Hapus parameter true
+    await fetchInstansi(); //  PERBAIKAN: Hapus parameter true
 
   } catch (error) {
     console.error('Error deleting instansi:', error);

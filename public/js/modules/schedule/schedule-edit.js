@@ -12,7 +12,7 @@ let selectedEditMeetingFiles = [];
 
 /**
  * Creates HTML for message edit form
- * ✅ WITH GROUP SELECTION TABS
+ *  WITH GROUP SELECTION TABS
  */
 export function createMessageEditFormHtml(schedule) {
   return `
@@ -119,7 +119,7 @@ export function createMessageEditFormHtml(schedule) {
 
 /**
  * Creates HTML for meeting edit form
- * ✅ WITH GROUP SELECTION TABS
+ *  WITH GROUP SELECTION TABS
  */
 export function createMeetingEditFormHtml(schedule) {
   return `
@@ -237,7 +237,7 @@ export function createMeetingEditFormHtml(schedule) {
 }
 
 /**
- * ✅ NEW: Setup dynamic manual numbers update ketika grup/kontak berubah
+ *  NEW: Setup dynamic manual numbers update ketika grup/kontak berubah
  */
 async function setupEditFormDynamicNumbersUpdate(formType = 'edit') {
   const contactManager = await import('../contacts/contact-manager.js');
@@ -305,22 +305,22 @@ async function setupEditFormDynamicNumbersUpdate(formType = 'edit') {
     });
   };
   
-  // ✅ Listen to custom event from contact-groups.js
+  //  Listen to custom event from contact-groups.js
   document.addEventListener('editFormNumbersChanged', (e) => {
     if (e.detail.formType === formType) {
       recalculateManualNumbers();
     }
   });
   
-  // ✅ Initial call
+  //  Initial call
   setTimeout(recalculateManualNumbers, 100);
   
-  console.log(`✅ Dynamic numbers update setup for ${formType} form`);
+  console.log(` Dynamic numbers update setup for ${formType} form`);
 }
 
 /**
  * Populates message edit form with schedule data
- * ✅ FIXED: Dynamic update when groups/contacts change
+ *  FIXED: Dynamic update when groups/contacts change
  */
 export async function populateMessageEditForm(schedule) {
   document.getElementById("edit-message").value = schedule.message || "";
@@ -340,7 +340,7 @@ export async function populateMessageEditForm(schedule) {
   const contactGroups = await import('../contacts/contact-groups.js');
   const contactUI = await import('../contacts/contact-ui.js');
 
-  // ✅ CLEAR DULU
+  //  CLEAR DULU
   contactManager.selectedNumbers.clear();
   contactGroups.selectedGroups.clear();
 
@@ -351,7 +351,7 @@ export async function populateMessageEditForm(schedule) {
   const numbersSet = new Set(plainNumbers);
   const manualNumbers = [];
   
-  // ✅ PRIORITAS 1: Parse groupInfo dari schedule (jika ada)
+  //  PRIORITAS 1: Parse groupInfo dari schedule (jika ada)
   let scheduleGroupInfo = [];
   if (schedule.groupInfo) {
     try {
@@ -367,7 +367,7 @@ export async function populateMessageEditForm(schedule) {
           const group = allGroups.find(g => g.name === groupData.name);
           if (group) {
             contactGroups.selectedGroups.add(group.id);
-            console.log(`✅ Selected group "${groupData.name}" (ID: ${group.id})`);
+            console.log(` Selected group "${groupData.name}" (ID: ${group.id})`);
             
             // Remove group members from numbersSet
             if (groupData.members && Array.isArray(groupData.members)) {
@@ -381,7 +381,7 @@ export async function populateMessageEditForm(schedule) {
     }
   }
 
-  // ✅ PRIORITAS 2: Sisanya adalah kontak individual ATAU nomor manual
+  //  PRIORITAS 2: Sisanya adalah kontak individual ATAU nomor manual
   const allContacts = contactManager.getContacts();
   const contactNumbersSet = new Set(allContacts.map(c => c.number));
   
@@ -397,7 +397,7 @@ export async function populateMessageEditForm(schedule) {
   console.log("👥 Groups selected:", Array.from(contactGroups.selectedGroups));
   console.log("📱 Manual numbers (not in contacts):", manualNumbers);
 
-  // ✅ ISI MANUAL NUMBERS
+  //  ISI MANUAL NUMBERS
   const manualNumbersInput = document.getElementById("edit-manualNumbers");
   if (manualNumbersInput) {
     manualNumbersInput.value = manualNumbers.join(", ");
@@ -410,7 +410,7 @@ export async function populateMessageEditForm(schedule) {
   // Initialize tab switching
   initEditMessageFormTabs();
 
-  // ✅ CRITICAL: Setup listener untuk update manual numbers ketika grup/kontak berubah
+  //  CRITICAL: Setup listener untuk update manual numbers ketika grup/kontak berubah
   setupEditFormDynamicNumbersUpdate('edit');
 
   // File handling
@@ -459,7 +459,7 @@ export async function populateMessageEditForm(schedule) {
 
 /**
  * Populates meeting edit form with schedule data
- * ✅ FIXED: Dynamic update when groups/contacts change
+ *  FIXED: Dynamic update when groups/contacts change
  */
 export async function populateMeetingEditForm(schedule) {
   document.getElementById("edit-meetingTitle").value = schedule.meetingTitle || schedule.message || "";
@@ -497,7 +497,7 @@ export async function populateMeetingEditForm(schedule) {
   const contactGroups = await import('../contacts/contact-groups.js');
   const contactUI = await import('../contacts/contact-ui.js');
 
-  // ✅ Clear selections
+  //  Clear selections
   contactManager.selectedMeetingNumbers.clear();
   contactGroups.selectedMeetingGroups.clear();
 
@@ -508,7 +508,7 @@ export async function populateMeetingEditForm(schedule) {
   const numbersSet = new Set(plainNumbers);
   const manualNumbers = [];
   
-  // ✅ PRIORITAS 1: Parse groupInfo dari schedule (jika ada)
+  //  PRIORITAS 1: Parse groupInfo dari schedule (jika ada)
   let scheduleGroupInfo = [];
   if (schedule.groupInfo) {
     try {
@@ -524,7 +524,7 @@ export async function populateMeetingEditForm(schedule) {
           const group = allGroups.find(g => g.name === groupData.name);
           if (group) {
             contactGroups.selectedMeetingGroups.add(group.id);
-            console.log(`✅ Selected meeting group "${groupData.name}" (ID: ${group.id})`);
+            console.log(` Selected meeting group "${groupData.name}" (ID: ${group.id})`);
             
             // Remove group members from numbersSet
             if (groupData.members && Array.isArray(groupData.members)) {
@@ -538,7 +538,7 @@ export async function populateMeetingEditForm(schedule) {
     }
   }
 
-  // ✅ PRIORITAS 2: Sisanya adalah kontak individual ATAU nomor manual
+  //  PRIORITAS 2: Sisanya adalah kontak individual ATAU nomor manual
   const allContacts = contactManager.getContacts();
   const contactNumbersSet = new Set(allContacts.map(c => c.number));
   
@@ -554,20 +554,20 @@ export async function populateMeetingEditForm(schedule) {
   console.log("👥 Meeting groups selected:", Array.from(contactGroups.selectedMeetingGroups));
   console.log("📱 Manual numbers for meeting (not in contacts):", manualNumbers);
 
-  // ✅ ISI MANUAL NUMBERS
+  //  ISI MANUAL NUMBERS
   const numbersInput = document.getElementById("edit-meetingNumbers");
   if (numbersInput) {
     numbersInput.value = manualNumbers.join(", ");
   }
 
-  // ✅ PENTING: Render dulu sebelum init tabs
+  //  PENTING: Render dulu sebelum init tabs
   contactUI.renderMeetingContactListForEdit();
   contactGroups.renderMeetingGroupSelectionListForEdit();
 
-  // ✅ Initialize tab switching SETELAH render
+  //  Initialize tab switching SETELAH render
   initEditMeetingFormTabs();
 
-  // ✅ CRITICAL: Setup listener untuk update manual numbers ketika grup/kontak berubah
+  //  CRITICAL: Setup listener untuk update manual numbers ketika grup/kontak berubah
   setupEditFormDynamicNumbersUpdate('meeting');
 
   // File handling
@@ -618,7 +618,7 @@ export async function populateMeetingEditForm(schedule) {
 }
 
 /**
- * ✅ Initialize tab switching for edit message form
+ *  Initialize tab switching for edit message form
  */
 function initEditMessageFormTabs() {
   const tabs = document.querySelectorAll('#editContactsPanel, #editGroupsPanel').length > 0
@@ -651,7 +651,7 @@ function initEditMessageFormTabs() {
 }
 
 /**
- * ✅ Initialize tab switching for edit meeting form
+ *  Initialize tab switching for edit meeting form
  */
 function initEditMeetingFormTabs() {
   const tabs = document.querySelectorAll('#editMeetingContactsPanel, #editMeetingGroupsPanel').length > 0
@@ -853,7 +853,7 @@ export async function initEditMessageContactListeners() {
     });
   }
 
-  // ✅ Group search untuk edit message form
+  //  Group search untuk edit message form
   const editGroupSearch = document.getElementById("edit-groupSearch");
   if (editGroupSearch) {
     editGroupSearch.addEventListener("input", function() {
@@ -861,7 +861,7 @@ export async function initEditMessageContactListeners() {
     });
   }
 
-  // ✅ Select All / Deselect All untuk Edit Contact Lists (Message)
+  //  Select All / Deselect All untuk Edit Contact Lists (Message)
   const selectAllEditContactsBtn = document.getElementById("selectAllEditContactsBtn");
   if (selectAllEditContactsBtn) {
     selectAllEditContactsBtn.addEventListener("click", async function() {
@@ -896,7 +896,7 @@ export async function initEditMessageContactListeners() {
     });
   }
 
-  // ✅ Select All / Deselect All untuk Edit Groups (Message)
+  //  Select All / Deselect All untuk Edit Groups (Message)
   const selectAllEditGroupsBtn = document.getElementById("selectAllEditGroupsBtn");
   if (selectAllEditGroupsBtn) {
     selectAllEditGroupsBtn.addEventListener("click", function() {
@@ -936,7 +936,7 @@ export async function initEditMessageContactListeners() {
 
 /**
  * Initializes edit meeting contact listeners
- * ✅ WITH GROUP SEARCH & SELECT ALL/DESELECT ALL + Dynamic number update
+ *  WITH GROUP SEARCH & SELECT ALL/DESELECT ALL + Dynamic number update
  */
 export async function initEditMeetingContactListeners() {
   const contactGroups = await import('../contacts/contact-groups.js');
@@ -950,7 +950,7 @@ export async function initEditMeetingContactListeners() {
     });
   }
 
-  // ✅ Group search for edit meeting form
+  //  Group search for edit meeting form
   const editMeetingGroupSearch = document.getElementById("edit-meetingGroupSearch");
   if (editMeetingGroupSearch) {
     editMeetingGroupSearch.addEventListener("input", function() {
@@ -958,7 +958,7 @@ export async function initEditMeetingContactListeners() {
     });
   }
 
-  // ✅ Select All / Deselect All for Edit Meeting Contact Lists
+  //  Select All / Deselect All for Edit Meeting Contact Lists
   const selectAllEditMeetingContactsBtn = document.getElementById("selectAllEditMeetingContactsBtn");
   if (selectAllEditMeetingContactsBtn) {
     selectAllEditMeetingContactsBtn.addEventListener("click", async function() {
@@ -993,7 +993,7 @@ export async function initEditMeetingContactListeners() {
     });
   }
 
-  // ✅ Select All / Deselect All for Edit Groups (Meeting)
+  //  Select All / Deselect All for Edit Groups (Meeting)
   const selectAllEditMeetingGroupsBtn = document.getElementById("selectAllEditMeetingGroupsBtn");
   if (selectAllEditMeetingGroupsBtn) {
     selectAllEditMeetingGroupsBtn.addEventListener("click", function() {
@@ -1033,7 +1033,7 @@ export async function initEditMeetingContactListeners() {
 
 /**
  * Handles reminder form submission
- * ✅ INCLUDES GROUP INFO with full data (name + members)
+ *  INCLUDES GROUP INFO with full data (name + members)
  */
 export async function handleReminderFormSubmit(e) {
   e.preventDefault();
@@ -1050,28 +1050,28 @@ export async function handleReminderFormSubmit(e) {
     if (existingEditFiles.length > 0) {
       const keepExistingFiles = existingEditFiles.map((f) => f.name || f.filename || f);
       formData.append("keepExistingFiles", JSON.stringify(keepExistingFiles));
-      console.log(`✅ Keeping ${keepExistingFiles.length} existing files:`, keepExistingFiles);
+      console.log(` Keeping ${keepExistingFiles.length} existing files:`, keepExistingFiles);
     }
     
     if (Array.isArray(selectedEditFiles) && selectedEditFiles.length > 0) {
       selectedEditFiles.forEach((f) => formData.append("files", f));
-      console.log(`✅ Adding ${selectedEditFiles.length} new files`);
+      console.log(` Adding ${selectedEditFiles.length} new files`);
     }
     
     if (removedExistingEditFiles.length > 0) {
       formData.append("deletedFiles", JSON.stringify(removedExistingEditFiles));
-      console.log(`✅ Deleting ${removedExistingEditFiles.length} files:`, removedExistingEditFiles);
+      console.log(` Deleting ${removedExistingEditFiles.length} files:`, removedExistingEditFiles);
     }
   } else {
     const { getSelectedFiles } = await import('../schedule/schedule-manager.js');
     const selectedFiles = getSelectedFiles();
     if (Array.isArray(selectedFiles) && selectedFiles.length > 0) {
       selectedFiles.forEach((f) => formData.append("files", f));
-      console.log(`✅ Adding ${selectedFiles.length} files for new schedule`);
+      console.log(` Adding ${selectedFiles.length} files for new schedule`);
     }
   }
 
-  // ✅ FIXED: Parse nomor dengan benar + INCLUDE GROUP INFO
+  //  FIXED: Parse nomor dengan benar + INCLUDE GROUP INFO
   const contactManager = await import('../contacts/contact-manager.js');
   const contactGroups = await import('../contacts/contact-groups.js');
   
@@ -1080,7 +1080,7 @@ export async function handleReminderFormSubmit(e) {
     .map((n) => n.trim())
     .filter(Boolean);
   
-  // ✅ Get numbers from selected groups
+  //  Get numbers from selected groups
   const groupNumbers = contactGroups.getNumbersFromSelectedGroups(false);
   
   const finalNumbers = JSON.stringify(
@@ -1088,7 +1088,7 @@ export async function handleReminderFormSubmit(e) {
   );
   formData.set("numbers", finalNumbers);
 
-  // ✅ CRITICAL FIX: ALWAYS send groupInfo (even if empty array)
+  //  CRITICAL FIX: ALWAYS send groupInfo (even if empty array)
   const selectedGroupsData = contactGroups.getSelectedGroups(false);
   
   // ALWAYS append groupInfo - even if empty array
@@ -1132,7 +1132,7 @@ export async function handleReminderFormSubmit(e) {
     Swal.close();
 
     if (res.ok) {
-      console.log('✅ Reminder update success');
+      console.log(' Reminder update success');
       
       Swal.fire(
         isEditing ? "Jadwal Diupdate!" : "Pesan Terjadwal!", 
@@ -1169,7 +1169,7 @@ export async function handleReminderFormSubmit(e) {
         await renderScheduleTable();
       }
       
-      console.log('✅ Schedule table re-rendered after reminder edit');
+      console.log(' Schedule table re-rendered after reminder edit');
     } else {
       console.error('❌ Server error:', text);
       Swal.fire("Gagal", text, "error");
@@ -1183,7 +1183,7 @@ export async function handleReminderFormSubmit(e) {
 
 /**
  * Handles meeting form submission
- * ✅ INCLUDES GROUP INFO with full data (name + members)
+ *  INCLUDES GROUP INFO with full data (name + members)
  */
 export async function handleMeetingFormSubmit(e) {
   e.preventDefault();
@@ -1196,7 +1196,7 @@ export async function handleMeetingFormSubmit(e) {
   
   const manualNumbers = (formData.get("manualNumbers") || "").toString().split(",").map((n) => n.trim()).filter(Boolean);
   
-  // ✅ Get numbers from selected meeting groups
+  //  Get numbers from selected meeting groups
   const groupNumbers = contactGroups.getNumbersFromSelectedGroups(true);
   
   const finalNumbers = JSON.stringify(Array.from(new Set([...contactManager.selectedMeetingNumbers, ...groupNumbers, ...manualNumbers])));
@@ -1206,7 +1206,7 @@ export async function handleMeetingFormSubmit(e) {
   formData.set("numbers", finalNumbers);
   formData.delete("manualNumbers");
 
-  // ✅ CRITICAL FIX: ALWAYS send groupInfo (even if empty array)
+  //  CRITICAL FIX: ALWAYS send groupInfo (even if empty array)
   const selectedGroupsData = contactGroups.getSelectedGroups(true);
   
   // ALWAYS append groupInfo - even if empty array
@@ -1274,7 +1274,7 @@ export async function handleMeetingFormSubmit(e) {
     Swal.close();
     
     if (res.ok && result.success) {
-      console.log('✅ Meeting update success:', result);
+      console.log(' Meeting update success:', result);
       
       Swal.fire(isEditing ? "Rapat Diupdate!" : "Rapat Terjadwal!", result.message, "success");
 
@@ -1303,7 +1303,7 @@ export async function handleMeetingFormSubmit(e) {
         await renderScheduleTable();
       }
       
-      console.log('✅ Schedule table re-rendered after meeting edit');
+      console.log(' Schedule table re-rendered after meeting edit');
     } else {
       Swal.fire("Gagal", result.message || "Terjadi kesalahan", "error");
     }

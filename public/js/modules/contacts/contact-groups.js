@@ -19,9 +19,7 @@ export function getGroups() {
 }
 
 /**
- * ✅ Get selected groups with full data
- * @param {boolean} isMeeting - true for meeting groups, false for message groups
- * @returns {Array} Array of selected group objects with id, name, and members
+ * Get selected groups with full data
  */
 export function getSelectedGroups(isMeeting = false) {
   const groupSet = isMeeting ? selectedMeetingGroups : selectedGroups;
@@ -77,7 +75,7 @@ function getSelectedEditContactGroups() {
 }
 
 /**
- * ✅ NEW: Helper function to trigger dynamic numbers update
+ * NEW: Helper function to trigger dynamic numbers update
  */
 function triggerDynamicNumbersUpdate(formType) {
   // Trigger custom event yang akan di-catch oleh schedule-edit.js
@@ -85,7 +83,7 @@ function triggerDynamicNumbersUpdate(formType) {
     detail: { formType } 
   });
   document.dispatchEvent(event);
-  console.log(`🔔 Triggered dynamic numbers update for ${formType}`);
+  console.log(` Triggered dynamic numbers update for ${formType}`);
 }
 
 /**
@@ -161,7 +159,7 @@ export function renderContactCrudGroupList(searchQuery = "") {
 }
 
 /**
- * ✅ Renders group selection list untuk EDIT MESSAGE form
+ * Renders group selection list untuk EDIT MESSAGE form
  */
 export function renderGroupSelectionListForEdit(searchQuery = "") {
   const list = document.getElementById("edit-groupSelectionList");
@@ -223,7 +221,7 @@ export function renderGroupSelectionListForEdit(searchQuery = "") {
       }
       updateEditGroupSelectionInfo();
       
-      // ✅ Trigger dynamic update for manual numbers
+      // Trigger dynamic update for manual numbers
       triggerDynamicNumbersUpdate('edit');
     });
   });
@@ -232,7 +230,7 @@ export function renderGroupSelectionListForEdit(searchQuery = "") {
 }
 
 /**
- * ✅ Renders group selection list untuk EDIT MEETING form
+ * Renders group selection list untuk EDIT MEETING form
  */
 export function renderMeetingGroupSelectionListForEdit(searchQuery = "") {
   const list = document.getElementById("edit-meetingGroupSelectionList");
@@ -296,7 +294,7 @@ export function renderMeetingGroupSelectionListForEdit(searchQuery = "") {
         }
         updateEditMeetingGroupSelectionInfo();
         
-        // ✅ Trigger dynamic update for manual numbers
+        //  Trigger dynamic update for manual numbers
         triggerDynamicNumbersUpdate('meeting');
       });
     });

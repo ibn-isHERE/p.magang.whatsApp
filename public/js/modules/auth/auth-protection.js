@@ -1,24 +1,22 @@
-// auth-protection.js - FIXED VERSION (Simplified & Persistent - No Remember Me)
-
-// ✅ Cek auth dari localStorage (sudah persisten)
+// Cek autentikasi dari localStorage (sudah persisten)
 const token = localStorage.getItem('token');
 const userDataStr = localStorage.getItem('user');
 const currentUser = userDataStr ? JSON.parse(userDataStr) : null;
 
-// ❌ Redirect ke login jika tidak ada token/user
+// Redirect ke login jika tidak ada token/user
 if (!token || !currentUser) {
-    console.log('❌ No authentication found, redirecting to login...');
+    console.log('Tidak ada autentikasi ditemukan, redirect ke login...');
     window.location.replace('/index.html');
-    throw new Error('Not authenticated'); // Stop script execution
+    throw new Error('Not authenticated'); // Hentikan eksekusi script
 }
 
-console.log('✅ User authenticated:', currentUser.name, `(${currentUser.role})`);
+console.log('User terautentikasi:', currentUser.name, `(${currentUser.role})`);
 
-// Display user profile di navbar
+// Tampilkan profil user di navbar
 function displayUserProfile() {
     const userProfileContainer = document.getElementById('userProfileContainer');
     if (!userProfileContainer) {
-        console.warn('⚠️ userProfileContainer not found');
+        console.warn('userProfileContainer tidak ditemukan');
         return;
     }
 
@@ -36,7 +34,7 @@ function displayUserProfile() {
         </button>
     `;
     
-    console.log('✅ User profile displayed');
+    console.log('Profil user berhasil ditampilkan');
 }
 
 // Handle logout
@@ -52,12 +50,12 @@ function handleLogout() {
         cancelButtonColor: '#cbd5e0'
     }).then((result) => {
         if (result.isConfirmed) {
-            // ✅ Clear semua data auth dari localStorage
+            // Hapus semua data autentikasi dari localStorage
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             localStorage.removeItem('lastActivity');
             
-            console.log('✅ Auth data cleared');
+            console.log('Data autentikasi berhasil dihapus');
             
             Swal.fire({
                 icon: 'success',
@@ -72,23 +70,23 @@ function handleLogout() {
     });
 }
 
-// Restrict access based on role
+// Batasi akses berdasarkan role
 function restrictAccess() {
     if (currentUser.role === 'operator') {
-        console.log('🔒 Applying operator restrictions...');
+        console.log('Menerapkan pembatasan untuk operator...');
         
-        // ❌ HIDE menu buttons untuk operator
+        // Sembunyikan menu button untuk operator
         const restrictedMenus = ['user'];
 
         restrictedMenus.forEach(menu => {
             const menuButton = document.querySelector(`[data-form="${menu}"]`);
             if (menuButton) {
                 menuButton.style.display = 'none';
-                console.log(`  ❌ Hidden menu: ${menu}`);
+                console.log(`Menu disembunyikan: ${menu}`);
             }
         });
 
-        // ❌ HIDE containers untuk operator
+        // Sembunyikan container untuk operator
         const restrictedContainers = [
             'userManagementFormContainer',
             'userManagementMainContainer'
@@ -101,41 +99,41 @@ function restrictAccess() {
             }
         });
 
-        console.log('🔒 Operator access restrictions applied');
+        console.log('Pembatasan akses operator berhasil diterapkan');
     } else {
-        console.log('✅ Admin - full access granted');
+        console.log('Admin - akses penuh diberikan');
     }
 }
 
-// ⏰ Activity Tracking - Auto refresh on user interaction
+// Activity Tracking - Auto refresh saat ada interaksi user
 let activityTimer = null;
-const ACTIVITY_CHECK_INTERVAL = 5 * 60 * 1000; // Check every 5 minutes
-const IDLE_TIMEOUT = 7 * 24 * 60 * 60 * 1000; // 7 days
+const ACTIVITY_CHECK_INTERVAL = 5 * 60 * 1000; // Cek setiap 5 menit
+const IDLE_TIMEOUT = 7 * 24 * 60 * 60 * 1000; // 7 hari
 
-// Update last activity timestamp
+// Update timestamp aktivitas terakhir
 function updateActivity() {
     const now = Date.now();
     localStorage.setItem('lastActivity', now);
     
-    // Clear existing timer
+    // Hapus timer yang ada
     if (activityTimer) {
         clearTimeout(activityTimer);
     }
     
-    // Set new check timer
+    // Set timer baru untuk pengecekan
     activityTimer = setTimeout(checkIdleTimeout, ACTIVITY_CHECK_INTERVAL);
 }
 
-// Check if user has been idle too long
+// Cek apakah user sudah idle terlalu lama
 function checkIdleTimeout() {
     const lastActivity = parseInt(localStorage.getItem('lastActivity') || Date.now());
     const now = Date.now();
     const idleTime = now - lastActivity;
     
-    console.log(`🕐 Idle time: ${Math.floor(idleTime / 1000 / 60)} minutes`);
+    console.log(`Waktu idle: ${Math.floor(idleTime / 1000 / 60)} menit`);
     
     if (idleTime > IDLE_TIMEOUT) {
-        console.warn('⚠️ Session expired due to inactivity (7 days)');
+        console.warn('Sesi berakhir karena tidak aktif selama 7 hari');
         Swal.fire({
             icon: 'warning',
             title: 'Session Expired',
@@ -145,12 +143,12 @@ function checkIdleTimeout() {
             handleLogout();
         });
     } else {
-        // Refresh activity on server if user still active
+        // Refresh aktivitas di server jika user masih aktif
         refreshActivityOnServer();
     }
 }
 
-// Refresh activity timestamp on server
+// Refresh timestamp aktivitas di server
 async function refreshActivityOnServer() {
     try {
         const response = await fetch('/api/auth/refresh-activity', {
@@ -164,48 +162,48 @@ async function refreshActivityOnServer() {
         if (response.ok) {
             const data = await response.json();
             
-            // Update token with new lastActivity
+            // Update token dengan lastActivity baru
             if (data.token) {
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('lastActivity', data.lastActivity);
-                console.log('✅ Activity refreshed on server');
+                console.log('Aktivitas berhasil di-refresh di server');
             }
         } else if (response.status === 401) {
-            // Session expired on server
-            console.warn('⚠️ Session expired on server');
+            // Sesi berakhir di server
+            console.warn('Sesi berakhir di server');
             handleLogout();
         }
     } catch (error) {
-        console.error('❌ Failed to refresh activity:', error);
+        console.error('Gagal refresh aktivitas:', error);
     }
 }
 
-// Listen to user interactions to track activity
+// Dengarkan interaksi user untuk tracking aktivitas
 function setupActivityTracking() {
-    // Track various user activities
+    // Track berbagai aktivitas user
     const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
     
     let debounceTimer = null;
     
     activityEvents.forEach(eventName => {
         document.addEventListener(eventName, () => {
-            // Debounce: only update once per minute
+            // Debounce: hanya update sekali per menit
             if (debounceTimer) return;
             
             debounceTimer = setTimeout(() => {
                 updateActivity();
                 debounceTimer = null;
-            }, 60000); // 1 minute debounce
+            }, 60000); // Debounce 1 menit
         }, { passive: true });
     });
     
-    // Initial activity update
+    // Update aktivitas awal
     updateActivity();
     
-    console.log('✅ Activity tracking enabled');
+    console.log('Activity tracking diaktifkan');
 }
 
-// Verify token validity on page load
+// Verifikasi validitas token saat halaman dimuat
 async function verifyToken() {
     try {
         const response = await fetch('/api/auth/verify', {
@@ -218,7 +216,7 @@ async function verifyToken() {
 
         if (!response.ok) {
             if (data.reason === 'IDLE_TIMEOUT') {
-                console.warn('⚠️ Session expired: No activity for 7 days');
+                console.warn('Sesi berakhir: Tidak ada aktivitas selama 7 hari');
                 Swal.fire({
                     icon: 'warning',
                     title: 'Session Expired',
@@ -229,42 +227,42 @@ async function verifyToken() {
                     window.location.replace('/index.html');
                 });
             } else {
-                console.warn('⚠️ Token verification failed - logging out');
+                console.warn('Verifikasi token gagal - melakukan logout');
                 localStorage.clear();
                 window.location.replace('/index.html');
             }
         } else {
-            console.log('✅ Token verified - Session active');
+            console.log('Token terverifikasi - Sesi aktif');
             
-            // Update last activity from server
+            // Update aktivitas terakhir dari server
             if (data.lastActivity) {
                 localStorage.setItem('lastActivity', data.lastActivity);
             }
             
-            // Setup activity tracking
+            // Setup tracking aktivitas
             setupActivityTracking();
         }
     } catch (error) {
-        console.error('❌ Token verification error:', error);
-        // Network error - masih allow akses tapi warn user
-        console.warn('⚠️ Working offline - activity tracking limited');
+        console.error('Error verifikasi token:', error);
+        // Error jaringan - masih izinkan akses tapi beri warning ke user
+        console.warn('Bekerja offline - tracking aktivitas terbatas');
     }
 }
 
-// Initialize on DOM ready
+// Inisialisasi saat DOM ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
         displayUserProfile();
         restrictAccess();
-        verifyToken(); // Optional: verify token on page load
+        verifyToken(); // Opsional: verifikasi token saat halaman dimuat
     });
 } else {
     displayUserProfile();
     restrictAccess();
-    verifyToken(); // Optional: verify token on page load
+    verifyToken(); // Opsional: verifikasi token saat halaman dimuat
 }
 
-// Make functions available globally
+// Buat fungsi tersedia secara global
 window.handleLogout = handleLogout;
 window.currentUser = currentUser;
 window.authToken = token;

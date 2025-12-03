@@ -2,7 +2,7 @@
 // Jika user SUDAH login, langsung redirect ke mainpage.html
 
 (function() {
-    // ✅ Cek apakah user sudah login
+    // Cek apakah user sudah login
     const token = localStorage.getItem('token');
     const userDataStr = localStorage.getItem('user');
     
@@ -12,17 +12,17 @@
             
             // Jika data valid, redirect ke mainpage
             if (userData && userData.email) {
-                console.log('✅ User already logged in:', userData.name);
-                console.log('🔄 Redirecting to mainpage...');
+                console.log('User sudah login:', userData.name);
+                console.log('Mengalihkan ke mainpage...');
                 window.location.replace('/mainpage.html');
             }
         } catch (error) {
-            console.warn('⚠️ Invalid user data, clearing storage');
+            console.warn('Data user tidak valid, membersihkan storage');
             // Jika data corrupt, hapus
             localStorage.removeItem('token');
             localStorage.removeItem('user');
         }
     } else {
-        console.log('ℹ️ No active session - showing login page');
+        console.log('Tidak ada sesi aktif - menampilkan halaman login');
     }
 })();

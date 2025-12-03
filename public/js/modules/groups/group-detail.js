@@ -1,5 +1,5 @@
 // group-detail.js - Group Detail View & Member Management Module
-// FIXED: Use dynamic imports to avoid circular dependencies
+// Use dynamic imports to avoid circular dependencies
 
 let currentGroupId = null;
 let selectedMembersToRemove = new Set();
@@ -282,7 +282,7 @@ function initMemberSearch() {
     return;
   }
 
-  console.log("✅ Filter initialized successfully!");
+  console.log(" Filter initialized successfully!");
 
   function performFilter() {
     const nameQuery = filterName ? filterName.value.toLowerCase().trim() : "";

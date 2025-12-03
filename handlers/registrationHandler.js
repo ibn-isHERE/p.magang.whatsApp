@@ -67,7 +67,7 @@ class RegistrationHandler {
     }
 
     /**
-     * Handle perintah UNREG
+     * Menangani perintah UNREG
      */
     async handleUnreg(message, fromNumber) {
         try {
@@ -81,7 +81,7 @@ class RegistrationHandler {
                     });
                 });
 
-                console.log(`✅ Kontak ${contact.number} (ID: ${contact.id}) berhasil dihapus (UNREG)`);
+                console.log(`Kontak ${contact.number} (ID: ${contact.id}) berhasil dihapus (UNREG)`);
                 await this.client.sendMessage(message.from, templates.unregSuccess);
                 
                 return { handled: true, action: 'unreg_success' };
@@ -91,7 +91,7 @@ class RegistrationHandler {
                 return { handled: true, action: 'unreg_not_found' };
             }
         } catch (error) {
-            console.error('Error handling UNREG:', error);
+            console.error('Error saat menangani UNREG:', error);
             await this.client.sendMessage(message.from, 'Terjadi kesalahan sistem. Mohon coba lagi.');
             
             return { handled: true, action: 'unreg_error' };
@@ -99,7 +99,7 @@ class RegistrationHandler {
     }
 
     /**
-     * Handle proses registrasi (parsing REG#...)
+     * Menangani proses registrasi (parsing REG#...)
      */
     async handleRegistration(message, fromNumber, messageBody) {
         const parts = messageBody.split('#');
@@ -121,11 +121,11 @@ class RegistrationHandler {
         }
 
         try {
-            // CEK DULU: Apakah nomor sudah terdaftar?
+            // Cek apakah nomor sudah terdaftar
             const existingContact = await this.checkRegistration(fromNumber);
             
             if (existingContact) {
-                console.log(`⚠️ Nomor ${fromNumber} sudah terdaftar sebagai ${existingContact.name}`);
+                console.log(`Nomor ${fromNumber} sudah terdaftar sebagai ${existingContact.name}`);
                 await this.client.sendMessage(message.from, templates.alreadyRegistered);
                 return { success: false, reason: 'duplicate' };
             }
@@ -150,7 +150,7 @@ class RegistrationHandler {
                 });
             });
 
-            console.log(`✅ Kontak baru berhasil disimpan: ${nama} (${normalizedNumber})`);
+            console.log(`Kontak baru berhasil disimpan: ${nama} (${normalizedNumber})`);
             await this.client.sendMessage(message.from, templates.registrationSuccess);
 
             return { success: true, data: { nama, instansi, jabatan, number: normalizedNumber } };
@@ -160,7 +160,7 @@ class RegistrationHandler {
                 await this.client.sendMessage(message.from, templates.alreadyRegistered);
                 return { success: false, reason: 'duplicate' };
             } else {
-                console.error('Error saving contact:', error);
+                console.error('Error saat menyimpan kontak:', error);
                 await this.client.sendMessage(message.from, 'Terjadi kesalahan saat menyimpan data. Mohon coba lagi.');
                 return { success: false, reason: 'database_error' };
             }
@@ -168,7 +168,7 @@ class RegistrationHandler {
     }
 
     /**
-     * Kirim pesan welcome sesuai status user
+     * Mengirim pesan selamat datang sesuai status user
      */
     async sendWelcomeMessage(message, fromNumber, userState) {
         try {
@@ -202,7 +202,7 @@ class RegistrationHandler {
             }
 
         } catch (error) {
-            console.error('Error sending welcome message:', error);
+            console.error('Error saat mengirim pesan selamat datang:', error);
             // Fallback ke pesan default
             await this.client.sendMessage(message.from, templates.welcomeReturningUser);
             userState[fromNumber] = 'MENU_UTAMA';
@@ -211,7 +211,7 @@ class RegistrationHandler {
     }
 
     /**
-     * Get appropriate welcome message based on user status
+     * Mendapatkan pesan selamat datang yang sesuai berdasarkan status user
      */
     async getWelcomeMessage(fromNumber) {
         try {
@@ -224,7 +224,7 @@ class RegistrationHandler {
                 return hasHistory ? templates.welcomeReturningUser : templates.welcomeNewUser;
             }
         } catch (error) {
-            console.error('Error getting welcome message:', error);
+            console.error('Error saat mendapatkan pesan selamat datang:', error);
             return templates.welcomeReturningUser;
         }
     }

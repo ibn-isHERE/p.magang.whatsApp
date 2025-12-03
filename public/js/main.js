@@ -23,7 +23,7 @@ import {
   showNotification
 } from './modules/events/event-handlers.js';
 
-// ✅ IMPORT SIDEBAR MODULE
+//  IMPORT SIDEBAR MODULE
 import { 
   initSidebar, 
   updateChatBadge, 
@@ -36,7 +36,7 @@ import {
 async function showForm(formId) {
   showFormOriginal(formId);
   
-  // ✅ UPDATE SIDEBAR ACTIVE STATE
+  //  UPDATE SIDEBAR ACTIVE STATE
   if (window.setActiveMenuItem) {
     window.setActiveMenuItem(formId);
   }
@@ -156,7 +156,7 @@ async function initApp() {
   console.log("🚀 Starting app initialization...");
 
   try {
-    // ✅ INITIALIZE SIDEBAR FIRST
+    //  INITIALIZE SIDEBAR FIRST
     console.log("🎯 Initializing sidebar...");
     initSidebar();
     
@@ -211,7 +211,7 @@ async function initApp() {
     window.closeDetailGroupModal = closeDetailGroupModal;
     window.showNotification = showNotification;
     
-    // ✅ EXPORT SIDEBAR FUNCTIONS TO WINDOW
+    //  EXPORT SIDEBAR FUNCTIONS TO WINDOW
     window.updateChatBadge = updateChatBadge;
     window.setActiveMenuItem = setActiveMenuItem;
 
@@ -248,7 +248,7 @@ async function initApp() {
         await contactManager.handleContactFormSubmit(e);
         await contactManager.fetchGroupsForDropdown();
         
-        // ✅ Update instansi & jabatan dropdowns
+        //  Update instansi & jabatan dropdowns
         await instansiManager.fetchInstansi();
         await jabatanManager.fetchJabatan();
         
@@ -300,7 +300,7 @@ async function initApp() {
     contactManager.initMessageFormTabs();
     contactManager.initMeetingFormTabs();
     
-    console.log("✅ Initial data loaded successfully");
+    console.log(" Initial data loaded successfully");
     
     await scheduleManager.loadMeetingRooms();
     scheduleManager.updateFilterButtonActiveState("all");
@@ -314,7 +314,7 @@ async function initApp() {
     // Start countdown timer updates
     setInterval(() => scheduleRender.updateCountdownTimers(), 1000);
 
-    console.log("✅ App initialization complete");
+    console.log(" App initialization complete");
     
   } catch (error) {
     console.error("❌ Error during app initialization:", error);
@@ -338,10 +338,10 @@ function setupImportButtons() {
     newCsvBtn.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
-      console.log('✅ CSV button clicked, calling downloadCSVTemplate');
+      console.log(' CSV button clicked, calling downloadCSVTemplate');
       window.downloadCSVTemplate();
     });
-    console.log('✅ CSV Template button setup complete');
+    console.log(' CSV Template button setup complete');
   } else {
     console.warn('⚠️ CSV button not found in DOM');
   }
@@ -355,10 +355,10 @@ function setupImportButtons() {
     newExcelBtn.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
-      console.log('✅ Excel button clicked, calling downloadExcelTemplate');
+      console.log(' Excel button clicked, calling downloadExcelTemplate');
       window.downloadExcelTemplate();
     });
-    console.log('✅ Excel Guide button setup complete');
+    console.log(' Excel Guide button setup complete');
   } else {
     console.warn('⚠️ Excel button not found in DOM');
   }
@@ -372,10 +372,10 @@ function setupImportButtons() {
     newHelpBtn.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
-      console.log('✅ Help button clicked, calling showImportHelp');
+      console.log(' Help button clicked, calling showImportHelp');
       window.showImportHelp();
     });
-    console.log('✅ Help button setup complete');
+    console.log(' Help button setup complete');
   } else {
     console.warn('⚠️ Help button not found in DOM');
   }
@@ -386,7 +386,7 @@ function setupImportButtons() {
  */
 async function initImportSystem() {
   try {
-    console.log('📦 Starting import system initialization...');
+    console.log(' Starting import system initialization...');
     
     const importModule = await import('./modules/contacts/contact-import.js');
     const { 
@@ -396,21 +396,21 @@ async function initImportSystem() {
       showImportHelp 
     } = importModule;
     
-    console.log('✅ Import module loaded successfully');
+    console.log(' Import module loaded successfully');
     
     // Export functions to window IMMEDIATELY
     window.downloadCSVTemplate = downloadCSVTemplate;
     window.downloadExcelTemplate = downloadExcelTemplate;
     window.showImportHelp = showImportHelp;
     
-    console.log('✅ Functions exported to window:');
+    console.log(' Functions exported to window:');
     console.log('   - window.downloadCSVTemplate:', typeof window.downloadCSVTemplate);
     console.log('   - window.downloadExcelTemplate:', typeof window.downloadExcelTemplate);
     console.log('   - window.showImportHelp:', typeof window.showImportHelp);
     
     // Initialize form handlers
     initContactImport();
-    console.log('✅ initContactImport() called');
+    console.log(' initContactImport() called');
     
     // Small delay to ensure DOM is ready
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -418,7 +418,7 @@ async function initImportSystem() {
     // Setup button listeners
     setupImportButtons();
     
-    console.log('✅ Import system fully initialized');
+    console.log(' Import system fully initialized');
     
   } catch (error) {
     console.error('❌ Error initializing import system:', error);
@@ -449,14 +449,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Initialize import system FIRST with error handling
     console.log('Step 1: Initializing import system...');
     await initImportSystem();
-    console.log('Step 1: ✅ Import system ready');
+    console.log('Step 1:  Import system ready');
     
     // Initialize main app
     console.log('Step 2: Initializing main app...');
     await initApp();
-    console.log('Step 2: ✅ Main app ready');
+    console.log('Step 2:  Main app ready');
     
-    console.log('✅✅✅ ALL INITIALIZATION COMPLETE ✅✅✅');
+    console.log(' ALL INITIALIZATION COMPLETE ');
     
   } catch (error) {
     console.error('❌ Critical error during initialization:', error);
@@ -526,4 +526,4 @@ window.addEventListener('unhandledrejection', function(event) {
   console.error('🔴 Unhandled promise rejection:', event.reason);
 });
 
-console.log('📦 main.js loaded and ready');
+console.log(' main.js loaded and ready');

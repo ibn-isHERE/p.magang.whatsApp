@@ -63,7 +63,7 @@ export function initSidebar() {
       // Add active class to clicked item
       this.classList.add('active');
       
-      // ✅ SPECIAL HANDLING for User Management
+      //  SPECIAL HANDLING for User Management
       if (formId === 'User') {
         showUserManagement();
       } else {
@@ -80,7 +80,7 @@ export function initSidebar() {
     });
   });
   
-  // ✅ Function to show User Management
+  //  Function to show User Management
   function showUserManagement() {
     // Hide all form containers
     document.querySelectorAll('.form-content').forEach(container => {
@@ -125,7 +125,7 @@ export function initSidebar() {
     }
   }
   
-  // ✅ TIDAK PERLU EVENT DELEGATION LAGI - Logout sudah pakai onclick di HTML
+  //  TIDAK PERLU EVENT DELEGATION LAGI - Logout sudah pakai onclick di HTML
   
   // Close sidebar on ESC key
   document.addEventListener('keydown', (e) => {
@@ -145,7 +145,7 @@ export function initSidebar() {
     }, 250);
   });
   
-  console.log('✅ Sidebar initialized successfully');
+  console.log(' Sidebar initialized successfully');
 }
 
 /**

@@ -239,7 +239,7 @@ async function autoSyncGroupMembers(groupName, selectedMembers) {
 
     const finalMembers = Array.from(membersSet);
     
-    console.log(`✅ Final members untuk grup "${groupName}": ${finalMembers.length}`);
+    console.log(` Final members untuk grup "${groupName}": ${finalMembers.length}`);
     console.log(`   Members:`, finalMembers);
 
     return finalMembers;

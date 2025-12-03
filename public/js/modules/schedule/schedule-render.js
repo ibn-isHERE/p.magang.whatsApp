@@ -15,7 +15,7 @@ import {
 } from './schedule-edit.js';
 
 /**
- * ✅ NEW: Format delivery result untuk ditampilkan
+ *  NEW: Format delivery result untuk ditampilkan
  */
 function formatDeliveryResult(deliveryResultJson) {
   if (!deliveryResultJson) {
@@ -386,10 +386,10 @@ async function createScheduleRowHtml(schedule) {
     recipientSummary += ` (${recipientDisplay.individualCount} kontak)`;
   }
 
-  // ✅ NEW: Format delivery result
+  //  NEW: Format delivery result
   const deliveryResultHtml = formatDeliveryResult(schedule.deliveryResult);
 
-  // ✅ UPDATED: Add delivery result column (7 columns total now)
+  //  UPDATED: Add delivery result column (7 columns total now)
   return `
     <td data-scheduled-time="${schedule.scheduledTime}">${timeCellContent}</td>
     <td>${recipientDisplayHtml}<br><small style="color: #718096;">(${recipientSummary})</small></td>
@@ -621,7 +621,7 @@ async function attachScheduleActionListeners() {
         window.showEditModal("Edit Jadwal Rapat");
         modalBody.innerHTML = createMeetingEditFormHtml(scheduleToEdit);
         
-        // ✅ PERBAIKAN: Pastikan ini di-call SEBELUM populate form
+        //  PERBAIKAN: Pastikan ini di-call SEBELUM populate form
         if (window.afterEditMeetingModalOpen) {
           window.afterEditMeetingModalOpen();
         }
@@ -633,7 +633,7 @@ async function attachScheduleActionListeners() {
           Swal.fire("Error", "Gagal memuat data ruangan rapat", "error");
         }
 
-        // ✅ PERBAIKAN: Setup event listeners untuk form
+        //  PERBAIKAN: Setup event listeners untuk form
         const editForm = document.getElementById("editMeetingForm");
         if (editForm) {
           editForm.addEventListener("submit", handleMeetingFormSubmit);
@@ -840,7 +840,7 @@ async function attachScheduleActionListeners() {
 
 // Export all functions
 export { 
-  formatDeliveryResult,  // ✅ Export new function
+  formatDeliveryResult,  //  Export new function
   formatRecipientsDisplay,
   createScheduleRowHtml,
   attachScheduleActionListeners

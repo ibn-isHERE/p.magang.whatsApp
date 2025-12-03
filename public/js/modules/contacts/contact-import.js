@@ -1,36 +1,36 @@
 // contact-import.js - Complete Contact Import Module (FIXED)
 /**
- * Initialize contact import functionality
+ * Menginisialisasi fungsi import kontak
  */
 export function initContactImport() {
   const importForm = document.getElementById('import-form');
   const fileInput = importForm?.querySelector('input[type="file"]');
   
   if (!importForm || !fileInput) {
-    console.error('❌ Import form or file input not found');
+    console.error('Form import atau file input tidak ditemukan');
     return;
   }
   
-  // Preview file name when selected
+  // Preview nama file ketika dipilih
   fileInput.addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
-      console.log(`📄 File dipilih: ${file.name} (${formatFileSize(file.size)})`);
+      console.log(`File dipilih: ${file.name} (${formatFileSize(file.size)})`);
       showFileInfo(file);
     }
   });
   
-  // Handle form submission
+  // Handle pengiriman form
   importForm.addEventListener('submit', handleImportSubmit);
   
-  // ✅ FIX: Setup template download buttons
+  // Setup tombol download template
   setupTemplateButtons();
   
-  console.log('✅ Contact import initialized');
+  console.log('Contact import berhasil diinisialisasi');
 }
 
 /**
- * ✅ NEW: Setup template download buttons
+ * Mengatur tombol download template
  */
 function setupTemplateButtons() {
   const csvBtn = document.getElementById('downloadCSVTemplate');
@@ -41,7 +41,7 @@ function setupTemplateButtons() {
       e.preventDefault();
       downloadCSVTemplate();
     });
-    console.log('✅ CSV template button ready');
+    console.log('Tombol template CSV siap');
   }
   
   if (excelBtn) {
@@ -49,15 +49,15 @@ function setupTemplateButtons() {
       e.preventDefault();
       downloadExcelTemplate();
     });
-    console.log('✅ Excel guide button ready');
+    console.log('Tombol panduan Excel siap');
   }
 }
 
 /**
- * Show file info preview
+ * Menampilkan preview informasi file
  */
 function showFileInfo(file) {
-  // Remove existing info
+  // Hapus info yang sudah ada
   const existingInfo = document.querySelector('.import-file-info');
   if (existingInfo) {
     existingInfo.remove();
@@ -94,7 +94,7 @@ function showFileInfo(file) {
 }
 
 /**
- * Get file icon based on extension
+ * Mendapatkan icon file berdasarkan ekstensi
  */
 function getFileIcon(filename) {
   const ext = getFileExtension(filename);
@@ -108,7 +108,7 @@ function getFileIcon(filename) {
 }
 
 /**
- * Format file size
+ * Memformat ukuran file
  */
 function formatFileSize(bytes) {
   if (bytes === 0) return '0 Bytes';
@@ -119,14 +119,14 @@ function formatFileSize(bytes) {
 }
 
 /**
- * Get file extension
+ * Mendapatkan ekstensi file
  */
 function getFileExtension(filename) {
   return filename.substring(filename.lastIndexOf('.')).toLowerCase();
 }
 
 /**
- * Handle import form submission
+ * Menangani pengiriman form import
  */
 async function handleImportSubmit(e) {
   e.preventDefault();
@@ -135,7 +135,7 @@ async function handleImportSubmit(e) {
   const fileInput = form.querySelector('input[type="file"]');
   const file = fileInput.files[0];
   
-  // Validate file selection
+  // Validasi pemilihan file
   if (!file) {
     Swal.fire({
       icon: 'error',
@@ -146,7 +146,7 @@ async function handleImportSubmit(e) {
     return;
   }
   
-  // Validate file type
+  // Validasi tipe file
   const validExtensions = ['.csv', '.json', '.xlsx', '.xls'];
   const fileExt = getFileExtension(file.name);
   
@@ -172,7 +172,7 @@ async function handleImportSubmit(e) {
     return;
   }
   
-  // Validate file size (max 5MB)
+  // Validasi ukuran file (maksimal 5MB)
   const maxSize = 5 * 1024 * 1024;
   if (file.size > maxSize) {
     Swal.fire({
@@ -194,7 +194,7 @@ async function handleImportSubmit(e) {
     return;
   }
   
-  // Show loading
+  // Tampilkan loading
   Swal.fire({
     title: '<i class="fa-solid fa-spinner fa-spin"></i> Mengimport...',
     html: `
@@ -239,7 +239,7 @@ async function handleImportSubmit(e) {
     const fileInfo = document.querySelector('.import-file-info');
     if (fileInfo) fileInfo.remove();
     
-    // Refresh contact list
+    // Refresh daftar kontak
     if (window.contactManagerModule && window.contactManagerModule.fetchAndRenderContacts) {
       await window.contactManagerModule.fetchAndRenderContacts();
     }
@@ -249,7 +249,7 @@ async function handleImportSubmit(e) {
     }
     
   } catch (error) {
-    console.error('Import error:', error);
+    console.error('Error saat import:', error);
     Swal.fire({
       icon: 'error',
       title: 'Import Gagal',
@@ -272,14 +272,14 @@ async function handleImportSubmit(e) {
 }
 
 /**
- * Show import success with statistics
+ * Menampilkan hasil sukses import dengan statistik
  */
 async function showImportSuccess(result) {
   const { stats, errors } = result;
   
   let html = '<div style="text-align: left; padding: 10px;">';
   
-  // Success banner
+  // Banner sukses
   html += `
     <div style="background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%); padding: 16px; border-radius: 10px; margin-bottom: 16px; border-left: 4px solid #48bb78; box-shadow: 0 2px 8px rgba(72, 187, 120, 0.15);">
       <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
@@ -294,7 +294,7 @@ async function showImportSuccess(result) {
     </div>
   `;
   
-  // Statistics table
+  // Tabel statistik
   html += `
     <div style="background: #f7fafc; padding: 16px; border-radius: 8px; margin-bottom: 12px; border: 2px solid #e2e8f0;">
       <strong style="color: #2d3748; display: block; margin-bottom: 12px; font-size: 15px;">
@@ -332,7 +332,7 @@ async function showImportSuccess(result) {
     </div>
   `;
   
-  // Skipped info
+  // Info kontak yang diabaikan
   if (stats.skipped > 0) {
     html += `
       <div style="background: linear-gradient(135deg, #fffaf0 0%, #feebc8 100%); padding: 14px; border-radius: 8px; border-left: 4px solid #ed8936; margin-bottom: 12px;">
@@ -351,7 +351,7 @@ async function showImportSuccess(result) {
     `;
   }
   
-  // Errors (if any)
+  // Detail error (jika ada)
   if (errors && errors.length > 0) {
     html += `
       <details style="background: #fff5f5; padding: 12px; border-radius: 8px; border-left: 4px solid #f56565; cursor: pointer;">
@@ -396,7 +396,7 @@ async function showImportSuccess(result) {
 }
 
 /**
- * Download CSV template
+ * Mengunduh template CSV
  */
 export function downloadCSVTemplate() {
   const template = `name,number,instansi,jabatan,grup
@@ -470,13 +470,13 @@ Budi Santoso,081122334455,Tim Administrasi,Pegawai,Tim Admin`;
 }
 
 /**
- * Download Excel template with group sync support
+ * Mengunduh template Excel dengan dukungan sinkronisasi grup
  */
 export function downloadExcelTemplate() {
-  // Create workbook and worksheet
+  // Buat workbook dan worksheet
   const wb = XLSX.utils.book_new();
   
-  // Sample data with examples
+  // Data contoh
   const data = [
     {
       name: 'John Doe',
@@ -515,10 +515,10 @@ export function downloadExcelTemplate() {
     }
   ];
   
-  // Convert data to worksheet
+  // Konversi data ke worksheet
   const ws = XLSX.utils.json_to_sheet(data);
   
-  // Set column widths
+  // Set lebar kolom
   ws['!cols'] = [
     { wch: 20 }, // name
     { wch: 18 }, // number
@@ -527,16 +527,16 @@ export function downloadExcelTemplate() {
     { wch: 20 }  // grup
   ];
   
-  // Add worksheet to workbook
+  // Tambahkan worksheet ke workbook
   XLSX.utils.book_append_sheet(wb, ws, 'Kontak');
   
-  // Generate filename with timestamp
+  // Generate nama file dengan timestamp
   const filename = `template_import_kontak_${new Date().getTime()}.xlsx`;
   
-  // Download file
+  // Unduh file
   XLSX.writeFile(wb, filename);
   
-  // Show success message
+  // Tampilkan pesan sukses
   Swal.fire({
     icon: 'success',
     title: 'Template Excel Diunduh',
@@ -596,7 +596,7 @@ export function downloadExcelTemplate() {
         </div>
         
         <div style="background: #fffaf0; padding: 12px; border-radius: 6px; border-left: 4px solid #ed8936; margin-top: 12px;">
-          <strong style="color: #c05621;">⚠️ Tips:</strong>
+          <strong style="color: #c05621;">Tips:</strong>
           <ul style="margin: 8px 0 0 20px; color: #744210; font-size: 12px;">
             <li>Pastikan kolom header sesuai (case-sensitive)</li>
             <li>Format nomor: 08xxxxxxxxxx atau +628xxxxxxxxxx</li>
@@ -612,7 +612,7 @@ export function downloadExcelTemplate() {
 }
 
 /**
- * Show import help with group sync explanation
+ * Menampilkan bantuan import dengan penjelasan sinkronisasi grup
  */
 export function showImportHelp() {
   Swal.fire({
@@ -620,7 +620,7 @@ export function showImportHelp() {
     title: 'Bantuan Import Kontak',
     html: `
       <div style="text-align: left; padding: 10px;">
-        <h4 style="color: #2c5282; margin-bottom: 12px;">📋 Langkah-langkah Import:</h4>
+        <h4 style="color: #2c5282; margin-bottom: 12px;">Langkah-langkah Import:</h4>
         
         <ol style="color: #4a5568; font-size: 13px; line-height: 1.8;">
           <li>Buat grup yang diperlukan di menu <strong>Manajemen Grup</strong> (jika tidak ada)</li>
@@ -645,7 +645,7 @@ export function showImportHelp() {
         </div>
         
         <div style="background: #f7fafc; padding: 12px; border-radius: 6px; margin: 12px 0;">
-          <strong style="color: #2d3748;">📱 Format Nomor yang Diterima:</strong>
+          <strong style="color: #2d3748;">Format Nomor yang Diterima:</strong>
           <ul style="margin: 8px 0 0 20px; color: #4a5568; font-size: 12px;">
             <li>08xxxxxxxxxx (contoh: 081234567890)</li>
             <li>+628xxxxxxxxxx (contoh: +6281234567890)</li>
@@ -654,7 +654,7 @@ export function showImportHelp() {
         </div>
         
         <div style="background: #f0fff4; padding: 12px; border-radius: 6px;">
-          <strong style="color: #22543d;">✅ Aturan Validasi:</strong>
+          <strong style="color: #22543d;">Aturan Validasi:</strong>
           <ul style="margin: 8px 0 0 20px; color: #276749; font-size: 12px;">
             <li>Nama minimal 2 karakter</li>
             <li>Nomor minimal 10 digit, maksimal 15 digit</li>

@@ -98,12 +98,12 @@ export function showForm(formId) {
   const activeButton = document.querySelector(`[data-form="${formId}"]`);
   if (activeButton) {
     activeButton.classList.add("active");
-    console.log(`✅ Active button set for: ${formId}`);
+    console.log(` Active button set for: ${formId}`);
   } else {
     console.warn(`⚠️ No sidebar button found for: ${formId}`);
   }
 
-  console.log(`✅ Form switched to: ${formId}`);
+  console.log(` Form switched to: ${formId}`);
 }
 
 /**
@@ -117,14 +117,14 @@ export function showEditModal(title) {
 
 /**
  * Closes edit modal and resets content
- * ✅ FIXED: Now clears selected contacts to prevent carryover to new schedules
+ *  FIXED: Now clears selected contacts to prevent carryover to new schedules
  */
 export async function closeEditModal() {
   const modal = document.getElementById("editModal");
   modal.style.display = "none";
   document.getElementById("editModalBody").innerHTML = "";
 
-  // ✅ CRITICAL FIX: Clear selected numbers when closing edit modal
+  //  CRITICAL FIX: Clear selected numbers when closing edit modal
   try {
     const contactManager = await import("../contacts/contact-manager.js");
 
@@ -132,7 +132,7 @@ export async function closeEditModal() {
     if (contactManager.selectedNumbers) {
       const prevCount = contactManager.selectedNumbers.size;
       contactManager.selectedNumbers.clear();
-      console.log(`✅ Cleared ${prevCount} selectedNumbers on modal close`);
+      console.log(` Cleared ${prevCount} selectedNumbers on modal close`);
     }
 
     // Clear meeting form selections
@@ -140,7 +140,7 @@ export async function closeEditModal() {
       const prevCount = contactManager.selectedMeetingNumbers.size;
       contactManager.selectedMeetingNumbers.clear();
       console.log(
-        `✅ Cleared ${prevCount} selectedMeetingNumbers on modal close`
+        ` Cleared ${prevCount} selectedMeetingNumbers on modal close`
       );
     }
 
@@ -154,13 +154,13 @@ export async function closeEditModal() {
         if (contactUI.renderMeetingContactList) {
           contactUI.renderMeetingContactList();
         }
-        console.log("✅ Contact lists re-rendered after clearing selections");
+        console.log(" Contact lists re-rendered after clearing selections");
       } catch (err) {
         console.error("Error re-rendering contact lists:", err);
       }
     }, 100);
 
-    console.log("✅ Contact selections cleared successfully on modal close");
+    console.log(" Contact selections cleared successfully on modal close");
   } catch (error) {
     console.error("❌ Error clearing selections on modal close:", error);
   }

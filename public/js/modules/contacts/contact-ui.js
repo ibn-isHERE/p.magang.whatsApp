@@ -97,7 +97,7 @@ export function renderContactList() {
 }
 
 /**
- * ✅ NEW: Get filtered contacts for edit form
+ *  NEW: Get filtered contacts for edit form
  */
 export function getFilteredContactsForEdit() {
   const contacts = getContactsRef();
@@ -119,7 +119,7 @@ export function getFilteredContactsForEdit() {
 }
 
 /**
- * ✅ NEW: Get filtered meeting contacts for edit form
+ *  Get filtered meeting contacts for edit form
  */
 export function getFilteredMeetingContactsForEdit() {
   const contacts = getContactsRef();
@@ -278,7 +278,7 @@ function updateMeetingContactSelectionInfo() {
 
 /**
  * Get filtered contacts based on search
- * ✅ EXPORTED untuk digunakan di event-handlers.js
+ *  EXPORTED untuk digunakan di event-handlers.js
  */
 export function getFilteredContacts() {
   const contacts = getContactsRef();
@@ -301,7 +301,7 @@ export function getFilteredContacts() {
 
 /**
  * Get filtered meeting contacts based on search
- * ✅ EXPORTED untuk digunakan di event-handlers.js
+ *  EXPORTED untuk digunakan di event-handlers.js
  */
 export function getFilteredMeetingContacts() {
   const contacts = getContactsRef();
@@ -324,7 +324,7 @@ export function getFilteredMeetingContacts() {
 
 /**
  * Get filtered contacts for contact management table
- * ✅ EXPORTED untuk Select All/Deselect All di Contact Management
+ *  EXPORTED untuk Select All/Deselect All di Contact Management
  */
 export function getFilteredContactsForManagement() {
   const tbody = document.getElementById("contact-management-tbody");
@@ -377,7 +377,7 @@ export function renderContactListForEdit() {
 
   filteredContacts.forEach((contact) => {
     const label = document.createElement("label");
-    // ✅ PERBAIKAN: Pastikan cek dari selectedNumbers yang benar
+    //  Pastikan cek dari selectedNumbers yang benar
     const isChecked = selectedNumbers.has(contact.number) ? "checked" : "";
 
     label.innerHTML = `
@@ -396,7 +396,7 @@ export function renderContactListForEdit() {
         selectedNumbers.delete(this.value);
       }
 
-      // ✅ Update info display
+      //  Update info display
       updateContactSelectionInfoForEdit();
     });
   });
@@ -463,7 +463,7 @@ export function renderMeetingContactListForEdit() {
 
   filteredContacts.forEach((contact) => {
     const label = document.createElement("label");
-    // ✅ PERBAIKAN: Pastikan cek dari selectedMeetingNumbers yang benar
+    //  PERBAIKAN: Pastikan cek dari selectedMeetingNumbers yang benar
     const isChecked = selectedMeetingNumbers.has(contact.number)
       ? "checked"
       : "";
@@ -486,7 +486,7 @@ export function renderMeetingContactListForEdit() {
           selectedMeetingNumbers.delete(this.value);
         }
 
-        // ✅ Update info display
+        //  Update info display
         updateMeetingContactSelectionInfoForEdit();
       });
     });
@@ -596,7 +596,7 @@ export function renderContactManagementTable(
   attachDeleteCheckboxListeners(selectedContactsToDeleteRef);
   updateBulkDeleteButton(selectedContactsToDeleteRef);
 
-  // ✅ Re-initialize bulk delete listeners setiap kali tabel di-render
+  //  Re-initialize bulk delete listeners setiap kali tabel di-render
   setTimeout(() => {
     initContactManagementFilter();
     initBulkDeleteListeners();
@@ -659,7 +659,7 @@ export function initContactManagementFilter() {
     return;
   }
 
-  console.log("✅ Contact filter initialized successfully!");
+  console.log(" Contact filter initialized successfully!");
 
   function performFilter() {
     const nameQuery = filterName ? filterName.value.toLowerCase().trim() : "";
@@ -811,7 +811,7 @@ export function initContactManagementFilter() {
 
 /**
  * Initialize bulk delete listeners
- * ✅ FIXED: Tambah Select All/Deselect All untuk Contact Management
+ * Tambah Select All/Deselect All untuk Contact Management
  */
 export function initBulkDeleteListeners() {
   const bulkDeleteBtn = document.getElementById("bulkDeleteContactBtn");
@@ -822,7 +822,7 @@ export function initBulkDeleteListeners() {
     });
   }
 
-  // ✅ Select All / Deselect All untuk Contact Management
+  // Select All / Deselect All untuk Contact Management
   const selectAllMgmtBtn = document.getElementById("selectAllContactsDelete");
   const deselectAllMgmtBtn = document.getElementById(
     "deselectAllContactsDelete"
@@ -836,7 +836,7 @@ export function initBulkDeleteListeners() {
     newSelectAllBtn.addEventListener("click", function () {
       const selectedContactsToDeleteRef = getSelectedContactsToDeleteRef();
 
-      // ✅ Ambil hanya checkbox yang VISIBLE (setelah filter)
+      // Ambil hanya checkbox yang VISIBLE (setelah filter)
       const visibleCheckboxes = Array.from(
         document.querySelectorAll(".contact-delete-checkbox")
       ).filter((cb) => {
@@ -868,7 +868,7 @@ export function initBulkDeleteListeners() {
     newDeselectAllBtn.addEventListener("click", function () {
       const selectedContactsToDeleteRef = getSelectedContactsToDeleteRef();
 
-      // ✅ Hilangkan hanya yang VISIBLE
+      // Hilangkan hanya yang VISIBLE
       const visibleCheckboxes = Array.from(
         document.querySelectorAll(".contact-delete-checkbox")
       ).filter((cb) => {

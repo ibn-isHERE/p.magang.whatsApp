@@ -1,11 +1,11 @@
 let users = [];
 
-// Helper function to get token from either storage
+// Helper function untuk mendapatkan token dari storage
 function getAuthToken() {
   return sessionStorage.getItem("token") || localStorage.getItem("token");
 }
 
-// Check if user is authenticated
+// Cek apakah user terautentikasi
 function checkAuthentication() {
   const token = getAuthToken();
   if (!token) {
@@ -22,7 +22,7 @@ function checkAuthentication() {
   return true;
 }
 
-// Load Users from API
+// Load Users dari API
 async function loadUsersList() {
   const tbody = document.getElementById("user-management-tbody");
 
@@ -127,7 +127,7 @@ async function loadUsersList() {
       )
       .join("");
   } catch (error) {
-    console.error("❌ Error loading users:", error);
+    console.error("Error loading users:", error);
     tbody.innerHTML = `
       <tr>
         <td colspan="5" style="text-align: center; padding: 40px; color: #fc8181;">
@@ -142,7 +142,7 @@ async function loadUsersList() {
   }
 }
 
-// Escape HTML to prevent XSS
+// Escape HTML untuk mencegah XSS
 function escapeHtml(text) {
   if (!text) return "";
   const div = document.createElement("div");
@@ -169,7 +169,7 @@ function resetUserCrudForm() {
   if (hintText) hintText.textContent = "";
 }
 
-// Open Edit User Modal
+// Buka Modal Edit User
 function openEditUserModal(userId) {
   const user = users.find((u) => u.id === userId);
   if (!user) {
@@ -323,7 +323,7 @@ function openEditUserModal(userId) {
   });
 }
 
-// Close Edit User Modal
+// Tutup Modal Edit User
 function closeEditUserModal() {
   const modal = document.getElementById("editUserModal");
   if (modal) {
@@ -331,7 +331,7 @@ function closeEditUserModal() {
   }
 }
 
-// Handle Edit User Form Submit
+// Handle Submit Form Edit User
 async function handleEditUserSubmit() {
   if (!checkAuthentication()) {
     return;
@@ -438,7 +438,7 @@ async function handleEditUserSubmit() {
   }
 }
 
-// Delete User Function
+// Fungsi Delete User
 async function deleteUserCrud(userId) {
   const user = users.find((u) => u.id === userId);
   if (!user) return;
@@ -508,7 +508,7 @@ async function deleteUserCrud(userId) {
   }
 }
 
-// Initialize Password Toggle for ADD User Form
+// Inisialisasi Password Toggle untuk Form ADD User
 function initPasswordToggle() {
   const passwordInput = document.getElementById("user-crud-password");
   if (!passwordInput) return;
@@ -543,7 +543,7 @@ function initPasswordToggle() {
   passwordInput.style.paddingRight = '40px';
 }
 
-// Handle Add New User
+// Handle Tambah User Baru
 async function handleAddUserSubmit(e) {
   if (e) {
     e.preventDefault();
@@ -551,10 +551,10 @@ async function handleAddUserSubmit(e) {
     e.stopImmediatePropagation();
   }
 
-  console.log("🚀 FORM SUBMIT TRIGGERED!");
+  console.log("Form submit triggered");
 
   if (!checkAuthentication()) {
-    console.log("❌ Authentication failed");
+    console.log("Authentication failed");
     return false;
   }
 
@@ -564,7 +564,7 @@ async function handleAddUserSubmit(e) {
   const role = document.getElementById("user-crud-role").value;
   const isActive = document.getElementById("user-crud-active").checked;
 
-  // Validation
+  // Validasi
   if (!name || !email || !role || !password) {
     Swal.fire({
       icon: "warning",
@@ -650,7 +650,7 @@ async function handleAddUserSubmit(e) {
     return false;
 
   } catch (error) {
-    console.error("❌ Error adding user:", error);
+    console.error("Error adding user:", error);
     Swal.fire({
       icon: "error",
       title: "Gagal!",
@@ -660,9 +660,9 @@ async function handleAddUserSubmit(e) {
   }
 }
 
-// INITIALIZE
+// INISIALISASI
 (function() {
-  console.log("🎯 USER MANAGEMENT MODULE LOADING...");
+  console.log("USER MANAGEMENT MODULE LOADING...");
   
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initUserManagement);
@@ -672,17 +672,17 @@ async function handleAddUserSubmit(e) {
 })();
 
 function initUserManagement() {
-  console.log("🎯 INITIALIZING USER MANAGEMENT");
+  console.log("INITIALIZING USER MANAGEMENT");
 
   const userCrudForm = document.getElementById("user-crud-form");
   
   if (!userCrudForm) {
-    console.warn("⚠️ Form not found: user-crud-form - Will retry in 500ms");
+    console.warn("Form not found: user-crud-form - Will retry in 500ms");
     setTimeout(initUserManagement, 500);
     return;
   }
 
-  console.log("✅ Form found:", userCrudForm);
+  console.log("Form found:", userCrudForm);
   
   userCrudForm.removeAttribute('action');
   userCrudForm.removeAttribute('method');
@@ -695,7 +695,7 @@ function initUserManagement() {
     return handleAddUserSubmit(e);
   }, true);
   
-  console.log("✅ Form handlers attached");
+  console.log("Form handlers attached");
   
   setTimeout(initPasswordToggle, 100);
 
@@ -721,7 +721,7 @@ function initUserManagement() {
   }
 }
 
-// Make functions globally available
+// Buat fungsi tersedia secara global
 window.loadUsersList = loadUsersList;
 window.openEditUserModal = openEditUserModal;
 window.closeEditUserModal = closeEditUserModal;

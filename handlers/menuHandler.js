@@ -10,18 +10,18 @@ class MenuHandler {
         this.io = io;
         this.saveMessageFunction = saveMessageFunction;
         this.inactivityTimers = {};
-        this.userState = null; // Will be set by MessageHandler
+        this.userState = null; // Akan diset oleh MessageHandler
     }
 
     /**
-     * Set reference to userState from MessageHandler
+     * Mengatur referensi ke userState dari MessageHandler
      */
     setUserStateReference(userStateRef) {
         this.userState = userStateRef;
     }
 
     /**
-     * Handle pilihan menu dari user
+     * Menangani pilihan menu dari user
      */
     async handleMenuChoice(message, fromNumber, choice, userState, registrationHandler) {
         const menuChoice = choice.trim();
@@ -63,7 +63,7 @@ class MenuHandler {
             // Simpan pesan ke database
             await this.saveMessageFunction(message);
             
-            console.log(`💬 User ${fromNumber} masuk mode CHATTING_WAITING (menunggu admin)`);
+            console.log(`User ${fromNumber} masuk mode CHATTING_WAITING (menunggu admin)`);
 
             return { valid: true, action: 'start_chat' };
         }
@@ -75,13 +75,13 @@ class MenuHandler {
     }
 
     /**
-     * Handle pesan dari user yang sedang dalam mode CHATTING
+     * Menangani pesan dari user yang sedang dalam mode CHATTING
      */
     async handleChatMessage(message, fromNumber) {
         // Hanya reset timer jika sudah dalam mode CHATTING_ACTIVE
         if (this.userState && this.userState[fromNumber] === 'CHATTING_ACTIVE') {
             this.setInactivityTimer(fromNumber);
-            console.log(`🔄 Timer reset untuk ${fromNumber} (user mengirim pesan)`);
+            console.log(`Timer direset untuk ${fromNumber} (user mengirim pesan)`);
         }
 
         // Cek apakah chat di history
@@ -91,14 +91,14 @@ class MenuHandler {
                 [fromNumber], 
                 async (err, row) => {
                     if (err) {
-                        console.error("Error checking chat history status:", err);
+                        console.error("Error saat mengecek status history chat:", err);
                         reject(err);
                         return;
                     }
 
                     if (row) {
                         // Aktivkan kembali percakapan
-                        console.log(`[LOGIC] Pesan masuk dari nomor di history (${fromNumber}). Mengaktifkan kembali seluruh percakapan.`);
+                        console.log(`Pesan masuk dari nomor di history (${fromNumber}). Mengaktifkan kembali seluruh percakapan.`);
                         
                         this.db.run(
                             "UPDATE chats SET status = 'active' WHERE fromNumber = ?", 
@@ -107,7 +107,7 @@ class MenuHandler {
                                 if (updateErr) {
                                     console.error("Gagal mengaktifkan kembali percakapan:", updateErr);
                                 } else {
-                                    console.log(`[LOGIC] Percakapan untuk ${fromNumber} berhasil diaktifkan kembali.`);
+                                    console.log(`Percakapan untuk ${fromNumber} berhasil diaktifkan kembali.`);
                                 }
                                 
                                 await this.saveMessageFunction(message);
@@ -133,14 +133,14 @@ class MenuHandler {
         if (this.userState && this.userState[fromNumber] === 'CHATTING_WAITING') {
             this.userState[fromNumber] = 'CHATTING_ACTIVE';
             this.setInactivityTimer(fromNumber);
-            console.log(`✅ Chat session activated untuk ${fromNumber} - Timer dimulai!`);
+            console.log(`Chat session diaktifkan untuk ${fromNumber} - Timer dimulai!`);
             return true;
         }
         return false;
     }
 
     /**
-     * Set timer inaktivitas untuk sesi chat
+     * Mengatur timer inaktivitas untuk sesi chat
      */
     setInactivityTimer(fromNumber) {
         // Hapus timer lama jika ada
@@ -153,7 +153,7 @@ class MenuHandler {
             // Timer 1: Peringatan setelah 30 menit
             warning: setTimeout(async () => {
                 await this.client.sendMessage(`${fromNumber}@c.us`, templates.inactivityWarning);
-                console.log(`⏰ Mengirim peringatan inaktivitas ke ${fromNumber}.`);
+                console.log(`Mengirim peringatan inaktivitas ke ${fromNumber}.`);
 
                 // Simpan pesan peringatan ke database
                 const warningData = {
@@ -176,11 +176,11 @@ class MenuHandler {
                     warningData.timestamp, warningData.messageType, warningData.isRead, warningData.status
                 ], (err) => {
                     if (err) {
-                        console.error('❌ Error menyimpan pesan peringatan:', err);
+                        console.error('Error saat menyimpan pesan peringatan:', err);
                     } else {
                         const completeMessageData = { id: this.lastID, ...warningData };
                         this.io.emit('newIncomingMessage', completeMessageData);
-                        console.log(`✅ Pesan peringatan untuk ${fromNumber} berhasil disimpan.`);
+                        console.log(`Pesan peringatan untuk ${fromNumber} berhasil disimpan.`);
                     }
                 });
 
@@ -193,14 +193,14 @@ class MenuHandler {
             end: null
         };
         
-        console.log(`⏱️ Timer inaktivitas diset untuk ${fromNumber} (30 menit + 10 menit)`);
+        console.log(`Timer inaktivitas diset untuk ${fromNumber} (30 menit + 10 menit)`);
     }
 
     /**
-     * Akhiri sesi chat karena inaktivitas
+     * Mengakhiri sesi chat karena inaktivitas
      */
     async endChatSession(fromNumber) {
-        console.log(`⏱️ Mengakhiri sesi untuk ${fromNumber} karena tidak aktif.`);
+        console.log(`Mengakhiri sesi untuk ${fromNumber} karena tidak aktif.`);
 
         const timestamp = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
         const endMessageText = templates.systemSessionEnd(timestamp);
@@ -229,53 +229,53 @@ class MenuHandler {
             sessionEndData.timestamp, sessionEndData.messageType, sessionEndData.isRead, sessionEndData.status
         ], (err) => {
             if (err) {
-                console.error('❌ Error menyimpan pesan akhir sesi:', err);
+                console.error('Error saat menyimpan pesan akhir sesi:', err);
                 return;
             }
 
             const completeMessageData = { id: this.lastID, ...sessionEndData };
             this.io.emit('newIncomingMessage', completeMessageData);
-            console.log(`✅ Pesan akhir sesi untuk ${fromNumber} berhasil disimpan.`);
+            console.log(`Pesan akhir sesi untuk ${fromNumber} berhasil disimpan.`);
         });
 
         // Hapus state dan timer
         if (this.userState) {
             delete this.userState[fromNumber];
-            console.log(`🔄 State cleared untuk ${fromNumber}`);
+            console.log(`State dihapus untuk ${fromNumber}`);
         }
         
         if (this.inactivityTimers[fromNumber]) {
             clearTimeout(this.inactivityTimers[fromNumber].warning);
             clearTimeout(this.inactivityTimers[fromNumber].end);
             delete this.inactivityTimers[fromNumber];
-            console.log(`⏱️ Timer cleared untuk ${fromNumber}`);
+            console.log(`Timer dihapus untuk ${fromNumber}`);
         }
 
         // Pindahkan chat ke history
         this.db.run("UPDATE chats SET status = 'history' WHERE fromNumber = ?", [fromNumber], (err) => {
             if (err) {
-                console.error(`❌ Gagal memindahkan chat ${fromNumber} ke history:`, err);
+                console.error(`Gagal memindahkan chat ${fromNumber} ke history:`, err);
             } else {
-                console.log(`✅ Chat untuk ${fromNumber} berhasil dipindahkan ke history.`);
+                console.log(`Chat untuk ${fromNumber} berhasil dipindahkan ke history.`);
                 this.io.emit('sessionEnded', { fromNumber });
             }
         });
     }
 
     /**
-     * Clear timer untuk nomor tertentu
+     * Menghapus timer untuk nomor tertentu
      */
     clearInactivityTimer(fromNumber) {
         if (this.inactivityTimers[fromNumber]) {
             clearTimeout(this.inactivityTimers[fromNumber].warning);
             clearTimeout(this.inactivityTimers[fromNumber].end);
             delete this.inactivityTimers[fromNumber];
-            console.log(`⏱️ Timer manually cleared untuk ${fromNumber}`);
+            console.log(`Timer dihapus secara manual untuk ${fromNumber}`);
         }
     }
 
     /**
-     * Get all inactivity timers (untuk debugging)
+     * Mendapatkan semua timer inaktivitas yang aktif (untuk debugging)
      */
     getActiveTimers() {
         return Object.keys(this.inactivityTimers);
