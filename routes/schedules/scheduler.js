@@ -1,4 +1,4 @@
-// scheduler.js - WITH SAFE DELAYS AND BATCHING
+// scheduler.js - Dengan safe delays dan batching
 
 const schedule = require("node-schedule");
 const { MessageMedia } = require("whatsapp-web.js");
@@ -10,7 +10,7 @@ let jobs = {};
 let client = null;
 let db = null;
 
-// KONFIGURASI DELAY - SESUAIKAN SESUAI KEBUTUHAN
+// Konfigurasi delay - sesuaikan sesuai kebutuhan
 const DELAY_CONFIG = {
   VALIDATION_DELAY: 500,           // 0.5 detik antar validasi nomor
   MESSAGE_DELAY_MIN: 8000,         // 8 detik minimum antar pesan
@@ -22,7 +22,7 @@ const DELAY_CONFIG = {
 };
 
 /**
- * Generate random delay dalam range
+ * Menghasilkan random delay dalam range
  */
 function getRandomDelay(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -36,7 +36,7 @@ function sleep(ms) {
 }
 
 /**
- * Log progress pengiriman
+ * Mencatat progress pengiriman
  */
 function logProgress(current, total, type = 'pesan') {
   const percentage = Math.round((current / total) * 100);
@@ -101,7 +101,7 @@ async function scheduleMessage(scheduleData) {
 }
 
 /**
- * ENHANCED: Execute dengan safe delays, batching, dan tracking delivery result
+ * ENHANCED: Eksekusi dengan safe delays, batching, dan tracking delivery result
  */
 async function executeScheduledMessage(id, numbers, message, filesData) {
   if (!client) {
@@ -176,7 +176,7 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
     notRegistered: []
   };
 
-  // STEP 1: Validasi semua nomor dulu dengan delay aman
+  // LANGKAH 1: Validasi semua nomor dulu dengan delay aman
   for (let i = 0; i < targetNumbers.length; i++) {
     const num = targetNumbers[i];
     const formattedNum = formatNumber(num);
@@ -236,7 +236,7 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
     return;
   }
 
-  // STEP 2: Kirim dengan safe delays dan batching
+  // LANGKAH 2: Kirim dengan safe delays dan batching
   console.log(`\nMengirim pesan ke ${deliveryResult.success.length} nomor valid...`);
   
   const totalRecipients = deliveryResult.success.length;
@@ -326,7 +326,7 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
   // Cleanup files
   cleanupFiles(filesData);
 
-  // SAVE delivery result to database
+  // Simpan delivery result ke database
   saveDeliveryResult(id, deliveryResult);
 
   // Update status di database
@@ -342,7 +342,7 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
 }
 
 /**
- * Save delivery result to database
+ * Menyimpan delivery result ke database
  */
 function saveDeliveryResult(scheduleId, deliveryResult) {
   const resultJson = JSON.stringify({
@@ -357,9 +357,9 @@ function saveDeliveryResult(scheduleId, deliveryResult) {
     [resultJson, scheduleId],
     (err) => {
       if (err) {
-        console.error('Failed to save delivery result:', err);
+        console.error('Gagal menyimpan delivery result:', err);
       } else {
-        console.log(`Delivery result saved for schedule ${scheduleId}`);
+        console.log(`Delivery result berhasil disimpan untuk schedule ${scheduleId}`);
       }
     }
   );
@@ -382,7 +382,7 @@ function handleFailedMessage(id, filesData, reason) {
 }
 
 /**
- * ENHANCED: Update with delivery result
+ * ENHANCED: Update dengan delivery result
  */
 function updateMessageStatus(id, status, deliveryResult) {
   const sent = deliveryResult.actualSent || 0;

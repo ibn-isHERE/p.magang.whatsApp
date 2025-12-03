@@ -3,9 +3,7 @@ const express = require("express");
 const util = require("util");
 const { toTitleCase, normalizeForComparison } = require('../utils/textHelpers');
 
-// ========================================
-// ✅ PHONE NUMBER VALIDATOR
-// ========================================
+// Validator nomor telepon
 function validatePhoneNumber(number) {
   const cleaned = String(number).trim().replace(/[^\d+]/g, '');
   
@@ -46,7 +44,7 @@ function validatePhoneNumber(number) {
     };
   }
 
-  // Normalize to 08xx format
+  // Normalisasi ke format 08xx
   let normalized = cleaned;
   if (normalized.startsWith('+62')) {
     normalized = '0' + normalized.slice(3);
@@ -88,26 +86,26 @@ function createContactsRouter(db) {
 
   /**
    * Helper: updateGroupMembers - CASE-INSENSITIVE VERSION
-   * Supports multiple groups - updates all groups that the contact belongs to
-   * 🔥 UPDATED: Pencocokan nama grup tidak case-sensitive
+   * Mendukung multiple groups - memperbarui semua grup yang memiliki kontak ini
+   * UPDATED: Pencocokan nama grup tidak case-sensitive
    */
   async function updateGroupMembers(groupName, contactNumber, action) {
     if (!groupName || !contactNumber) return;
 
     try {
-      // 🔥 CASE-INSENSITIVE: Gunakan LOWER() untuk pencocokan
+      // CASE-INSENSITIVE: Gunakan LOWER() untuk pencocokan
       const rows = await dbAll(
         "SELECT id, name, members FROM groups WHERE LOWER(name) = LOWER(?)",
         [groupName]
       );
       
       if (!rows || rows.length === 0) {
-        console.log(`⚠️ Grup "${groupName}" tidak ditemukan`);
+        console.log(`Grup "${groupName}" tidak ditemukan`);
         return;
       }
 
       const row = rows[0];
-      console.log(`✅ Grup ditemukan: "${row.name}" (dicari: "${groupName}")`);
+      console.log(`Grup ditemukan: "${row.name}" (dicari: "${groupName}")`);
       
       let membersArray = [];
       try {
@@ -120,10 +118,10 @@ function createContactsRouter(db) {
       const set = new Set(membersArray.map(String));
       if (action === "add") {
         set.add(String(contactNumber));
-        console.log(`➕ Menambahkan ${contactNumber} ke grup "${row.name}"`);
+        console.log(`Menambahkan ${contactNumber} ke grup "${row.name}"`);
       } else if (action === "remove") {
         set.delete(String(contactNumber));
-        console.log(`➖ Menghapus ${contactNumber} dari grup "${row.name}"`);
+        console.log(`Menghapus ${contactNumber} dari grup "${row.name}"`);
       }
 
       const newMembers = Array.from(set);
@@ -135,7 +133,7 @@ function createContactsRouter(db) {
         row.id,
       ]);
     } catch (err) {
-      console.error("updateGroupMembers error:", err);
+      console.error("Error updateGroupMembers:", err);
     }
   }
 
@@ -158,7 +156,7 @@ function createContactsRouter(db) {
       });
     }
 
-    // ✅ VALIDASI NAMA
+    // Validasi nama
     if (name.trim().length < 2) {
       return res.status(400).json({ 
         error: "Nama minimal 2 karakter",
@@ -166,7 +164,7 @@ function createContactsRouter(db) {
       });
     }
 
-    // ✅ VALIDASI NOMOR TELEPON
+    // Validasi nomor telepon
     const phoneValidation = validatePhoneNumber(number);
     
     if (!phoneValidation.valid) {
@@ -176,7 +174,7 @@ function createContactsRouter(db) {
       });
     }
 
-    // ✅ CEK DUPLIKASI NOMOR
+    // Cek duplikasi nomor
     try {
       const existingContact = await dbGet(
         "SELECT id, name FROM contacts WHERE number = ?",
@@ -195,15 +193,15 @@ function createContactsRouter(db) {
         });
       }
     } catch (err) {
-      console.error("Error checking duplicate:", err);
+      console.error("Error saat mengecek duplikasi:", err);
       return res.status(500).json({ error: "Gagal memeriksa duplikasi nomor" });
     }
 
-    // 🔥 AUTO TITLE CASE untuk instansi dan jabatan (seperti di registrationHandler)
+    // Auto title case untuk instansi dan jabatan
     const normalizedInstansi = instansi ? toTitleCase(instansi) : null;
     const normalizedJabatan = jabatan ? toTitleCase(jabatan) : null;
 
-    // ✅ Support multiple groups
+    // Support multiple groups
     let groupValue = null;
     let groupNamesForSync = [];
 
@@ -259,11 +257,11 @@ function createContactsRouter(db) {
       if (groupNamesForSync.length > 0) {
         for (const groupName of groupNamesForSync) {
           await updateGroupMembers(groupName, phoneValidation.normalized, "add")
-            .catch((e) => console.error(`sync add group ${groupName} failed:`, e));
+            .catch((e) => console.error(`Sync add group ${groupName} gagal:`, e));
         }
       }
     } catch (err) {
-      console.error("Insert contact error:", err);
+      console.error("Error insert kontak:", err);
       return res.status(500).json({ error: "Gagal menambahkan kontak ke database" });
     }
   });
@@ -279,7 +277,7 @@ function createContactsRouter(db) {
       });
     }
 
-    // ✅ VALIDASI NAMA
+    // Validasi nama
     if (name.trim().length < 2) {
       return res.status(400).json({ 
         error: "Nama minimal 2 karakter",
@@ -287,7 +285,7 @@ function createContactsRouter(db) {
       });
     }
 
-    // ✅ VALIDASI NOMOR TELEPON
+    // Validasi nomor telepon
     const phoneValidation = validatePhoneNumber(number);
     
     if (!phoneValidation.valid) {
@@ -298,7 +296,7 @@ function createContactsRouter(db) {
     }
 
     try {
-      // ✅ CEK DUPLIKASI (kecuali untuk kontak yang sedang diedit)
+      // Cek duplikasi (kecuali untuk kontak yang sedang diedit)
       const existingContact = await dbGet(
         "SELECT id, name FROM contacts WHERE number = ? AND id != ?",
         [phoneValidation.normalized, id]
@@ -336,11 +334,11 @@ function createContactsRouter(db) {
         oldGrupArray = [];
       }
 
-      // 🔥 AUTO TITLE CASE untuk instansi dan jabatan
+      // Auto title case untuk instansi dan jabatan
       const normalizedInstansi = instansi ? toTitleCase(instansi) : null;
       const normalizedJabatan = jabatan ? toTitleCase(jabatan) : null;
 
-      // ✅ Parse new groups - support multiple groups
+      // Parse new groups - support multiple groups
       let groupValue = null;
       let newGrupArray = [];
 
@@ -374,7 +372,7 @@ function createContactsRouter(db) {
         id,
       ]);
 
-      console.log(`✅ Kontak diupdate: ${name.trim()} | Instansi: ${normalizedInstansi} | Jabatan: ${normalizedJabatan}`);
+      console.log(`Kontak diupdate: ${name.trim()} | Instansi: ${normalizedInstansi} | Jabatan: ${normalizedJabatan}`);
 
       if (result.changes === 0) {
         return res.status(404).json({ 
@@ -395,27 +393,27 @@ function createContactsRouter(db) {
         }
       });
 
-      // SYNCHRONIZATION LOGIC for multiple groups (async)
+      // Logika sinkronisasi untuk multiple groups (async)
       (async () => {
         try {
           const oldSet = new Set(oldGrupArray.map(String));
           const newSet = new Set(newGrupArray.map(String));
 
-          // Remove from groups that are no longer assigned
+          // Hapus dari grup yang tidak lagi ditugaskan
           for (const oldGroup of oldGrupArray) {
             if (!newSet.has(String(oldGroup))) {
               await updateGroupMembers(oldGroup, oldNumber, "remove");
             }
           }
 
-          // Add to new groups
+          // Tambahkan ke grup baru
           for (const newGroup of newGrupArray) {
             if (!oldSet.has(String(newGroup))) {
               await updateGroupMembers(newGroup, phoneValidation.normalized, "add");
             }
           }
 
-          // If number changed, update all current groups
+          // Jika nomor berubah, update semua grup saat ini
           if (oldNumber !== phoneValidation.normalized) {
             for (const groupName of newGrupArray) {
               await updateGroupMembers(groupName, oldNumber, "remove");
@@ -423,11 +421,11 @@ function createContactsRouter(db) {
             }
           }
         } catch (e) {
-          console.error("Error during post-update group sync:", e);
+          console.error("Error saat sinkronisasi grup post-update:", e);
         }
       })();
     } catch (err) {
-      console.error("Update contact error:", err);
+      console.error("Error update kontak:", err);
       return res.status(500).json({ error: "Gagal mengupdate kontak" });
     }
   });
@@ -471,7 +469,7 @@ function createContactsRouter(db) {
         changes: result.changes
       });
 
-      // Synchronization: remove number from all assigned groups (async)
+      // Sinkronisasi: hapus nomor dari semua grup yang ditugaskan (async)
       (async () => {
         try {
           for (const g of Array.isArray(grups) ? grups : []) {
@@ -480,11 +478,11 @@ function createContactsRouter(db) {
             }
           }
         } catch (e) {
-          console.error("Error during post-delete group sync:", e);
+          console.error("Error saat sinkronisasi grup post-delete:", e);
         }
       })();
     } catch (err) {
-      console.error("Delete contact error:", err);
+      console.error("Error delete kontak:", err);
       return res.status(500).json({ error: "Gagal menghapus kontak" });
     }
   });

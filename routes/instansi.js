@@ -94,10 +94,10 @@ function createInstansiRouter(db) {
       });
     }
 
-    // ✅ Normalisasi ke Title Case
+    // Normalisasi ke Title Case
     const normalizedNama = toTitleCase(nama.trim());
 
-    // ✅ Cek duplikasi (case-insensitive)
+    // Cek duplikasi (case-insensitive)
     const existing = await dbGet(
       "SELECT id, nama FROM instansi WHERE LOWER(nama) = LOWER(?)",
       [normalizedNama]
@@ -154,7 +154,7 @@ function createInstansiRouter(db) {
         });
       }
 
-      // ✅ Normalisasi ke Title Case
+      // Normalisasi ke Title Case
       const normalizedNama = toTitleCase(nama.trim());
 
       // Cek apakah instansi ada
@@ -166,7 +166,7 @@ function createInstansiRouter(db) {
         });
       }
 
-      // ✅ Cek duplikasi nama (case-insensitive, kecuali untuk instansi yang sedang diedit)
+      // Cek duplikasi nama (case-insensitive, kecuali untuk instansi yang sedang diedit)
       const duplicate = await dbGet(
         "SELECT id, nama FROM instansi WHERE LOWER(nama) = LOWER(?) AND id != ?",
         [normalizedNama, id]
@@ -181,7 +181,7 @@ function createInstansiRouter(db) {
         });
       }
 
-      // ✅ Update data dengan nama yang sudah dinormalisasi
+      // Update data dengan nama yang sudah dinormalisasi
       const result = await dbRun(
         `UPDATE instansi 
          SET nama = ?, keterangan = ?, aktif = ?, updatedAt = CURRENT_TIMESTAMP 
@@ -196,13 +196,13 @@ function createInstansiRouter(db) {
         });
       }
 
-      // ✅ Jika nama berubah, update juga di tabel contacts
+      // Jika nama berubah, update juga di tabel contacts
       if (normalizeForComparison(existing.nama) !== normalizeForComparison(normalizedNama)) {
         await dbRun(
           "UPDATE contacts SET instansi = ? WHERE LOWER(instansi) = LOWER(?)",
           [normalizedNama, existing.nama]
         );
-        console.log(`✅ Updated instansi di contacts: "${existing.nama}" → "${normalizedNama}"`);
+        console.log(`Updated instansi di contacts: "${existing.nama}" → "${normalizedNama}"`);
       }
 
       res.json({ 

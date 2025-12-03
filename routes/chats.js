@@ -7,23 +7,21 @@ const { MessageMedia } = require("whatsapp-web.js");
 function createChatsRouter(db, whatsappClient, io) {
   const router = express.Router();
 
-  // ==========================================
-// CACHE untuk menyimpan message objects dari WhatsApp
-// ==========================================
-const messageCache = new Map();
-const MAX_CACHE_SIZE = 1000;
+  // Cache untuk menyimpan message objects dari WhatsApp
+  const messageCache = new Map();
+  const MAX_CACHE_SIZE = 1000;
 
-// Cleanup cache secara periodik (setiap 1 jam)
-setInterval(() => {
-  if (messageCache.size > MAX_CACHE_SIZE) {
-    const entriesToDelete = messageCache.size - MAX_CACHE_SIZE;
-    const keys = Array.from(messageCache.keys()).slice(0, entriesToDelete);
-    keys.forEach(key => messageCache.delete(key));
-    console.log(`🧹 Cache cleaned: removed ${entriesToDelete} old entries`);
-  }
-}, 3600000);
+  // Pembersihan cache secara periodik (setiap 1 jam)
+  setInterval(() => {
+    if (messageCache.size > MAX_CACHE_SIZE) {
+      const entriesToDelete = messageCache.size - MAX_CACHE_SIZE;
+      const keys = Array.from(messageCache.keys()).slice(0, entriesToDelete);
+      keys.forEach(key => messageCache.delete(key));
+      console.log(`Cache dibersihkan: ${entriesToDelete} entri lama telah dihapus`);
+    }
+  }, 3600000);
 
-  // --- Multer setup untuk menyimpan media chat ---
+  // Konfigurasi Multer untuk menyimpan media chat
   const uploadDir = path.join(__dirname, "..", "uploads", "chat_media");
   fs.mkdirSync(uploadDir, { recursive: true });
 
@@ -72,7 +70,7 @@ setInterval(() => {
 
     db.all(query, [], (err, rows) => {
       if (err) {
-        console.error("Error getting conversations:", err.message);
+        console.error("Error mendapatkan daftar percakapan:", err.message);
         return res
           .status(500)
           .json({
@@ -102,18 +100,18 @@ setInterval(() => {
 
     db.all(query, [number], (err, rows) => {
       if (err) {
-        console.error("Error getting conversation history:", err);
+        console.error("Error mendapatkan riwayat percakapan:", err);
         res.status(500).json({ error: err.message });
         return;
       }
 
-      // Mark messages as read when conversation is opened
+      // Tandai pesan sebagai sudah dibaca saat percakapan dibuka
       db.run(
         'UPDATE chats SET isRead = TRUE WHERE fromNumber = ? AND direction = "in" AND isRead = FALSE',
         [number],
         (updateErr) => {
           if (updateErr) {
-            console.error("Error marking messages as read:", updateErr);
+            console.error("Error menandai pesan sebagai sudah dibaca:", updateErr);
           } else {
             io.emit("messagesMarkedAsRead", { fromNumber: number });
           }
@@ -158,7 +156,7 @@ setInterval(() => {
     const searchParam = `%${searchQuery}%`;
     db.all(query, [searchParam, searchParam, searchParam], (err, rows) => {
       if (err) {
-        console.error("Error searching conversations:", err);
+        console.error("Error mencari percakapan:", err);
         res.status(500).json({ error: err.message });
         return;
       }
@@ -191,9 +189,9 @@ setInterval(() => {
         formattedNumber, 
         '✅ *Sesi chat telah diakhiri oleh admin.*\n\nTerima kasih telah menggunakan layanan AsaMPedaS BPS Provinsi Riau.\n\nKetik *menu* untuk memulai percakapan baru.'
       );
-      console.log(`📤 Notifikasi end session dikirim ke ${number}`);
+      console.log(`Notifikasi akhir sesi berhasil dikirim ke ${number}`);
     } catch (sendError) {
-      console.error(`❌ Error mengirim notifikasi ke ${number}:`, sendError);
+      console.error(`Error mengirim notifikasi ke ${number}:`, sendError);
     }
 
     db.serialize(() => {
@@ -205,7 +203,7 @@ setInterval(() => {
         function (err) {
           if (err) {
             db.run("ROLLBACK");
-            console.error("Error updating chat status to history:", err);
+            console.error("Error memperbarui status chat ke history:", err);
             return res
               .status(500)
               .json({
@@ -225,7 +223,7 @@ setInterval(() => {
             function (err) {
               if (err) {
                 db.run("ROLLBACK");
-                console.error("Error inserting end-of-session message:", err);
+                console.error("Error menyisipkan pesan akhir sesi:", err);
                 return res
                   .status(500)
                   .json({
@@ -236,7 +234,7 @@ setInterval(() => {
 
               db.run("COMMIT", (err) => {
                 if (err) {
-                  console.error("Error committing transaction:", err);
+                  console.error("Error melakukan commit transaksi:", err);
                   return res
                     .status(500)
                     .json({
@@ -246,14 +244,14 @@ setInterval(() => {
                 }
 
                 console.log(
-                  `[LOGIC] Sesi untuk ${number} telah diakhiri dan dipindahkan ke history.`
+                  `[LOGIC] Sesi untuk ${number} telah diakhiri dan dipindahkan ke history`
                 );
 
-                // Clear state dan timer via messageHandler
+                // Bersihkan state dan timer melalui messageHandler
                 const messageHandler = req.app.get('messageHandler');
                 if (messageHandler) {
                   messageHandler.clearUserState(number);
-                  console.log(`🔄 State dan timer cleared untuk ${number} (manual end)`);
+                  console.log(`State dan timer dibersihkan untuk ${number} (pengakhiran manual)`);
                 }
 
                 res.json({
@@ -268,7 +266,7 @@ setInterval(() => {
     });
   });
 
-  // ⭐ ENDPOINT DIPERBAIKI: Mengirim pesan balasan + Aktivasi Session
+  // Endpoint untuk mengirim pesan balasan dan aktivasi session
   router.post("/send", async (req, res) => {
   const { to, message } = req.body;
 
@@ -289,13 +287,13 @@ setInterval(() => {
 
     const formattedNumber = to.includes("@c.us") ? to : `${to}@c.us`;
     
-    // 🆕 SIMPAN return value dari sendMessage
+    // Simpan return value dari sendMessage
     const sentMessage = await whatsappClient.sendMessage(formattedNumber, message);
 
-    // 🆕 SIMPAN MESSAGE OBJECT ke cache untuk keperluan delete nanti
+    // Simpan message object ke cache untuk keperluan delete nanti
     if (sentMessage && sentMessage.id) {
       messageCache.set(sentMessage.id.id, sentMessage);
-      console.log(`📦 Message cached: ${sentMessage.id.id}`);
+      console.log(`Pesan di-cache: ${sentMessage.id.id}`);
     }
 
     const dbResult = await new Promise((resolve, reject) => {
@@ -330,7 +328,7 @@ setInterval(() => {
       isRead: true,
     };
 
-    // ⭐ Aktifkan chat session jika user dalam CHATTING_WAITING
+    // Aktifkan chat session jika user dalam status CHATTING_WAITING
     const messageHandler = req.app.get('messageHandler');
     if (messageHandler) {
       const fromNumberClean = to.replace("@c.us", "");
@@ -339,7 +337,7 @@ setInterval(() => {
       if (userState === 'CHATTING_WAITING') {
         const activated = messageHandler.activateChatSessionForNumber(fromNumberClean);
         if (activated) {
-          console.log(`✅ Chat session ACTIVATED untuk ${fromNumberClean} - Admin telah reply!`);
+          console.log(`Chat session diaktifkan untuk ${fromNumberClean} - Admin telah membalas`);
         }
       }
     }
@@ -369,7 +367,7 @@ setInterval(() => {
   }
 });
 
-  // ⭐ ENDPOINT DIPERBAIKI: Mengirim media + Aktivasi Session
+  // Endpoint untuk mengirim media dan aktivasi session
   router.post("/send-media", upload.array("media", 12), async (req, res) => {
     const to = req.body.to;
     const caption = req.body.caption || "";
@@ -408,13 +406,13 @@ setInterval(() => {
         const options = { caption };
         if (mtype === "document") options.sendMediaAsDocument = true;
 
-        // 🆕 SIMPAN RETURN VALUE dari sendMessage
+        // Simpan return value dari sendMessage
         const sentMessage = await whatsappClient.sendMessage(formattedNumber, media, options);
 
-        // 🆕 SIMPAN MESSAGE OBJECT ke cache
+        // Simpan message object ke cache
         if (sentMessage && sentMessage.id) {
           messageCache.set(sentMessage.id.id, sentMessage);
-          console.log(`📦 Media message cached: ${sentMessage.id.id}`);
+          console.log(`Pesan media di-cache: ${sentMessage.id.id}`);
         }
 
         const messageObj = {
@@ -428,14 +426,14 @@ setInterval(() => {
 
         const dbResult = await new Promise((resolve, reject) => {
           const timestamp = new Date().toISOString();
-          // 🆕 TAMBAHKAN waMessageId ke query
+          // Tambahkan waMessageId ke query
           const query = `
             INSERT INTO chats (fromNumber, message, direction, timestamp, messageType, isRead, waMessageId)
             VALUES (?, ?, 'out', ?, ?, TRUE, ?)
           `;
           db.run(
             query,
-            [to, JSON.stringify(messageObj), timestamp, mtype, sentMessage.id.id], // 🆕 tambah parameter
+            [to, JSON.stringify(messageObj), timestamp, mtype, sentMessage.id.id],
             function (err) {
               if (err) return reject(err);
               resolve({ id: this.lastID, timestamp });
@@ -456,7 +454,7 @@ setInterval(() => {
         results.push(resultMessage);
       }
 
-      // ⭐ TAMBAHAN BARU: Aktifkan chat session jika user dalam CHATTING_WAITING
+      // Aktifkan chat session jika user dalam status CHATTING_WAITING
       const messageHandler = req.app.get('messageHandler');
       if (messageHandler) {
         const fromNumberClean = to.replace("@c.us", "");
@@ -465,10 +463,10 @@ setInterval(() => {
         if (userState === 'CHATTING_WAITING') {
           const activated = messageHandler.activateChatSessionForNumber(fromNumberClean);
           if (activated) {
-            console.log(`✅ Chat session ACTIVATED untuk ${fromNumberClean} - Admin kirim media! Timer dimulai.`);
+            console.log(`Chat session diaktifkan untuk ${fromNumberClean} - Admin mengirim media. Timer dimulai`);
           }
         } else if (userState === 'CHATTING_ACTIVE') {
-          console.log(`🔄 User ${fromNumberClean} sudah dalam CHATTING_ACTIVE, timer akan di-reset saat user reply.`);
+          console.log(`User ${fromNumberClean} sudah dalam status CHATTING_ACTIVE, timer akan di-reset saat user membalas`);
         }
       }
 
@@ -480,7 +478,7 @@ setInterval(() => {
         data: results,
       });
     } catch (err) {
-      console.error("Error send-media:", err);
+      console.error("Error mengirim media:", err);
       (req.files || []).forEach((f) => f.path && fs.unlink(f.path, () => {}));
       res
         .status(500)
@@ -504,7 +502,7 @@ setInterval(() => {
 
     db.get(query, [], (err, row) => {
       if (err) {
-        console.error("Error getting unread count:", err);
+        console.error("Error mendapatkan jumlah pesan belum dibaca:", err);
         return res.status(500).json({ error: err.message });
       }
 
@@ -535,7 +533,7 @@ setInterval(() => {
 
     db.run(query, [number], function (err) {
       if (err) {
-        console.error("Error marking messages as read:", err);
+        console.error("Error menandai pesan sebagai sudah dibaca:", err);
         return res.status(500).json({ success: false, message: err.message });
       }
 
@@ -578,7 +576,7 @@ setInterval(() => {
 
     db.all(statsQuery, [], (err, rows) => {
       if (err) {
-        console.error("Error getting chat stats:", err);
+        console.error("Error mendapatkan statistik chat:", err);
         res.status(500).json({ error: err.message });
         return;
       }
@@ -611,7 +609,7 @@ setInterval(() => {
 
     db.run(deleteQuery, [number], function (err) {
       if (err) {
-        console.error("Error deleting conversation:", err);
+        console.error("Error menghapus percakapan:", err);
         res.status(500).json({ error: err.message });
         return;
       }
@@ -653,7 +651,7 @@ setInterval(() => {
 
     db.get(contactQuery, [number, number, number], (err, contact) => {
       if (err) {
-        console.error("Error getting contact info:", err);
+        console.error("Error mendapatkan info kontak:", err);
         res.status(500).json({ error: err.message });
         return;
       }
@@ -671,7 +669,7 @@ setInterval(() => {
 
         db.get(chatQuery, [number], (chatErr, chatInfo) => {
           if (chatErr) {
-            console.error("Error getting chat info:", chatErr);
+            console.error("Error mendapatkan info chat:", chatErr);
             res.status(500).json({ error: chatErr.message });
             return;
           }
@@ -705,7 +703,7 @@ setInterval(() => {
 
     db.all(query, [number], (err, rows) => {
       if (err) {
-        console.error("Error getting backup data:", err);
+        console.error("Error mendapatkan data backup:", err);
         return res.status(500).json({ error: err.message });
       }
 
@@ -732,7 +730,7 @@ setInterval(() => {
 
     db.all(query, [], (err, rows) => {
       if (err) {
-        console.error("Error getting backup data:", err);
+        console.error("Error mendapatkan data backup:", err);
         return res.status(500).json({ error: err.message });
       }
 
@@ -765,13 +763,13 @@ setInterval(() => {
       });
     }
 
-    // Get message data first
+    // Ambil data pesan terlebih dahulu
     db.get(
       "SELECT fromNumber, direction FROM chats WHERE id = ?",
       [messageId],
       (err, messageData) => {
         if (err) {
-          console.error("Error getting message data:", err);
+          console.error("Error mendapatkan data pesan:", err);
           return res.status(500).json({ error: err.message });
         }
 
@@ -779,17 +777,17 @@ setInterval(() => {
           return res.status(404).json({ error: "Pesan tidak ditemukan" });
         }
 
-        // Update message
+        // Perbarui pesan
         db.run(
           "UPDATE chats SET message = ?, editedAt = ? WHERE id = ?",
           [newMessage.trim(), new Date().toISOString(), messageId],
           function (updateErr) {
             if (updateErr) {
-              console.error("Error updating message:", updateErr);
+              console.error("Error memperbarui pesan:", updateErr);
               return res.status(500).json({ error: updateErr.message });
             }
 
-            // Emit socket event
+            // Kirim event socket
             io.emit("messageEdited", {
               messageId: messageId,
               fromNumber: messageData.fromNumber,
@@ -811,12 +809,12 @@ setInterval(() => {
     );
   });
 
-  // Update existing delete message endpoint untuk emit yang lebih baik
+  // Endpoint untuk menghapus pesan dengan emit yang lebih baik
   router.delete("/message/:messageId", async (req, res) => {
   const messageId = req.params.messageId;
 
   try {
-    // Get message data
+    // Ambil data pesan
     const messageData = await new Promise((resolve, reject) => {
       db.get(
         "SELECT fromNumber, direction, messageType, waMessageId, message FROM chats WHERE id = ?",
@@ -843,12 +841,12 @@ setInterval(() => {
       
       if (cachedMessage) {
         try {
-          await cachedMessage.delete(true); // true = delete for everyone
+          await cachedMessage.delete(true); // true = hapus untuk semua orang
           deletedFromWhatsApp = true;
           messageCache.delete(messageData.waMessageId);
-          console.log(`✅ Pesan berhasil dihapus dari WhatsApp (ID: ${messageData.waMessageId})`);
+          console.log(`Pesan berhasil dihapus dari WhatsApp (ID: ${messageData.waMessageId})`);
         } catch (deleteErr) {
-          console.error('❌ Gagal hapus dari WhatsApp:', deleteErr.message);
+          console.error('Gagal menghapus dari WhatsApp:', deleteErr.message);
           
           // Fallback: kirim notifikasi jika gagal hapus
           const fromNumber = messageData.fromNumber;
@@ -857,13 +855,13 @@ setInterval(() => {
           
           try {
             await whatsappClient.sendMessage(formattedNumber, notificationText);
-            console.log(`📤 Notifikasi penghapusan terkirim ke ${fromNumber}`);
+            console.log(`Notifikasi penghapusan berhasil dikirim ke ${fromNumber}`);
           } catch (notifErr) {
-            console.error('❌ Gagal kirim notifikasi:', notifErr);
+            console.error('Gagal mengirim notifikasi:', notifErr);
           }
         }
       } else {
-        console.log(`⚠️ Message object tidak ditemukan di cache (ID: ${messageData.waMessageId})`);
+        console.log(`Message object tidak ditemukan di cache (ID: ${messageData.waMessageId})`);
         
         // Kirim notifikasi sebagai fallback
         const fromNumber = messageData.fromNumber;
@@ -872,9 +870,9 @@ setInterval(() => {
         
         try {
           await whatsappClient.sendMessage(formattedNumber, notificationText);
-          console.log(`📤 Notifikasi penghapusan terkirim (fallback) ke ${fromNumber}`);
+          console.log(`Notifikasi penghapusan berhasil dikirim (fallback) ke ${fromNumber}`);
         } catch (notifErr) {
-          console.error('❌ Gagal kirim notifikasi:', notifErr);
+          console.error('Gagal mengirim notifikasi:', notifErr);
         }
       }
     }
@@ -902,7 +900,7 @@ setInterval(() => {
     });
 
   } catch (error) {
-    console.error('Error deleting message:', error);
+    console.error('Error menghapus pesan:', error);
     res.status(500).json({
       success: false,
       message: "Gagal menghapus pesan",
@@ -916,7 +914,7 @@ setInterval(() => {
     const messageId = req.params.messageId;
 
     try {
-      // Get message data
+      // Ambil data pesan
       const messageData = await new Promise((resolve, reject) => {
         db.get(
           "SELECT fromNumber, message, direction FROM chats WHERE id = ?",
@@ -966,7 +964,7 @@ setInterval(() => {
         );
       });
 
-      // Update pesan original dengan status unsent
+      // Perbarui pesan original dengan status unsent
       await new Promise((resolve, reject) => {
         db.run(
           "UPDATE chats SET message = ?, editedAt = ? WHERE id = ?",
@@ -982,7 +980,7 @@ setInterval(() => {
         );
       });
 
-      // Emit socket event
+      // Kirim event socket
       io.emit("messageUnsent", {
         messageId: messageId,
         fromNumber: fromNumber
@@ -997,7 +995,7 @@ setInterval(() => {
       });
 
     } catch (error) {
-      console.error('Error unsending message:', error);
+      console.error('Error membatalkan pesan:', error);
       res.status(500).json({
         success: false,
         message: "Gagal membatalkan pesan",
@@ -1006,9 +1004,7 @@ setInterval(() => {
     }
   });
 
-  // ==========================================
-  // ENDPOINT: Edit Message dengan Notifikasi ke User
-  // ==========================================
+  // Endpoint untuk edit pesan dengan notifikasi ke user
   router.put("/message/:messageId/with-notification", async (req, res) => {
     const messageId = req.params.messageId;
     const { newMessage } = req.body;
@@ -1021,7 +1017,7 @@ setInterval(() => {
     }
 
     try {
-      // Get message data
+      // Ambil data pesan
       const messageData = await new Promise((resolve, reject) => {
         db.get(
           "SELECT fromNumber, message, direction, messageType FROM chats WHERE id = ?",
@@ -1040,7 +1036,7 @@ setInterval(() => {
         });
       }
 
-      // Only allow editing outgoing text messages
+      // Hanya izinkan edit pesan teks outgoing
       if (messageData.direction !== 'out' || messageData.messageType !== 'chat') {
         return res.status(400).json({
           success: false,
@@ -1056,7 +1052,7 @@ setInterval(() => {
       
       await whatsappClient.sendMessage(formattedNumber, correctionText);
 
-      // Update di database
+      // Perbarui di database
       const editedAt = new Date().toISOString();
       await new Promise((resolve, reject) => {
         db.run(
@@ -1083,7 +1079,7 @@ setInterval(() => {
         );
       });
 
-      // Emit socket event
+      // Kirim event socket
       io.emit("messageEdited", {
         messageId: messageId,
         fromNumber: fromNumber,
@@ -1103,7 +1099,7 @@ setInterval(() => {
       });
 
     } catch (error) {
-      console.error('Error editing message with notification:', error);
+      console.error('Error mengedit pesan dengan notifikasi:', error);
       res.status(500).json({
         success: false,
         message: "Gagal mengedit pesan",

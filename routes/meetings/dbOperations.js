@@ -2,7 +2,6 @@ let db = null;
 
 function setDatabase(database) {
     db = database;
-    console.log("✅ Meetings database operations initialized");
 }
 
 function getDatabase() {
@@ -11,7 +10,7 @@ function getDatabase() {
 
 function updateMeetingStatus(meetingId, status, message = null) {
     if (!db) {
-        console.error("Database not available");
+        console.error("Database tidak tersedia");
         return;
     }
 
@@ -60,7 +59,7 @@ function updateExpiredMeetings() {
                             (updateErr) => {
                                 if (!updateErr) {
                                     updatedCount++;
-                                    console.log(`✅ Auto-finished meeting: ${meeting.id} - ${meeting.meetingTitle}`);
+                                    console.log(`Meeting otomatis diselesaikan: ${meeting.id} - ${meeting.meetingTitle}`);
                                     
                                     if (global.emitMeetingStatusUpdate) {
                                         global.emitMeetingStatusUpdate(
@@ -73,7 +72,7 @@ function updateExpiredMeetings() {
                                 
                                 if (++completed === rows.length) {
                                     if (updatedCount > 0) {
-                                        console.log(`📊 Auto-updated ${updatedCount} expired meetings to 'selesai'`);
+                                        console.log(`Total ${updatedCount} meeting kadaluarsa berhasil diupdate ke status 'selesai'`);
                                     }
                                     resolve();
                                 }
@@ -99,7 +98,7 @@ function getMeetingById(id) {
 
         db.get("SELECT * FROM meetings WHERE id = ?", [id], (err, row) => {
             if (err) {
-                console.error("Error getting meeting:", err.message);
+                console.error("Error mendapatkan meeting:", err.message);
                 reject(err);
             } else {
                 resolve(row);
@@ -109,8 +108,8 @@ function getMeetingById(id) {
 }
 
 /**
- * Insert new meeting
- * ✅ FIXED: Include selectedGroups AND groupInfo
+ * Menambahkan meeting baru
+ * Menyertakan selectedGroups dan groupInfo
  */
 function insertMeeting(meetingData) {
     return new Promise((resolve, reject) => {
@@ -130,13 +129,11 @@ function insertMeeting(meetingData) {
             start_epoch, 
             end_epoch, 
             filesData, 
-            selectedGroups,  // ✅ Nama grup yang dipilih
-            groupInfo        // ✅ Detail grup dengan members
+            selectedGroups,  // Nama grup yang dipilih
+            groupInfo        // Detail grup dengan members
         } = meetingData;
 
-        // ✅ CONSOLE LOG DIHAPUS - Tidak perlu log detail insert
-
-        // ✅ Query dengan selectedGroups DAN groupInfo
+        // Query dengan selectedGroups dan groupInfo
         const query = `
             INSERT INTO meetings (
                 id, meetingTitle, numbers, meetingRoom, date, startTime, endTime, 
@@ -157,18 +154,18 @@ function insertMeeting(meetingData) {
             end_epoch, 
             "terjadwal", 
             filesData || null,
-            selectedGroups || null,  // ✅ Bisa null atau JSON string
-            groupInfo || null         // ✅ Bisa null atau JSON string
+            selectedGroups || null,  // Bisa null atau JSON string
+            groupInfo || null         // Bisa null atau JSON string
         ];
 
         db.run(query, params, function (err) {
             if (err) {
-                console.error("❌ Error inserting meeting:", err.message);
+                console.error("Error saat memasukkan meeting:", err.message);
                 console.error("   Query:", query);
                 console.error("   Params:", params.map((p, i) => `${i}: ${typeof p === 'string' && p.length > 50 ? p.substring(0, 50) + '...' : p}`));
                 reject(err);
             } else {
-                console.log(`✅ Meeting ${id} inserted successfully`);
+                console.log(`Meeting ${id} berhasil ditambahkan`);
                 resolve(this);
             }
         });
@@ -176,8 +173,8 @@ function insertMeeting(meetingData) {
 }
 
 /**
- * Update meeting
- * ✅ FIXED: Include selectedGroups AND groupInfo
+ * Mengupdate meeting yang ada
+ * Menyertakan selectedGroups dan groupInfo
  */
 function updateMeeting(id, meetingData) {
     return new Promise((resolve, reject) => {
@@ -196,11 +193,11 @@ function updateMeeting(id, meetingData) {
             start_epoch, 
             end_epoch, 
             filesData, 
-            selectedGroups,  // ✅ Preserve selectedGroups
-            groupInfo        // ✅ Preserve groupInfo
+            selectedGroups,  // Mempertahankan selectedGroups
+            groupInfo        // Mempertahankan groupInfo
         } = meetingData;
 
-        // ✅ Query dengan selectedGroups DAN groupInfo
+        // Query dengan selectedGroups dan groupInfo
         const query = `
             UPDATE meetings SET 
                 meetingTitle = ?, 
@@ -229,17 +226,17 @@ function updateMeeting(id, meetingData) {
             start_epoch, 
             end_epoch, 
             filesData || null,
-            selectedGroups || null,  // ✅ Bisa null atau JSON string
-            groupInfo || null,        // ✅ Bisa null atau JSON string
+            selectedGroups || null,  // Bisa null atau JSON string
+            groupInfo || null,        // Bisa null atau JSON string
             id
         ];
 
         db.run(query, params, function(err) {
             if (err) {
-                console.error("❌ Error updating meeting:", err.message);
+                console.error("Error saat mengupdate meeting:", err.message);
                 reject(err);
             } else {
-                console.log(`✅ Meeting ${id} updated successfully`);
+                console.log(`Meeting ${id} berhasil diupdate`);
                 resolve(this);
             }
         });
@@ -255,10 +252,10 @@ function deleteMeeting(id) {
 
         db.run("DELETE FROM meetings WHERE id = ?", [id], function (err) {
             if (err) {
-                console.error("Error deleting meeting:", err.message);
+                console.error("Error saat menghapus meeting:", err.message);
                 reject(err);
             } else {
-                console.log(`✅ Meeting ${id} deleted successfully`);
+                console.log(`Meeting ${id} berhasil dihapus`);
                 resolve(this);
             }
         });
@@ -276,7 +273,7 @@ function getAllMeetings(whereClause = '', params = []) {
         
         db.all(query, params, (err, rows) => {
             if (err) {
-                console.error("Error getting all meetings:", err.message);
+                console.error("Error saat mendapatkan semua meeting:", err.message);
                 reject(err);
             } else {
                 resolve(rows || []);

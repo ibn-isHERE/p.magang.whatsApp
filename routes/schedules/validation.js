@@ -1,7 +1,7 @@
-// validation.js - Validation Module for Schedules
+// validation.js - Modul Validasi untuk Schedules
 
 /**
- * Format nomor ke format WhatsApp: 62XXXXXXXXXX@c.us
+ * Memformat nomor ke format WhatsApp: 62XXXXXXXXXX@c.us
  * @param {string} inputNumber - Nomor yang akan diformat
  * @returns {string|null} - Nomor terformat atau null jika tidak valid
  */
@@ -21,7 +21,7 @@ function formatNumber(inputNumber) {
 }
 
 /**
- * Validasi nomor telepon
+ * Memvalidasi nomor telepon
  * @param {Array} numbers - Array nomor telepon
  * @returns {Array} - Array nomor yang tidak valid
  */
@@ -30,7 +30,7 @@ function validateNumbers(numbers) {
 }
 
 /**
- * Validasi waktu jadwal
+ * Memvalidasi waktu jadwal
  * @param {string} datetime - String datetime
  * @returns {Object} - {isValid: boolean, adjustedTime: string, error: string}
  */
@@ -56,7 +56,7 @@ function validateScheduleTime(datetime) {
     };
   }
 
-  // Adjust time if it's in the past but within 1 minute
+  // Sesuaikan waktu jika di masa lalu tapi dalam 1 menit
   if (reminderTime.getTime() <= now.getTime()) {
     console.log(
       "Waktu pengiriman pesan sekarang atau sedikit di masa lalu, akan segera dikirim."
@@ -72,7 +72,7 @@ function validateScheduleTime(datetime) {
 }
 
 /**
- * Validasi input reminder
+ * Memvalidasi input reminder
  * @param {string} numbers - Nomor kontak
  * @param {string} message - Pesan
  * @param {string} datetime - Waktu jadwal
@@ -91,7 +91,7 @@ function validateReminderInput(numbers, message, datetime, uploadedFiles) {
 }
 
 /**
- * Parse dan validasi nomor
+ * Mem-parse dan memvalidasi nomor
  * @param {string} numbers - JSON string berisi array nomor
  * @returns {Object} - {validNumbers: Array, error: string}
  */

@@ -7,7 +7,7 @@ const db = require("../database");
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
 
-// ⚙️ Session Configuration
+// Konfigurasi Session
 const SESSION_CONFIG = {
   TOKEN_EXPIRY: "7d" // Token JWT 7 hari
 };
@@ -47,12 +47,10 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
-// ==================== AUTHENTICATION ROUTES ====================
+// AUTHENTICATION ROUTES
 
 // Login route
 router.post("/login", async (req, res) => {
-  console.log('🔵 Login attempt');
-  
   try {
     const { email, password } = req.body;
 
@@ -67,7 +65,7 @@ router.post("/login", async (req, res) => {
     const query = "SELECT * FROM users WHERE email = ? AND is_active = 1";
     db.get(query, [email], async (err, user) => {
       if (err) {
-        console.error("❌ Database error:", err);
+        console.error("Kesalahan database:", err);
         return res.status(500).json({
           success: false,
           message: "Terjadi kesalahan server",
@@ -90,8 +88,6 @@ router.post("/login", async (req, res) => {
           message: "Email atau password salah",
         });
       }
-
-      console.log('✅ Login successful:', user.email);
 
       // Generate JWT token
       const token = jwt.sign(
@@ -121,7 +117,7 @@ router.post("/login", async (req, res) => {
       });
     });
   } catch (error) {
-    console.error("❌ Login error:", error);
+    console.error("Kesalahan saat login:", error);
     res.status(500).json({
       success: false,
       message: "Terjadi kesalahan server",
@@ -159,7 +155,7 @@ router.get("/verify", authenticateToken, (req, res) => {
   );
 });
 
-// ==================== USER MANAGEMENT ROUTES ====================
+// USER MANAGEMENT ROUTES
 
 // Get all users (Admin only)
 router.get("/users", authenticateToken, requireAdmin, (req, res) => {
@@ -171,7 +167,7 @@ router.get("/users", authenticateToken, requireAdmin, (req, res) => {
 
   db.all(query, [], (err, results) => {
     if (err) {
-      console.error("Database error:", err);
+      console.error("Kesalahan database:", err);
       return res.status(500).json({
         success: false,
         message: "Terjadi kesalahan server",
@@ -187,15 +183,11 @@ router.get("/users", authenticateToken, requireAdmin, (req, res) => {
 
 // Create new user (Admin only)
 router.post("/users", authenticateToken, requireAdmin, async (req, res) => {
-  console.log("🔵 POST /users - Creating new user");
-  console.log("📦 Request body:", req.body);
-  
   try {
     const { email, password, name, role, is_active } = req.body;
 
     // Validation
     if (!email || !password || !name || !role) {
-      console.log("⚠️ Missing required fields");
       return res.status(400).json({
         success: false,
         message: "Semua field harus diisi",
@@ -203,7 +195,6 @@ router.post("/users", authenticateToken, requireAdmin, async (req, res) => {
     }
 
     if (!["admin", "operator"].includes(role)) {
-      console.log("⚠️ Invalid role:", role);
       return res.status(400).json({
         success: false,
         message: "Role tidak valid",
@@ -214,7 +205,7 @@ router.post("/users", authenticateToken, requireAdmin, async (req, res) => {
     const checkQuery = "SELECT id FROM users WHERE email = ?";
     db.get(checkQuery, [email], async (err, result) => {
       if (err) {
-        console.error("❌ Database error (check email):", err);
+        console.error("Kesalahan database saat cek email:", err);
         return res.status(500).json({
           success: false,
           message: "Terjadi kesalahan server",
@@ -223,7 +214,6 @@ router.post("/users", authenticateToken, requireAdmin, async (req, res) => {
       }
 
       if (result) {
-        console.log("⚠️ Email already exists:", email);
         return res.status(400).json({
           success: false,
           message: "Email sudah terdaftar",
@@ -233,10 +223,8 @@ router.post("/users", authenticateToken, requireAdmin, async (req, res) => {
       try {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
-        console.log("✅ Password hashed");
 
         const isActiveValue = is_active !== undefined ? (is_active ? 1 : 0) : 1;
-        console.log("📝 is_active value:", isActiveValue);
 
         // Insert user baru
         const insertQuery = `
@@ -246,7 +234,7 @@ router.post("/users", authenticateToken, requireAdmin, async (req, res) => {
 
         db.run(insertQuery, [email, hashedPassword, name, role, isActiveValue], function (err) {
           if (err) {
-            console.error("❌ Database error (insert):", err);
+            console.error("Kesalahan database saat insert:", err);
             
             if (err.code === 'SQLITE_CONSTRAINT' && err.message.includes('email')) {
               return res.status(400).json({
@@ -262,8 +250,6 @@ router.post("/users", authenticateToken, requireAdmin, async (req, res) => {
             });
           }
 
-          console.log("✅ User created successfully, ID:", this.lastID);
-
           res.json({
             success: true,
             message: "User berhasil dibuat",
@@ -271,7 +257,7 @@ router.post("/users", authenticateToken, requireAdmin, async (req, res) => {
           });
         });
       } catch (hashError) {
-        console.error("❌ Password hashing error:", hashError);
+        console.error("Kesalahan saat hash password:", hashError);
         return res.status(500).json({
           success: false,
           message: "Gagal memproses password",
@@ -280,7 +266,7 @@ router.post("/users", authenticateToken, requireAdmin, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("❌ Create user error:", error);
+    console.error("Kesalahan saat membuat user:", error);
     res.status(500).json({
       success: false,
       message: "Terjadi kesalahan server",
@@ -313,7 +299,7 @@ router.put("/users/:id", authenticateToken, requireAdmin, async (req, res) => {
     const checkQuery = "SELECT id FROM users WHERE email = ? AND id != ?";
     db.get(checkQuery, [email, userId], async (err, result) => {
       if (err) {
-        console.error("Database error:", err);
+        console.error("Kesalahan database:", err);
         return res.status(500).json({
           success: false,
           message: "Terjadi kesalahan server",
@@ -344,7 +330,7 @@ router.put("/users/:id", authenticateToken, requireAdmin, async (req, res) => {
 
       db.run(updateQuery, params, function (err) {
         if (err) {
-          console.error("Database error:", err);
+          console.error("Kesalahan database:", err);
           return res.status(500).json({
             success: false,
             message: "Gagal mengupdate user",
@@ -365,7 +351,7 @@ router.put("/users/:id", authenticateToken, requireAdmin, async (req, res) => {
       });
     });
   } catch (error) {
-    console.error("Update user error:", error);
+    console.error("Kesalahan saat update user:", error);
     res.status(500).json({
       success: false,
       message: "Terjadi kesalahan server",
@@ -387,7 +373,7 @@ router.delete("/users/:id", authenticateToken, requireAdmin, (req, res) => {
   const query = "DELETE FROM users WHERE id = ?";
   db.run(query, [userId], function (err) {
     if (err) {
-      console.error("Database error:", err);
+      console.error("Kesalahan database:", err);
       return res.status(500).json({
         success: false,
         message: "Gagal menghapus user",
@@ -430,7 +416,7 @@ router.post("/change-password", authenticateToken, async (req, res) => {
     const query = "SELECT password FROM users WHERE id = ?";
     db.get(query, [req.user.id], async (err, result) => {
       if (err) {
-        console.error("Database error:", err);
+        console.error("Kesalahan database:", err);
         return res.status(500).json({
           success: false,
           message: "Terjadi kesalahan server",
@@ -458,7 +444,7 @@ router.post("/change-password", authenticateToken, async (req, res) => {
       const updateQuery = "UPDATE users SET password = ? WHERE id = ?";
       db.run(updateQuery, [hashedPassword, req.user.id], function (err) {
         if (err) {
-          console.error("Database error:", err);
+          console.error("Kesalahan database:", err);
           return res.status(500).json({
             success: false,
             message: "Gagal mengubah password",
@@ -472,7 +458,7 @@ router.post("/change-password", authenticateToken, async (req, res) => {
       });
     });
   } catch (error) {
-    console.error("Change password error:", error);
+    console.error("Kesalahan saat ubah password:", error);
     res.status(500).json({
       success: false,
       message: "Terjadi kesalahan server",

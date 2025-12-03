@@ -12,11 +12,9 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
 });
 
 db.serialize(() => {
-    console.log("Creating database tables...\n");
+    console.log("Membuat tabel database...\n");
 
-    // ==========================================
-    // 1. USERS TABLE (Authentication & Authorization)
-    // ==========================================
+    // TABEL USERS (Authentication & Authorization)
     db.run(
         `CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,7 +29,6 @@ db.serialize(() => {
             if (err) {
                 console.error("Gagal membuat tabel 'users':", err.message);
             } else {
-                console.log("Tabel 'users' siap digunakan.");
                 createUserIndexes();
                 insertDefaultAdmin();
             }
@@ -55,99 +52,83 @@ db.serialize(() => {
                     ['admin@example.com', defaultAdminHash, 'Administrator', 'admin', 1],
                     (insertErr) => {
                         if (!insertErr) {
-                            console.log("Default admin account created (admin@example.com / bps123)");
+                            console.log("Akun admin default berhasil dibuat (admin@example.com / bps123)");
                         }
                     }
                 );
-            } else {
-                console.log("Admin account already exists");
             }
         });
     }
 
-    // ==========================================
-    // 2. SCHEDULES TABLE (Message Reminders)
-    // ==========================================
-     db.run(
-    `CREATE TABLE IF NOT EXISTS schedules (
-        id TEXT PRIMARY KEY,
-        numbers TEXT NOT NULL,
-        message TEXT,
-        filesData TEXT,
-        scheduledTime TEXT NOT NULL,
-        status TEXT NOT NULL,
-        selectedGroups TEXT,
-        groupInfo TEXT,
-        deliveryResult TEXT,
-        createdAt TEXT DEFAULT CURRENT_TIMESTAMP
-    )`,
-    (err) => {
-        if (err) {
-            console.error("Gagal membuat tabel 'schedules':", err.message);
-        } else {
-            console.log("Tabel 'schedules' siap digunakan.");
-            
-            db.all("PRAGMA table_info(schedules)", (pragmaErr, columns) => {
-                if (pragmaErr) return;
-                
-                const columnNames = columns.map(col => col.name);
-                
-                if (!columnNames.includes('deliveryResult')) {
-                    db.run(`ALTER TABLE schedules ADD COLUMN deliveryResult TEXT`, (alterErr) => {
-                        if (!alterErr) console.log("Added deliveryResult column to schedules");
-                    });
-                }
-            });
-        }
-    }
-);
-
-    // ==========================================
-    // 3. MEETINGS TABLE (Meeting Schedules)
-    // ==========================================
+    // TABEL SCHEDULES (Message Reminders)
     db.run(
-    `CREATE TABLE IF NOT EXISTS meetings (
-        id TEXT PRIMARY KEY,
-        meetingTitle TEXT NOT NULL,
-        numbers TEXT NOT NULL,
-        meetingRoom TEXT NOT NULL,
-        date TEXT NOT NULL,
-        startTime TEXT NOT NULL,
-        endTime TEXT NOT NULL,
-        status TEXT NOT NULL,
-        filesData TEXT,
-        selectedGroups TEXT,
-        groupInfo TEXT,
-        deliveryResult TEXT,
-        start_epoch INTEGER,
-        end_epoch INTEGER,
-        createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
-        updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
-    )`,
-    (err) => {
-        if (err) {
-            console.error("Gagal membuat tabel 'meetings':", err.message);
-        } else {
-            console.log("Tabel 'meetings' siap digunakan.");
-            
-            db.all("PRAGMA table_info(meetings)", (pragmaErr, columns) => {
-                if (pragmaErr) return;
-                
-                const columnNames = columns.map(col => col.name);
-                
-                if (!columnNames.includes('deliveryResult')) {
-                    db.run(`ALTER TABLE meetings ADD COLUMN deliveryResult TEXT`, (alterErr) => {
-                        if (!alterErr) console.log("Added deliveryResult column to meetings");
-                    });
-                }
-            });
+        `CREATE TABLE IF NOT EXISTS schedules (
+            id TEXT PRIMARY KEY,
+            numbers TEXT NOT NULL,
+            message TEXT,
+            filesData TEXT,
+            scheduledTime TEXT NOT NULL,
+            status TEXT NOT NULL,
+            selectedGroups TEXT,
+            groupInfo TEXT,
+            deliveryResult TEXT,
+            createdAt TEXT DEFAULT CURRENT_TIMESTAMP
+        )`,
+        (err) => {
+            if (err) {
+                console.error("Gagal membuat tabel 'schedules':", err.message);
+            } else {            
+                db.all("PRAGMA table_info(schedules)", (pragmaErr, columns) => {
+                    if (pragmaErr) return;
+                    
+                    const columnNames = columns.map(col => col.name);
+                    
+                    if (!columnNames.includes('deliveryResult')) {
+                        db.run(`ALTER TABLE schedules ADD COLUMN deliveryResult TEXT`);
+                    }
+                });
+            }
         }
-    }
-);
+    );
 
-    // ==========================================
-    // 4. CONTACTS TABLE (Contact Management)
-    // ==========================================
+    // TABEL MEETINGS (Meeting Schedules)
+    db.run(
+        `CREATE TABLE IF NOT EXISTS meetings (
+            id TEXT PRIMARY KEY,
+            meetingTitle TEXT NOT NULL,
+            numbers TEXT NOT NULL,
+            meetingRoom TEXT NOT NULL,
+            date TEXT NOT NULL,
+            startTime TEXT NOT NULL,
+            endTime TEXT NOT NULL,
+            status TEXT NOT NULL,
+            filesData TEXT,
+            selectedGroups TEXT,
+            groupInfo TEXT,
+            deliveryResult TEXT,
+            start_epoch INTEGER,
+            end_epoch INTEGER,
+            createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
+            updatedAt TEXT DEFAULT CURRENT_TIMESTAMP
+        )`,
+        (err) => {
+            if (err) {
+                console.error("Gagal membuat tabel 'meetings':", err.message);
+            } else {            
+                db.all("PRAGMA table_info(meetings)", (pragmaErr, columns) => {
+                    if (pragmaErr) return;
+                    
+                    const columnNames = columns.map(col => col.name);
+                    
+                    if (!columnNames.includes('deliveryResult')) {
+                        db.run(`ALTER TABLE meetings ADD COLUMN deliveryResult TEXT`);
+                    }
+                });
+            }
+        }
+    );
+
+    // TABEL CONTACTS (Contact Management)
     db.run(
         `CREATE TABLE IF NOT EXISTS contacts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -161,9 +142,7 @@ db.serialize(() => {
         (err) => {
             if (err) {
                 console.error("Gagal membuat tabel 'contacts':", err.message);
-            } else {
-                console.log("Tabel 'contacts' siap digunakan.");
-                
+            } else {                
                 db.all("PRAGMA table_info(contacts)", (pragmaErr, columns) => {
                     if (pragmaErr) return;
                     
@@ -171,8 +150,6 @@ db.serialize(() => {
                     const jabatanCol = columns.find(c => c.name === 'jabatan');
                     
                     if ((instansiCol && instansiCol.notnull === 1) || (jabatanCol && jabatanCol.notnull === 1)) {
-                        console.log("Migrating contacts table schema...");
-                        
                         db.serialize(() => {
                             db.run(`CREATE TABLE contacts_new (
                                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -187,11 +164,7 @@ db.serialize(() => {
                             db.run(`INSERT INTO contacts_new SELECT * FROM contacts`);
                             db.run(`DROP TABLE contacts`);
                             
-                            db.run(`ALTER TABLE contacts_new RENAME TO contacts`, (err) => {
-                                if (!err) {
-                                    console.log("Migration berhasil! instansi & jabatan sekarang optional.");
-                                }
-                            });
+                            db.run(`ALTER TABLE contacts_new RENAME TO contacts`);
                         });
                     }
                 });
@@ -199,9 +172,7 @@ db.serialize(() => {
         }
     );
 
-    // ==========================================
-    // 5. GROUPS TABLE (Contact Groups)
-    // ==========================================
+    // TABEL GROUPS (Contact Groups)
     db.run(
         `CREATE TABLE IF NOT EXISTS groups (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -212,15 +183,11 @@ db.serialize(() => {
         (err) => {
             if (err) {
                 console.error("Gagal membuat tabel 'groups':", err.message);
-            } else {
-                console.log("Tabel 'groups' siap digunakan.");
             }
         }
     );
 
-    // ==========================================
-    // 6. CHATS TABLE (Customer Service Chat)
-    // ==========================================
+    // TABEL CHATS (Customer Service Chat)
     db.run(
         `CREATE TABLE IF NOT EXISTS chats (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -239,12 +206,10 @@ db.serialize(() => {
         (err) => {
             if (err) {
                 console.error("Gagal membuat tabel 'chats':", err.message);
-            } else {
-                console.log("Tabel 'chats' siap digunakan.");
-                
+            } else {                
                 db.all("PRAGMA table_info(chats)", (pragmaErr, columns) => {
                     if (pragmaErr) {
-                        console.error("Error checking chats table structure:", pragmaErr);
+                        console.error("Kesalahan saat mengecek struktur tabel chats:", pragmaErr);
                         return;
                     }
                     
@@ -254,13 +219,9 @@ db.serialize(() => {
                         if (!columnNames.includes(columnName)) {
                             db.run(`ALTER TABLE chats ADD COLUMN ${columnDefinition}`, (alterErr) => {
                                 if (alterErr) {
-                                    console.error(`Error adding ${columnName} column:`, alterErr);
-                                } else {
-                                    console.log(`Added ${columnName} column to chats table`);
+                                    console.error(`Kesalahan saat menambahkan kolom ${columnName}:`, alterErr);
                                 }
                             });
-                        } else {
-                            console.log(`Column ${columnName} already exists in chats`);
                         }
                     };
 
@@ -276,60 +237,44 @@ db.serialize(() => {
         }
     );
 
-    // ==========================================
-    // 7. CREATE INDEXES FOR PERFORMANCE
-    // ==========================================
+    // MEMBUAT INDEX UNTUK PERFORMA
     db.run("CREATE INDEX IF NOT EXISTS idx_chats_fromNumber ON chats(fromNumber)", (err) => {
         if (err) {
-            console.error("Error creating fromNumber index:", err);
-        } else {
-            console.log("Index pada fromNumber siap digunakan.");
+            console.error("Kesalahan saat membuat index fromNumber:", err);
         }
     });
 
     db.run("CREATE INDEX IF NOT EXISTS idx_chats_timestamp ON chats(timestamp)", (err) => {
         if (err) {
-            console.error("Error creating timestamp index:", err);
-        } else {
-            console.log("Index pada timestamp siap digunakan.");
+            console.error("Kesalahan saat membuat index timestamp:", err);
         }
     });
 
     db.run("CREATE INDEX IF NOT EXISTS idx_chats_direction_isRead ON chats(direction, isRead)", (err) => {
         if (err) {
-            console.error("Error creating direction_isRead index:", err);
-        } else {
-            console.log("Index pada direction dan isRead siap digunakan.");
+            console.error("Kesalahan saat membuat index direction_isRead:", err);
         }
     });
 
     db.run("CREATE INDEX IF NOT EXISTS idx_chats_messageType ON chats(messageType)", (err) => {
         if (err) {
-            console.error("Error creating messageType index:", err);
-        } else {
-            console.log("Index pada messageType siap digunakan.");
+            console.error("Kesalahan saat membuat index messageType:", err);
         }
     });
 
     db.run("CREATE INDEX IF NOT EXISTS idx_schedules_status ON schedules(status)", (err) => {
         if (err) {
-            console.error("Error creating schedules status index:", err);
-        } else {
-            console.log("Index pada schedules.status siap digunakan.");
+            console.error("Kesalahan saat membuat index schedules status:", err);
         }
     });
 
     db.run("CREATE INDEX IF NOT EXISTS idx_meetings_status ON meetings(status)", (err) => {
         if (err) {
-            console.error("Error creating meetings status index:", err);
-        } else {
-            console.log("Index pada meetings.status siap digunakan.");
+            console.error("Kesalahan saat membuat index meetings status:", err);
         }
     });
 
-    // ==========================================
-    // 8. INSTANSI TABLE (Master Data)
-    // ==========================================
+    // TABEL INSTANSI (Master Data)
     db.run(
         `CREATE TABLE IF NOT EXISTS instansi (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -342,9 +287,7 @@ db.serialize(() => {
         (err) => {
             if (err) {
                 console.error("Gagal membuat tabel 'instansi':", err.message);
-            } else {
-                console.log("Tabel 'instansi' siap digunakan.");
-                
+            } else {                
                 db.get("SELECT COUNT(*) as count FROM instansi", (countErr, row) => {
                     if (!countErr && row.count === 0) {
                         const defaultInstansi = [
@@ -375,9 +318,7 @@ db.serialize(() => {
         }
     );
 
-    // ==========================================
-    // 9. JABATAN TABLE (Master Data)
-    // ==========================================
+    // TABEL JABATAN (Master Data)
     db.run(
         `CREATE TABLE IF NOT EXISTS jabatan (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -390,9 +331,7 @@ db.serialize(() => {
         (err) => {
             if (err) {
                 console.error("Gagal membuat tabel 'jabatan':", err.message);
-            } else {
-                console.log("Tabel 'jabatan' siap digunakan.");
-                
+            } else {                
                 db.get("SELECT COUNT(*) as count FROM jabatan", (countErr, row) => {
                     if (!countErr && row.count === 0) {
                         const defaultJabatan = [
@@ -400,7 +339,8 @@ db.serialize(() => {
                             'Pegawai',
                             'Supervisor',
                             'Manager',
-                            'Staff'
+                            'Staff',
+                            'magang'
                         ];
                         
                         const stmt = db.prepare("INSERT INTO jabatan (nama, aktif) VALUES (?, 1)");
@@ -416,20 +356,13 @@ db.serialize(() => {
         }
     );
 
-    db.run("CREATE INDEX IF NOT EXISTS idx_instansi_aktif ON instansi(aktif)", (err) => {
-        if (!err) console.log("Index pada instansi.aktif siap digunakan.");
-    });
+    db.run("CREATE INDEX IF NOT EXISTS idx_instansi_aktif ON instansi(aktif)");
+    db.run("CREATE INDEX IF NOT EXISTS idx_jabatan_aktif ON jabatan(aktif)");
 
-    db.run("CREATE INDEX IF NOT EXISTS idx_jabatan_aktif ON jabatan(aktif)", (err) => {
-        if (!err) console.log("Index pada jabatan.aktif siap digunakan.");
-    });
-
-    // ==========================================
-    // 10. MIGRATION: Add editedAt column to chats
-    // ==========================================
+    // MIGRASI: Menambahkan kolom editedAt ke chats
     db.all("PRAGMA table_info(chats)", [], (err, columns) => {
         if (err) {
-            console.error("Error checking chats table schema:", err);
+            console.error("Kesalahan saat mengecek skema tabel chats:", err);
             return;
         }
 
@@ -440,59 +373,48 @@ db.serialize(() => {
                 "ALTER TABLE chats ADD COLUMN editedAt TEXT",
                 (err) => {
                     if (err) {
-                        console.error("Error adding editedAt column:", err);
-                    } else {
-                        console.log("✅ Column 'editedAt' added to chats table");
+                        console.error("Kesalahan saat menambahkan kolom editedAt:", err);
                     }
                 }
             );
-        } else {
-            console.log("Column 'editedAt' already exists in chats");
         }
     });
-    // ==========================================
-// 11. MIGRATION: Add waMessageId column to chats
-// ==========================================
-db.all("PRAGMA table_info(chats)", [], (err, columns) => {
-    if (err) {
-        console.error("Error checking chats table schema:", err);
-        return;
-    }
 
-    const hasWaMessageId = columns.some(col => col.name === 'waMessageId');
-    
-    if (!hasWaMessageId) {
-        db.run(
-            "ALTER TABLE chats ADD COLUMN waMessageId TEXT",
-            (err) => {
-                if (err) {
-                    console.error("Error adding waMessageId column:", err);
-                } else {
-                    console.log("✅ Column 'waMessageId' added to chats table");
+    // MIGRASI: Menambahkan kolom waMessageId ke chats
+    db.all("PRAGMA table_info(chats)", [], (err, columns) => {
+        if (err) {
+            console.error("Kesalahan saat mengecek skema tabel chats:", err);
+            return;
+        }
+
+        const hasWaMessageId = columns.some(col => col.name === 'waMessageId');
+        
+        if (!hasWaMessageId) {
+            db.run(
+                "ALTER TABLE chats ADD COLUMN waMessageId TEXT",
+                (err) => {
+                    if (err) {
+                        console.error("Kesalahan saat menambahkan kolom waMessageId:", err);
+                    }
                 }
-            }
-        );
-    } else {
-        console.log("Column 'waMessageId' already exists in chats");
-    }
+            );
+        }
+    });
+
+    console.log("\nInisialisasi database selesai!\n");
 });
 
-    console.log("\nDatabase initialization complete!\n");
-});
-
-// ==========================================
 // GRACEFUL SHUTDOWN
-// ==========================================
 process.on('SIGINT', () => {
-    console.log('\nShutting down gracefully...');
+    console.log('\nMelakukan shutdown dengan aman...');
     db.close((err) => {
         if (err) {
-            console.error('Error closing database:', err.message);
+            console.error('Kesalahan saat menutup database:', err.message);
         } else {
-            console.log('Database connection closed.');
+            console.log('Koneksi database ditutup.');
         }
         process.exit(0);
     });
 });
 
-module.exports = db;
+module.exports = db

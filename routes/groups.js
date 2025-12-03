@@ -18,7 +18,7 @@ function createGroupsRouter(db) {
     });
 
   /**
-   * updateContactGroup - supports multiple groups per contact
+   * updateContactGroup - mendukung multiple groups per contact
    * - contactNumber: string
    * - groupName: string
    * - action: 'add' | 'remove'
@@ -41,7 +41,7 @@ function createGroupsRouter(db) {
       }
       if (!Array.isArray(currentGroups)) currentGroups = [];
 
-      // Use Set for efficient operations
+      // Gunakan Set untuk operasi yang efisien
       const groupSet = new Set(currentGroups.map(String));
 
       if (action === "add") {
@@ -58,7 +58,7 @@ function createGroupsRouter(db) {
         row.id,
       ]);
     } catch (err) {
-      console.error("updateContactGroup error:", err);
+      console.error("Error updateContactGroup:", err);
     }
   }
 
@@ -82,10 +82,10 @@ function createGroupsRouter(db) {
         return res.status(400).json({ error: "Nama grup wajib diisi." });
       }
       
-      // ✅ Normalisasi ke Title Case
+      // Normalisasi ke Title Case
       const groupName = toTitleCase(String(name).trim());
 
-      // ✅ Cek duplikasi (case-insensitive) SEBELUM insert
+      // Cek duplikasi (case-insensitive) sebelum insert
       const existingGroups = await dbAll("SELECT name FROM groups");
       const isDuplicate = existingGroups.some(g => 
         normalizeForComparison(g.name) === normalizeForComparison(groupName)
@@ -97,7 +97,7 @@ function createGroupsRouter(db) {
         });
       }
 
-      // ✅ Support both 'members' and 'contactNumbers' for flexibility
+      // Support both 'members' and 'contactNumbers' for flexibility
       let newMembers = [];
       const memberSource = members || contactNumbers;
       
@@ -112,16 +112,16 @@ function createGroupsRouter(db) {
         }
       }
 
-      // Remove duplicates
+      // Hapus duplikat
       newMembers = [...new Set(newMembers)];
 
       const membersJson = newMembers.length > 0 ? JSON.stringify(newMembers) : null;
       const result = await dbRun("INSERT INTO groups (name, members) VALUES (?, ?)", [
-        groupName, // ✅ Menggunakan groupName yang sudah dinormalisasi
+        groupName, // Menggunakan groupName yang sudah dinormalisasi
         membersJson,
       ]);
 
-      // Synchronize: add group to all member contacts
+      // Sinkronisasi: tambahkan grup ke semua kontak member
       if (newMembers.length > 0) {
         for (const number of newMembers) {
           await updateContactGroup(number, groupName, "add");
@@ -133,8 +133,8 @@ function createGroupsRouter(db) {
         id: result.lastID,
       });
     } catch (err) {
-      console.error("Create group error:", err);
-      // ✅ Error handling sudah tidak perlu lagi karena cek duplikasi manual
+      console.error("Error membuat grup:", err);
+      // Error handling sudah tidak perlu lagi karena cek duplikasi manual
       res.status(500).json({ error: err.message });
     }
   });
@@ -149,7 +149,7 @@ function createGroupsRouter(db) {
         return res.status(400).json({ error: "Nama grup wajib diisi." });
       }
       
-      // ✅ Normalisasi ke Title Case
+      // Normalisasi ke Title Case
       const newName = toTitleCase(String(name).trim());
 
       // Get old record
@@ -161,7 +161,7 @@ function createGroupsRouter(db) {
       const oldRow = oldRows[0];
       const oldName = oldRow.name;
       
-      // ✅ Cek duplikasi (case-insensitive) hanya jika nama berubah
+      // Cek duplikasi (case-insensitive) hanya jika nama berubah
       if (normalizeForComparison(oldName) !== normalizeForComparison(newName)) {
         const existingGroups = await dbAll("SELECT id, name FROM groups WHERE id != ?", [id]);
         const isDuplicate = existingGroups.some(g => 
@@ -182,7 +182,7 @@ function createGroupsRouter(db) {
         oldMembers = [];
       }
 
-      // ✅ Support both 'members' and 'contactNumbers'
+      // Support both 'members' and 'contactNumbers'
       let newMembers = [];
       const memberSource = members || contactNumbers;
       
@@ -197,35 +197,35 @@ function createGroupsRouter(db) {
         }
       }
 
-      // Remove duplicates
+      // Hapus duplikat
       newMembers = [...new Set(newMembers)];
 
       const membersJson = newMembers.length > 0 ? JSON.stringify(newMembers) : null;
       const result = await dbRun("UPDATE groups SET name = ?, members = ? WHERE id = ?", [
-        newName, // ✅ Menggunakan newName yang sudah dinormalisasi
+        newName, // Menggunakan newName yang sudah dinormalisasi
         membersJson,
         id,
       ]);
 
-      // Synchronize contacts
+      // Sinkronisasi kontak
       const oldSet = new Set(oldMembers.map(String));
       const newSet = new Set(newMembers.map(String));
 
-      // Removed members: remove oldName from their contacts
+      // Member yang dihapus: hapus oldName dari kontak mereka
       for (const number of oldMembers) {
         if (!newSet.has(String(number))) {
           await updateContactGroup(String(number), oldName, "remove");
         }
       }
 
-      // Added members: add newName to their contacts
+      // Member yang ditambahkan: tambahkan newName ke kontak mereka
       for (const number of newMembers) {
         if (!oldSet.has(String(number))) {
           await updateContactGroup(String(number), newName, "add");
         }
       }
 
-      // ✅ If group name changed (case-insensitive check), update all contacts
+      // Jika nama grup berubah (case-insensitive check), update semua kontak
       if (normalizeForComparison(oldName) !== normalizeForComparison(newName)) {
         const contactsWithOld = await dbAll(
           "SELECT id, grup, number FROM contacts WHERE grup IS NOT NULL"
@@ -240,7 +240,7 @@ function createGroupsRouter(db) {
           }
           if (!Array.isArray(cGroups)) cGroups = [];
 
-          // ✅ Cari grup dengan case-insensitive
+          // Cari grup dengan case-insensitive
           const hasOldGroup = cGroups.some(g => 
             normalizeForComparison(g) === normalizeForComparison(oldName)
           );
@@ -262,7 +262,7 @@ function createGroupsRouter(db) {
         changes: result.changes,
       });
     } catch (err) {
-      console.error("Update group error:", err);
+      console.error("Error update grup:", err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -287,12 +287,12 @@ function createGroupsRouter(db) {
 
       const result = await dbRun("DELETE FROM groups WHERE id = ?", [id]);
 
-      // Remove group from all member contacts
+      // Hapus grup dari semua kontak member
       for (const number of members) {
         await updateContactGroup(String(number), groupName, "remove");
       }
 
-      // Safety: check all contacts for this group name
+      // Safety: cek semua kontak untuk nama grup ini
       const contactsWithGroup = await dbAll("SELECT id, grup FROM contacts WHERE grup IS NOT NULL");
       for (const c of contactsWithGroup) {
         let cGroups = [];
@@ -315,7 +315,7 @@ function createGroupsRouter(db) {
         changes: result.changes,
       });
     } catch (err) {
-      console.error("Delete group error:", err);
+      console.error("Error hapus grup:", err);
       res.status(500).json({ error: err.message });
     }
   });

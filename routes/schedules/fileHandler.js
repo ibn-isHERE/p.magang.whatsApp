@@ -1,4 +1,4 @@
-// fileHandler.js - File Handling Module for Schedules
+// fileHandler.js - Modul Pengelolaan File untuk Schedules
 
 const multer = require("multer");
 const path = require("path");
@@ -52,7 +52,7 @@ const upload = multer({
 }).array("files", 10);
 
 /**
- * Hapus file jika ada
+ * Menghapus file jika ada
  * @param {string} filePath - Path file yang akan dihapus
  */
 function deleteFileIfExists(filePath) {
@@ -66,7 +66,7 @@ function deleteFileIfExists(filePath) {
 }
 
 /**
- * Persiapkan data file untuk disimpan
+ * Mempersiapkan data file untuk disimpan
  * @param {Array} uploadedFiles - File yang diupload
  * @returns {string|null} - JSON string atau null
  */
@@ -86,7 +86,7 @@ function prepareFilesData(uploadedFiles) {
 }
 
 /**
- * Cleanup uploaded files
+ * Membersihkan file yang diupload
  * @param {Array} files - Array of files
  */
 function cleanupUploadedFiles(files) {
@@ -100,7 +100,7 @@ function cleanupUploadedFiles(files) {
 }
 
 /**
- * Cleanup files dari filesData JSON
+ * Membersihkan file dari filesData JSON
  * @param {string} filesData - JSON string berisi data file
  */
 function cleanupFiles(filesData) {

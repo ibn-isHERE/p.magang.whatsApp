@@ -95,10 +95,10 @@ function createJabatanRouter(db) {
         });
       }
 
-      // ✅ Normalisasi ke Title Case
+      // Normalisasi ke Title Case
       const normalizedNama = toTitleCase(nama.trim());
 
-      // ✅ Cek duplikasi nama (case-insensitive)
+      // Cek duplikasi nama (case-insensitive)
       const existing = await dbGet(
         "SELECT id, nama FROM jabatan WHERE LOWER(nama) = LOWER(?)",
         [normalizedNama]
@@ -113,7 +113,7 @@ function createJabatanRouter(db) {
         });
       }
 
-      // ✅ Insert data dengan nama yang sudah dinormalisasi
+      // Insert data dengan nama yang sudah dinormalisasi
       const result = await dbRun(
         "INSERT INTO jabatan (nama, keterangan, aktif) VALUES (?, ?, 1)",
         [normalizedNama, keterangan || null]
@@ -155,7 +155,7 @@ router.put("/:id", async (req, res) => {
         });
       }
 
-      // ✅ Normalisasi ke Title Case
+      // Normalisasi ke Title Case
       const normalizedNama = toTitleCase(nama.trim());
 
       // Cek apakah jabatan ada
@@ -167,7 +167,7 @@ router.put("/:id", async (req, res) => {
         });
       }
 
-      // ✅ Cek duplikasi nama (case-insensitive, kecuali untuk jabatan yang sedang diedit)
+      // Cek duplikasi nama (case-insensitive, kecuali untuk jabatan yang sedang diedit)
       const duplicate = await dbGet(
         "SELECT id, nama FROM jabatan WHERE LOWER(nama) = LOWER(?) AND id != ?",
         [normalizedNama, id]
@@ -182,7 +182,7 @@ router.put("/:id", async (req, res) => {
         });
       }
 
-      // ✅ Update data dengan nama yang sudah dinormalisasi
+      // Update data dengan nama yang sudah dinormalisasi
       const result = await dbRun(
         `UPDATE jabatan 
          SET nama = ?, keterangan = ?, aktif = ?, updatedAt = CURRENT_TIMESTAMP 
@@ -197,13 +197,13 @@ router.put("/:id", async (req, res) => {
         });
       }
 
-      // ✅ Jika nama berubah, update juga di tabel contacts
+      // Jika nama berubah, update juga di tabel contacts
       if (normalizeForComparison(existing.nama) !== normalizeForComparison(normalizedNama)) {
         await dbRun(
           "UPDATE contacts SET jabatan = ? WHERE LOWER(jabatan) = LOWER(?)",
           [normalizedNama, existing.nama]
         );
-        console.log(`✅ Updated jabatan di contacts: "${existing.nama}" → "${normalizedNama}"`);
+        console.log(`Updated jabatan di contacts: "${existing.nama}" → "${normalizedNama}"`);
       }
 
       res.json({ 

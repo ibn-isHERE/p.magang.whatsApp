@@ -1,7 +1,7 @@
-// helpers.js - Helper Functions for Meetings
+// helpers.js - Fungsi Helper untuk Meetings
 
 /**
- * Convert datetime ke epoch dengan timezone Asia/Jakarta
+ * Mengkonversi datetime ke epoch dengan timezone Asia/Jakarta
  */
 function dateTimeToEpoch(dateStr, timeStr) {
     // Format: YYYY-MM-DD dan HH:mm
@@ -10,7 +10,7 @@ function dateTimeToEpoch(dateStr, timeStr) {
 }
 
 /**
- * Convert epoch ke date dan time dengan timezone Asia/Jakarta
+ * Mengkonversi epoch ke date dan time dengan timezone Asia/Jakarta
  */
 function epochToDateTime(epochMs) {
     const date = new Date(epochMs);
@@ -30,7 +30,7 @@ function epochToDateTime(epochMs) {
 }
 
 /**
- * Parse datetime-local ke epoch dengan timezone Jakarta
+ * Mem-parse datetime-local ke epoch dengan timezone Jakarta
  */
 function parseDateTime(datetimeLocal) {
     // Input format: YYYY-MM-DDTHH:mm
@@ -44,7 +44,7 @@ function parseDateTime(datetimeLocal) {
 }
 
 /**
- * Cek apakah rapat masih aktif
+ * Mengecek apakah rapat masih aktif
  */
 function isMeetingActive(meeting) {
     const now = new Date().getTime();
@@ -68,7 +68,7 @@ function isMeetingActive(meeting) {
 }
 
 /**
- * Format waktu countdown
+ * Memformat waktu countdown
  */
 function formatTimeLeft(timeDifferenceMs) {
     const hours = Math.floor(timeDifferenceMs / (1000 * 60 * 60));
@@ -84,7 +84,7 @@ function formatTimeLeft(timeDifferenceMs) {
 }
 
 /**
- * Parse numbers dari berbagai format
+ * Mem-parse numbers dari berbagai format
  */
 function parseNumbers(numbers) {
     try {
@@ -96,13 +96,13 @@ function parseNumbers(numbers) {
 }
 
 /**
- * Format numbers untuk display
+ * Memformat numbers untuk ditampilkan
  */
 function formatNumbersForDisplay(storedNumbers) {
     try {
         const numbersArray = parseNumbers(storedNumbers);
         return numbersArray.map(num => {
-            // Convert dari format WhatsApp (628xxxxx@c.us) ke display (08xxxxx)
+            // Konversi dari format WhatsApp (628xxxxx@c.us) ke display (08xxxxx)
             let cleanNum = String(num).replace('@c.us', '');
             if (cleanNum.startsWith('62')) {
                 cleanNum = '0' + cleanNum.substring(2);
@@ -110,13 +110,13 @@ function formatNumbersForDisplay(storedNumbers) {
             return cleanNum;
         });
     } catch (e) {
-        console.error("Error formatting numbers for display:", e);
+        console.error("Error saat memformat numbers untuk display:", e);
         return [];
     }
 }
 
 /**
- * Parse files data safely
+ * Mem-parse files data dengan aman
  */
 function parseFilesData(filesData) {
     if (!filesData) return [];
@@ -125,13 +125,13 @@ function parseFilesData(filesData) {
         const parsed = JSON.parse(filesData);
         return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
-        console.error("Error parsing files data:", e);
+        console.error("Error saat parsing files data:", e);
         return [];
     }
 }
 
 /**
- * Safe JSON parse
+ * JSON parse yang aman
  */
 function safeJsonParse(jsonString, defaultValue = null) {
     try {

@@ -62,8 +62,6 @@ class MessageHandler {
         console.error("Error saat menangani edit pesan:", error);
       }
     });
-
-    console.log("WhatsApp event listeners untuk edit/delete berhasil diinisialisasi");
   }
 
   /**

@@ -1,4 +1,4 @@
-// validation.js - Validation Module for Meetings
+// validation.js - Modul Validasi untuk Meetings
 
 // Ruangan yang tersedia
 const ROOMS = [
@@ -10,7 +10,7 @@ const ROOMS = [
 ];
 
 /**
- * Format nomor ke format WhatsApp: 62XXXXXXXXXX@c.us
+ * Memformat nomor ke format WhatsApp: 62XXXXXXXXXX@c.us
  */
 function formatNumber(inputNumber) {
     let number = String(inputNumber).trim();
@@ -28,7 +28,7 @@ function formatNumber(inputNumber) {
 }
 
 /**
- * Konversi waktu ke menit untuk perhitungan overlap
+ * Mengkonversi waktu ke menit untuk perhitungan overlap
  */
 function timeToMinutes(timeString) {
     const [hours, minutes] = timeString.split(":").map(Number);
@@ -36,7 +36,7 @@ function timeToMinutes(timeString) {
 }
 
 /**
- * Cek overlap waktu
+ * Mengecek overlap waktu
  */
 function checkTimeOverlap(start1, end1, start2, end2) {
     const start1Min = timeToMinutes(start1);
@@ -48,7 +48,7 @@ function checkTimeOverlap(start1, end1, start2, end2) {
 }
 
 /**
- * Validasi input meeting
+ * Memvalidasi input meeting
  */
 function validateMeetingInput(meetingTitle, numbers, meetingRoom, startTime, endTime) {
     if (!meetingTitle || !numbers || !meetingRoom || !startTime || !endTime) {
@@ -101,7 +101,7 @@ function validateMeetingInput(meetingTitle, numbers, meetingRoom, startTime, end
 }
 
 /**
- * Cek conflict ruangan
+ * Mengecek konflik ruangan
  */
 function checkRoomConflict(db, date, startTime, endTime, meetingRoom, excludeId = null) {
     return new Promise((resolve, reject) => {

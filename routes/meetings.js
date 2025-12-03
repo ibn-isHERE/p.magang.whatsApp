@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-// Import modules
+// Import modul-modul
 const {
     ROOMS,
     formatNumber,
@@ -69,7 +69,7 @@ setInterval(() => {
     updateExpiredMeetings();
 }, 5 * 1000);
 
-// ===== ROUTES =====
+// ROUTES
 
 /**
  * GET semua meetings
@@ -96,13 +96,13 @@ router.get("/meetings", async (req, res) => {
         
         res.json(meetings);
     } catch (error) {
-        console.error("Error getting meetings:", error);
+        console.error("Kesalahan saat mengambil daftar meetings:", error);
         res.status(500).json({ error: "Gagal memproses permintaan." });
     }
 });
 
 /**
- * GET meeting by ID
+ * GET meeting berdasarkan ID
  */
 router.get("/meeting/:id", async (req, res) => {
     const { id } = req.params;
@@ -135,7 +135,7 @@ router.get("/meeting/:id", async (req, res) => {
 
         res.json(meeting);
     } catch (error) {
-        console.error("Error mengambil meeting:", error);
+        console.error("Kesalahan saat mengambil data meeting:", error);
         res.status(500).json({ error: "Gagal mengambil data meeting" });
     }
 });
@@ -148,7 +148,7 @@ router.get("/meeting-rooms", (req, res) => {
 });
 
 /**
- * GET active meetings
+ * GET meetings yang sedang aktif
  */
 router.get("/active-meetings", async (req, res) => {
     const db = getDatabase();
@@ -180,7 +180,7 @@ router.get("/active-meetings", async (req, res) => {
             }))
         });
     } catch (error) {
-        console.error("Error getting active meetings:", error);
+        console.error("Kesalahan saat mengambil active meetings:", error);
         res.status(500).json({ error: "Error mengambil active meetings" });
     }
 });
@@ -234,7 +234,7 @@ router.post("/check-room-availability", async (req, res) => {
         });
         
     } catch (error) {
-        console.error("Error checking room availability:", error);
+        console.error("Kesalahan saat memeriksa ketersediaan ruangan:", error);
         res.json({
             available: false,
             message: "Terjadi kesalahan server saat memeriksa ketersediaan ruangan",
@@ -243,7 +243,7 @@ router.post("/check-room-availability", async (req, res) => {
 });
 
 /**
- * POST tambah meeting
+ * POST tambah meeting baru
  */
 router.post("/add-meeting", upload.array('files', 10), async (req, res) => {
     try {
@@ -329,7 +329,7 @@ router.post("/add-meeting", upload.array('files', 10), async (req, res) => {
                     selectedGroupsToSave = JSON.stringify(selectedGroups);
                 }
             } catch (parseError) {
-                // Silent fail
+                // Abaikan error parsing
             }
         }
 
@@ -355,7 +355,7 @@ router.post("/add-meeting", upload.array('files', 10), async (req, res) => {
                     }
                 }
             } catch (parseError) {
-                // Silent fail
+                // Abaikan error parsing
             }
         }
 
@@ -395,7 +395,7 @@ router.post("/add-meeting", upload.array('files', 10), async (req, res) => {
         try {
             scheduleMeetingReminder(scheduleData);
         } catch (scheduleError) {
-            console.error("Error scheduling reminder:", scheduleError);
+            console.error("Kesalahan saat menjadwalkan reminder:", scheduleError);
         }
 
         if (global.emitScheduleCreated) {
@@ -428,7 +428,7 @@ router.post("/add-meeting", upload.array('files', 10), async (req, res) => {
         });
         
     } catch (error) {
-        console.error("Error in /add-meeting:", error);
+        console.error("Kesalahan di endpoint /add-meeting:", error);
         cleanupUploadedFiles(req.files);
         res.status(500).json({ 
             success: false, 
@@ -437,7 +437,6 @@ router.post("/add-meeting", upload.array('files', 10), async (req, res) => {
         });
     }
 });
-
 /**
  * PUT edit meeting
  */
@@ -543,7 +542,7 @@ router.put("/edit-meeting/:id", upload.array('files', 10), async (req, res) => {
                     selectedGroupsToSave = JSON.stringify(selectedGroups);
                 }
             } catch (e) {
-                // Silent fail
+                // Abaikan error parsing
             }
         }
         
@@ -596,7 +595,7 @@ router.put("/edit-meeting/:id", upload.array('files', 10), async (req, res) => {
 
     } catch (error) {
         cleanupUploadedFiles(newFiles);
-        console.error("Error in /edit-meeting:", error);
+        console.error("Kesalahan di endpoint /edit-meeting:", error);
         res.status(500).json({ success: false, message: error.message || "Terjadi kesalahan server." });
     }
 });
@@ -655,7 +654,7 @@ router.put('/cancel-meeting/:id', async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error pada rute /cancel-meeting:", error.message);
+        console.error("Kesalahan pada rute /cancel-meeting:", error.message);
         res.status(500).json({ success: false, message: "Terjadi kesalahan server." });
     }
 });
@@ -696,7 +695,7 @@ router.delete("/delete-meeting/:id", async (req, res) => {
             message: "Meeting berhasil dihapus"
         });
     } catch (error) {
-        console.error("Error deleting meeting:", error);
+        console.error("Kesalahan saat menghapus meeting:", error);
         res.status(500).json({ success: false, message: "Gagal hapus meeting dari database" });
     }
 });
@@ -736,7 +735,7 @@ router.put('/finish-meeting/:id', async (req, res) => {
         res.json({ success: true, message: "Rapat berhasil ditandai selesai dan file terkait telah dihapus." });
 
     } catch (error) {
-        console.error("Error pada rute /finish-meeting:", error.message);
+        console.error("Kesalahan pada rute /finish-meeting:", error.message);
         res.status(500).json({ success: false, message: "Terjadi kesalahan server." });
     }
 });
@@ -755,10 +754,10 @@ router.post("/update-expired", async (req, res) => {
         
         res.json({
             success: true,
-            message: "Update expired meetings completed"
+            message: "Proses update expired meetings selesai"
         });
     } catch (error) {
-        res.status(500).json({ success: false, message: "Error updating expired meetings" });
+        res.status(500).json({ success: false, message: "Kesalahan saat update expired meetings" });
     }
 });
 
@@ -804,12 +803,12 @@ router.get("/check-availability", async (req, res) => {
             isAvailable: roomMeetings.length === 0,
         });
     } catch (error) {
-        console.error("Error checking availability:", error);
-        res.status(500).json({ success: false, message: "Error mengecek availability" });
+        console.error("Kesalahan saat memeriksa ketersediaan:", error);
+        res.status(500).json({ success: false, message: "Kesalahan saat mengecek ketersediaan" });
     }
 });
 
-// Export module
+// Export modul
 module.exports = {
     router,
     initializeMeetings,

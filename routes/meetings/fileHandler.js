@@ -1,17 +1,17 @@
-// fileHandler.js - File Handling Module for Meetings
+// fileHandler.js - Modul Pengelolaan File untuk Meetings
 
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 
-// Upload directory
+// Direktori upload
 const uploadDir = path.join(__dirname, '..', '..', 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
 
 /**
- * Multer storage configuration
+ * Konfigurasi penyimpanan Multer
  */
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
@@ -21,7 +21,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 /**
- * Delete file if exists
+ * Menghapus file jika ada
  */
 function deleteFileIfExists(filePath) {
     if (filePath && fs.existsSync(filePath)) {
@@ -33,7 +33,7 @@ function deleteFileIfExists(filePath) {
 }
 
 /**
- * Process uploaded files
+ * Memproses file yang diupload
  */
 function processUploadedFiles(files) {
     if (!files || files.length === 0) {
@@ -53,7 +53,7 @@ function processUploadedFiles(files) {
 }
 
 /**
- * Cleanup uploaded files
+ * Membersihkan file yang diupload
  */
 function cleanupUploadedFiles(files) {
     if (files && Array.isArray(files)) {
@@ -66,7 +66,7 @@ function cleanupUploadedFiles(files) {
 }
 
 /**
- * Delete files from filesData JSON
+ * Menghapus file dari data JSON filesData
  */
 function deleteFilesFromData(filesData) {
     if (!filesData) return;
@@ -77,31 +77,31 @@ function deleteFilesFromData(filesData) {
             files.forEach(file => deleteFileIfExists(file.path));
         }
     } catch (e) {
-        console.error("Error deleting files from data:", e);
+        console.error("Error saat menghapus file dari data:", e);
     }
 }
 
 /**
- * Merge old and new files for edit operation
+ * Menggabungkan file lama dan baru untuk operasi edit
  */
 function mergeFilesForEdit(oldFilesData, newFiles, keepExistingNames, deletedNames) {
     const oldFiles = oldFilesData ? JSON.parse(oldFilesData) : [];
     let finalFilesArray = [];
 
-    // 1. Keep existing files that are not deleted
+    // 1. Pertahankan file yang ada dan tidak dihapus
     if (keepExistingNames.length > 0) {
         const keptFiles = oldFiles.filter(f => {
             const name = f.name || f.filename || f;
             return keepExistingNames.includes(name);
         });
         finalFilesArray.push(...keptFiles);
-        console.log(`Kept ${keptFiles.length} existing files:`, keptFiles.map(f => f.name));
+        console.log(`Mempertahankan ${keptFiles.length} file yang ada:`, keptFiles.map(f => f.name));
     } else if (deletedNames.length === 0 && (!newFiles || newFiles.length === 0)) {
-        // No changes, keep all old files
+        // Tidak ada perubahan, pertahankan semua file lama
         finalFilesArray.push(...oldFiles);
     }
 
-    // 2. Add new uploaded files
+    // 2. Tambahkan file baru yang diupload
     if (newFiles && newFiles.length > 0) {
         const newFilesData = newFiles.map(f => ({
             path: f.path,
@@ -109,10 +109,10 @@ function mergeFilesForEdit(oldFilesData, newFiles, keepExistingNames, deletedNam
             mimetype: f.mimetype
         }));
         finalFilesArray.push(...newFilesData);
-        console.log(`Added ${newFiles.length} new files:`, newFilesData.map(f => f.name));
+        console.log(`Menambahkan ${newFiles.length} file baru:`, newFilesData.map(f => f.name));
     }
 
-    // 3. Delete files marked for deletion
+    // 3. Hapus file yang ditandai untuk dihapus
     if (deletedNames.length > 0) {
         const toDelete = oldFiles.filter(f => {
             const name = f.name || f.filename || f;
@@ -120,11 +120,11 @@ function mergeFilesForEdit(oldFilesData, newFiles, keepExistingNames, deletedNam
         });
         toDelete.forEach((file) => {
             deleteFileIfExists(file.path);
-            console.log(`Deleted file: ${file.name || file.filename}`);
+            console.log(`File dihapus: ${file.name || file.filename}`);
         });
     }
 
-    // 4. Delete old files that are not kept
+    // 4. Hapus file lama yang tidak dipertahankan
     if (keepExistingNames.length > 0) {
         const filesToDelete = oldFiles.filter(f => {
             const name = f.name || f.filename || f;
@@ -132,7 +132,7 @@ function mergeFilesForEdit(oldFilesData, newFiles, keepExistingNames, deletedNam
         });
         filesToDelete.forEach((file) => {
             deleteFileIfExists(file.path);
-            console.log(`Deleted old file not kept: ${file.name || file.filename}`);
+            console.log(`File lama yang tidak dipertahankan dihapus: ${file.name || file.filename}`);
         });
     }
 

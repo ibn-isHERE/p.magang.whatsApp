@@ -1,4 +1,4 @@
-// scheduler.js - COMPLETE: With safe delays and batching for meetings
+// scheduler.js - LENGKAP: Dengan safe delays dan batching untuk meetings
 
 const schedule = require("node-schedule");
 const { MessageMedia } = require("whatsapp-web.js");
@@ -10,7 +10,7 @@ const { updateMeetingStatus, getDatabase } = require("./dbOperations");
 let client = null;
 let meetingJobs = {};
 
-// KONFIGURASI DELAY - SESUAIKAN SESUAI KEBUTUHAN
+// Konfigurasi delay - sesuaikan sesuai kebutuhan
 const DELAY_CONFIG = {
     VALIDATION_DELAY: 500,           // 0.5 detik antar validasi nomor
     MESSAGE_DELAY_MIN: 8000,         // 8 detik minimum antar pesan
@@ -22,7 +22,7 @@ const DELAY_CONFIG = {
 };
 
 /**
- * Generate random delay dalam range
+ * Menghasilkan random delay dalam range
  */
 function getRandomDelay(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -36,7 +36,7 @@ function sleep(ms) {
 }
 
 /**
- * Log progress pengiriman
+ * Mencatat progress pengiriman
  */
 function logProgress(current, total, type = 'pesan') {
     const percentage = Math.round((current / total) * 100);
@@ -45,17 +45,16 @@ function logProgress(current, total, type = 'pesan') {
 
 function setWhatsappClient(whatsappClient) {
     client = whatsappClient;
-    console.log("Meeting scheduler WhatsApp client set");
 }
 
 /**
- * Save meeting delivery result to database
+ * Menyimpan hasil pengiriman meeting ke database
  */
 function saveMeetingDeliveryResult(meetingId, deliveryResult) {
     const db = getDatabase();
     
     if (!db) {
-        console.error('Database not available for saving delivery result');
+        console.error('Database tidak tersedia untuk menyimpan hasil pengiriman');
         return;
     }
     
@@ -71,16 +70,16 @@ function saveMeetingDeliveryResult(meetingId, deliveryResult) {
         [resultJson, meetingId],
         (err) => {
             if (err) {
-                console.error('Failed to save meeting delivery result:', err);
+                console.error('Gagal menyimpan hasil pengiriman meeting:', err);
             } else {
-                console.log(`Meeting delivery result saved for ${meetingId}`);
+                console.log(`Hasil pengiriman meeting berhasil disimpan untuk ${meetingId}`);
             }
         }
     );
 }
 
 /**
- * ENHANCED: sendWhatsAppReminder dengan safe delays dan batching
+ * ENHANCED: Mengirim reminder WhatsApp dengan safe delays dan batching
  */
 async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
     if (!client) {
@@ -110,7 +109,7 @@ async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
         return false;
     }
 
-    // Track delivery result
+    // Melacak hasil pengiriman
     const deliveryResult = {
         total: numbersArray.length,
         validatedNumbers: [],
@@ -119,7 +118,7 @@ async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
         sentFailed: 0
     };
 
-    // STEP 1: Validasi nomor dengan delay aman
+    // LANGKAH 1: Validasi nomor dengan delay aman
     console.log(`\nMemvalidasi ${numbersArray.length} nomor untuk meeting ${meeting.id}...`);
     console.log(`Estimasi waktu validasi: ~${Math.round((numbersArray.length * DELAY_CONFIG.VALIDATION_DELAY) / 1000)} detik\n`);
 
@@ -164,7 +163,7 @@ async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
         return false;
     }
 
-    // STEP 2: Persiapkan media files
+    // LANGKAH 2: Persiapkan media files
     let medias = [];
     if (meeting.filesData) {
         try {
@@ -175,7 +174,7 @@ async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
                     medias.push(media);
                     console.log(`File dimuat: ${file.name}`);
                 } else {
-                    console.warn(`File not found: ${file.path}`);
+                    console.warn(`File tidak ditemukan: ${file.path}`);
                 }
             }
         } catch (e) {
@@ -183,7 +182,7 @@ async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
         }
     }
 
-    // STEP 3: Kirim dengan safe delays dan batching
+    // LANGKAH 3: Kirim dengan safe delays dan batching
     console.log(`\nMengirim reminder meeting ke ${deliveryResult.validatedNumbers.length} nomor valid...`);
     
     const totalRecipients = deliveryResult.validatedNumbers.length;
@@ -264,7 +263,7 @@ async function sendWhatsAppReminder(meeting, customTimeLeft = null) {
         item => !item.reason.includes('Tidak terdaftar')
     ).length;
 
-    // SAVE delivery result to database
+    // Simpan hasil pengiriman ke database
     saveMeetingDeliveryResult(meeting.id, deliveryResult);
 
     const hasSuccess = deliveryResult.sentSuccess > 0;
@@ -336,7 +335,7 @@ function scheduleMeetingReminder(meeting) {
         const db = getDatabase();
         db.get("SELECT * FROM meetings WHERE id = ?", [meeting.id], async (err, row) => {
             if (err || !row) {
-                console.error(`Error checking status for meeting ${meeting.id}`);
+                console.error(`Error saat mengecek status untuk meeting ${meeting.id}`);
                 return;
             }
 
@@ -401,7 +400,7 @@ function loadAndScheduleExistingMeetings() {
 }
 
 /**
- * ENHANCED: Notifikasi pembatalan dengan safe delays
+ * ENHANCED: Mengirim notifikasi pembatalan dengan safe delays
  */
 async function sendCancellationNotification(meeting) {
     if (!client) {
@@ -427,7 +426,7 @@ async function sendCancellationNotification(meeting) {
 
     if (!Array.isArray(numbersArray) || numbersArray.length === 0) return;
 
-    // Track cancellation delivery
+    // Melacak hasil pengiriman pembatalan
     const deliveryResult = {
         total: numbersArray.length,
         validatedNumbers: [],
@@ -450,7 +449,7 @@ async function sendCancellationNotification(meeting) {
         }
 
         try {
-            // Validasi + delay
+            // Validasi dengan delay
             await sleep(DELAY_CONFIG.VALIDATION_DELAY);
             
             const isRegistered = await client.isRegisteredUser(formattedNum);
@@ -492,7 +491,7 @@ async function sendCancellationNotification(meeting) {
         }
     }
     
-    // Save cancellation delivery result
+    // Simpan hasil pengiriman pembatalan
     saveMeetingDeliveryResult(meeting.id, deliveryResult);
 }
 

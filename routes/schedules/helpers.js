@@ -1,4 +1,4 @@
-// helpers.js - Helper Functions for Schedules
+// helpers.js - Fungsi Helper untuk Schedules
 
 /**
  * Escape string untuk HTML attributes
@@ -16,7 +16,7 @@ function escapeHtml(str) {
 }
 
 /**
- * Parse JSON safely
+ * Mem-parse JSON dengan aman
  * @param {string} jsonString - JSON string
  * @param {*} defaultValue - Default value if parsing fails
  * @returns {*} - Parsed value or default
@@ -25,13 +25,13 @@ function safeJsonParse(jsonString, defaultValue = null) {
   try {
     return JSON.parse(jsonString);
   } catch (e) {
-    console.error('JSON parsing error:', e.message);
+    console.error('Error saat parsing JSON:', e.message);
     return defaultValue;
   }
 }
 
 /**
- * Format file size to readable format
+ * Memformat ukuran file menjadi format yang mudah dibaca
  * @param {number} bytes - File size in bytes
  * @returns {string} - Formatted file size
  */
@@ -44,7 +44,7 @@ function formatFileSize(bytes) {
 }
 
 /**
- * Validate datetime string
+ * Memvalidasi string datetime
  * @param {string} datetime - Datetime string
  * @returns {boolean} - Is valid
  */
@@ -54,7 +54,7 @@ function isValidDatetime(datetime) {
 }
 
 /**
- * Get schedule status class
+ * Mendapatkan CSS class untuk status schedule
  * @param {string} status - Schedule status
  * @returns {string} - CSS class name
  */
@@ -70,7 +70,7 @@ function getStatusClass(status) {
 }
 
 /**
- * Get schedule status icon
+ * Mendapatkan icon untuk status schedule
  * @param {string} status - Schedule status
  * @returns {string} - Material icon name
  */
@@ -86,7 +86,7 @@ function getStatusIcon(status) {
 }
 
 /**
- * Clean phone number format
+ * Membersihkan format nomor telepon
  * @param {string} number - Phone number
  * @returns {string} - Cleaned number
  */
@@ -100,7 +100,7 @@ function cleanPhoneNumber(number) {
 }
 
 /**
- * Format numbers array for display
+ * Memformat array nomor untuk ditampilkan
  * @param {Array|string} numbers - Array of numbers or JSON string
  * @returns {Array} - Formatted numbers array
  */
@@ -125,13 +125,13 @@ function formatNumbersForDisplay(numbers) {
       return num;
     });
   } catch (e) {
-    console.error('Error formatting numbers:', e);
+    console.error('Error saat memformat nomor:', e);
     return [];
   }
 }
 
 /**
- * Check if schedule is meeting type
+ * Mengecek apakah schedule bertipe meeting
  * @param {Object} schedule - Schedule object
  * @returns {boolean} - Is meeting
  */
@@ -140,7 +140,7 @@ function isMeetingSchedule(schedule) {
 }
 
 /**
- * Generate unique schedule ID
+ * Menghasilkan ID schedule yang unik
  * @returns {string} - Unique ID
  */
 function generateScheduleId() {
@@ -148,7 +148,7 @@ function generateScheduleId() {
 }
 
 /**
- * Validate file type
+ * Memvalidasi tipe file
  * @param {string} mimetype - File mimetype
  * @returns {boolean} - Is valid
  */
