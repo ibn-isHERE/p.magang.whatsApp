@@ -606,6 +606,7 @@ function renderChatMessages(messages) {
     let mtype = message.messageType || (payload && payload.mimetype
       ? payload.mimetype.startsWith("image/") ? "image"
         : payload.mimetype.startsWith("video/") ? "video"
+        : payload.mimetype.startsWith("audio/") ? "audio"  // ⭐ Tambahan
         : "document"
       : "chat");
 
@@ -622,7 +623,6 @@ function renderChatMessages(messages) {
 
     let messageBubbleContent = "";
     
-    // Add message actions (edit/delete) for outgoing chat messages
     const canEditDelete = message.direction === "out" && mtype === "chat";
     const messageActions = canEditDelete ? `
       <div class="message-actions">
@@ -651,6 +651,22 @@ function renderChatMessages(messages) {
         ${ (payload && typeof payload === 'object' && payload.caption) || (typeof payload === 'string' && payload) ? `<div class="message-caption">${typeof payload === 'object' ? payload.caption : payload}</div>` : "" }
         <div class="message-time">${messageTime}</div>
       `;
+    } else if (mtype === "audio" && mediaUrl) {
+      // ⭐ TAMBAHAN BARU: Render voice note / audio
+      const isVoiceNote = payload && payload.mimetype && payload.mimetype.includes('ogg');
+      const audioLabel = isVoiceNote ? '🎤 Voice Note' : '🎵 Audio';
+      
+      messageBubbleContent = `
+        <div class="message-audio-container">
+          <div class="audio-label">${audioLabel}</div>
+          <audio controls class="chat-audio-player">
+            <source src="${mediaUrl}" type="${payload && payload.mimetype ? payload.mimetype : 'audio/ogg'}">
+            Browser Anda tidak mendukung audio player.
+          </audio>
+        </div>
+        ${ (payload && typeof payload === 'object' && payload.caption) || (typeof payload === 'string' && payload) ? `<div class="message-caption">${typeof payload === 'object' ? payload.caption : payload}</div>` : "" }
+        <div class="message-time">${messageTime}</div>
+      `;
     } else if ((mtype === "document" || mtype === "file") && mediaUrl) {
       const fileName = (payload && payload.originalname) || (typeof payload === "string" ? payload : "Unduh File");
       messageBubbleContent = `
@@ -663,32 +679,30 @@ function renderChatMessages(messages) {
         <div class="message-time">${messageTime}</div>
       `;
     } else {
-  const text = typeof payload === "object"
-    ? payload.caption || payload.originalname || JSON.stringify(payload)
-    : payload || "";
-  
-  // Cek apakah pesan diedit
-  const editedLabel = message.editedAt ? ' <span class="edited-label">(diedit)</span>' : '';
-  
-  // Cek apakah ini pesan dari user (incoming) atau admin (outgoing)
-  const showActions = message.direction === "out" && mtype === "chat";
-  const messageActions = showActions ? `
-    <div class="message-actions">
-      <button class="message-action-btn edit-btn" onclick="window.editChatMessage(${message.id}, '${(typeof payload === 'string' ? payload : '').replace(/'/g, "\\'")}')">
-        <i class="fa-solid fa-edit"></i>
-      </button>
-      <button class="message-action-btn delete-btn" onclick="window.deleteChatMessage(${message.id})">
-        <i class="fa-solid fa-trash"></i>
-      </button>
-    </div>
-  ` : '';
-  
-  messageBubbleContent = `
-    ${messageActions}
-    <div class="text-content">${text}${editedLabel}</div>
-    <div class="message-time">${messageTime}</div>
-  `;
-}
+      const text = typeof payload === "object"
+        ? payload.caption || payload.originalname || JSON.stringify(payload)
+        : payload || "";
+      
+      const editedLabel = message.editedAt ? ' <span class="edited-label">(diedit)</span>' : '';
+      
+      const showActions = message.direction === "out" && mtype === "chat";
+      const messageActions = showActions ? `
+        <div class="message-actions">
+          <button class="message-action-btn edit-btn" onclick="window.editChatMessage(${message.id}, '${(typeof payload === 'string' ? payload : '').replace(/'/g, "\\'")}')">
+            <i class="fa-solid fa-edit"></i>
+          </button>
+          <button class="message-action-btn delete-btn" onclick="window.deleteChatMessage(${message.id})">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </div>
+      ` : '';
+      
+      messageBubbleContent = `
+        ${messageActions}
+        <div class="text-content">${text}${editedLabel}</div>
+        <div class="message-time">${messageTime}</div>
+      `;
+    }
 
     messageDiv.innerHTML = `<div class="message-bubble">${messageBubbleContent}</div>`;
     chatMessages.appendChild(messageDiv);
