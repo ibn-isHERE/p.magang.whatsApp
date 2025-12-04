@@ -388,7 +388,6 @@
   white-space: nowrap;
 }
 
-.edit-btn,
 .edit-contact-btn,
 .edit-group-btn {
   background-color: #007bff;
@@ -396,6 +395,15 @@
   box-shadow: 0 1.26px 3.15px rgba(0, 123, 255, 0.2);
   margin-right: 10px;
 }
+
+.edit-btn {
+  background-color: #007bff;
+  color: white;
+  box-shadow: 0 1.26px 3.15px rgba(0, 123, 255, 0.2);
+  padding: 6px 12px !important;
+  margin: 5px;
+}
+
 .edit-btn:hover,
 .edit-contact-btn:hover,
 .edit-group-btn:hover {
