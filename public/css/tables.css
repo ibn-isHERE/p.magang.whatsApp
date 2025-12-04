@@ -635,3 +635,14 @@
   transform: translateY(-0.63px);
   box-shadow: 0 2.52px 5.04px rgba(220, 53, 69, 0.3);
 } 
+
+.status-processing {
+    color: #38a169;
+    font-weight: 500;
+}
+
+.status-canceling {
+  background-color: #fef5e7;
+  color: #ed8936;
+  font-weight: 500;
+}

@@ -1,4 +1,4 @@
-// scheduler.js - Dengan safe delays dan batching
+// scheduler.js - Dengan safe delays, batching, dan status processing
 
 const schedule = require("node-schedule");
 const { MessageMedia } = require("whatsapp-web.js");
@@ -101,7 +101,7 @@ async function scheduleMessage(scheduleData) {
 }
 
 /**
- * ENHANCED: Eksekusi dengan safe delays, batching, dan tracking delivery result
+ * ENHANCED: Eksekusi dengan safe delays, batching, tracking delivery result, dan status processing
  */
 async function executeScheduledMessage(id, numbers, message, filesData) {
   if (!client) {
@@ -109,6 +109,18 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
     handleFailedMessage(id, filesData, "Client WhatsApp tidak tersedia");
     return;
   }
+
+  // 🔹 UPDATE STATUS KE "processing" SAAT MULAI KIRIM
+  db.run(`UPDATE schedules SET status = ? WHERE id = ?`, ["processing", id], (err) => {
+    if (err) {
+      console.error("Gagal update status ke processing:", err.message);
+    } else {
+      console.log(`✅ Status pesan ID ${id} diubah ke 'processing'`);
+      if (global.emitScheduleStatusUpdate) {
+        global.emitScheduleStatusUpdate(id, 'processing', 'Sedang mengirim pesan...');
+      }
+    }
+  });
 
   let medias = [];
   let allFilesReady = true;
@@ -166,7 +178,10 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
   }
 
   // Track detail per nomor
-  console.log(`\nMemvalidasi ${targetNumbers.length} nomor untuk pesan ID ${id}...`);
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`📤 MEMULAI PENGIRIMAN PESAN ID: ${id}`);
+  console.log(`${'='.repeat(60)}`);
+  console.log(`Memvalidasi ${targetNumbers.length} nomor...`);
   console.log(`Estimasi waktu validasi: ~${Math.round((targetNumbers.length * DELAY_CONFIG.VALIDATION_DELAY) / 1000)} detik\n`);
   
   const deliveryResult = {
@@ -182,7 +197,7 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
     const formattedNum = formatNumber(num);
     
     if (!formattedNum) {
-      console.warn(`[${i+1}/${targetNumbers.length}] Format nomor tidak valid: ${num}`);
+      console.warn(`[${i+1}/${targetNumbers.length}] ❌ Format nomor tidak valid: ${num}`);
       deliveryResult.failed.push({
         number: num,
         reason: 'Format tidak valid'
@@ -199,16 +214,16 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
           formatted: formattedNum,
           status: 'pending'
         });
-        console.log(`[${i+1}/${targetNumbers.length}] ${num} - Valid & Terdaftar`);
+        console.log(`[${i+1}/${targetNumbers.length}] ✅ ${num} - Valid & Terdaftar`);
       } else {
         deliveryResult.notRegistered.push({
           number: num,
           reason: 'Tidak terdaftar di WhatsApp'
         });
-        console.warn(`[${i+1}/${targetNumbers.length}] ${num} - Tidak terdaftar di WhatsApp`);
+        console.warn(`[${i+1}/${targetNumbers.length}] ⚠️  ${num} - Tidak terdaftar di WhatsApp`);
       }
     } catch (error) {
-      console.error(`[${i+1}/${targetNumbers.length}] Error validasi ${num}:`, error.message);
+      console.error(`[${i+1}/${targetNumbers.length}] ❌ Error validasi ${num}:`, error.message);
       deliveryResult.failed.push({
         number: num,
         reason: `Error: ${error.message}`
@@ -221,15 +236,18 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
     }
   }
 
-  console.log(`\nHasil Validasi:`);
-  console.log(`   Valid: ${deliveryResult.success.length} nomor`);
-  console.log(`   Not Registered: ${deliveryResult.notRegistered.length} nomor`);
-  console.log(`   Error: ${deliveryResult.failed.length} nomor`);
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`📊 HASIL VALIDASI:`);
+  console.log(`${'='.repeat(60)}`);
+  console.log(`   ✅ Valid: ${deliveryResult.success.length} nomor`);
+  console.log(`   ⚠️  Not Registered: ${deliveryResult.notRegistered.length} nomor`);
+  console.log(`   ❌ Error: ${deliveryResult.failed.length} nomor`);
+  console.log(`${'='.repeat(60)}\n`);
 
   // Jika semua nomor invalid
   if (deliveryResult.success.length === 0) {
     const failureReason = `Semua nomor tidak valid (${deliveryResult.failed.length + deliveryResult.notRegistered.length} nomor gagal)`;
-    console.error(failureReason);
+    console.error(`❌ ${failureReason}`);
     
     saveDeliveryResult(id, deliveryResult);
     handleFailedMessage(id, filesData, failureReason);
@@ -237,7 +255,7 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
   }
 
   // LANGKAH 2: Kirim dengan safe delays dan batching
-  console.log(`\nMengirim pesan ke ${deliveryResult.success.length} nomor valid...`);
+  console.log(`📨 MENGIRIM PESAN KE ${deliveryResult.success.length} NOMOR VALID...`);
   
   const totalRecipients = deliveryResult.success.length;
   const avgDelay = (DELAY_CONFIG.MESSAGE_DELAY_MIN + DELAY_CONFIG.MESSAGE_DELAY_MAX) / 2 / 1000;
@@ -258,7 +276,7 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
       // Kirim pesan teks
       if (message && message.trim() !== "") {
         await client.sendMessage(contact.formatted, message.trim());
-        console.log(`[${recipientNum}/${totalRecipients}] Pesan teks terkirim ke ${contact.number}`);
+        console.log(`[${recipientNum}/${totalRecipients}] ✅ Pesan teks terkirim ke ${contact.number}`);
       }
 
       // Kirim file dengan delay lebih pendek
@@ -270,7 +288,7 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
           await sleep(fileDelay);
           
           await client.sendMessage(contact.formatted, media);
-          console.log(`   File ${j+1}/${medias.length} (${media.filename}) terkirim ke ${contact.number}`);
+          console.log(`   📎 File ${j+1}/${medias.length} (${media.filename}) terkirim ke ${contact.number}`);
         }
       }
 
@@ -285,14 +303,17 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
       // BATCH PAUSE: Pause setiap N pesan
       if (recipientNum % DELAY_CONFIG.BATCH_SIZE === 0 && recipientNum < totalRecipients) {
         const remainingBatches = Math.ceil((totalRecipients - recipientNum) / DELAY_CONFIG.BATCH_SIZE);
-        console.log(`\n=== BATCH PAUSE ===`);
+        console.log(`\n${'='.repeat(60)}`);
+        console.log(`⏸️  BATCH PAUSE`);
+        console.log(`${'='.repeat(60)}`);
         console.log(`   Terkirim: ${recipientNum}/${totalRecipients}`);
         console.log(`   Pause ${DELAY_CONFIG.BATCH_PAUSE / 60000} menit...`);
-        console.log(`   Sisa batch: ${remainingBatches}\n`);
+        console.log(`   Sisa batch: ${remainingBatches}`);
+        console.log(`${'='.repeat(60)}\n`);
         
         await sleep(DELAY_CONFIG.BATCH_PAUSE);
         
-        console.log(`Melanjutkan pengiriman...\n`);
+        console.log(`▶️  Melanjutkan pengiriman...\n`);
       }
       // Random delay antar pesan (jika bukan akhir batch)
       else if (recipientNum < totalRecipients) {
@@ -304,7 +325,7 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
       }
       
     } catch (err) {
-      console.error(`[${recipientNum}/${totalRecipients}] Gagal mengirim ke ${contact.number}:`, err.message);
+      console.error(`[${recipientNum}/${totalRecipients}] ❌ Gagal mengirim ke ${contact.number}:`, err.message);
       sentErrors.push({
         number: contact.number,
         reason: err.message
@@ -322,6 +343,13 @@ async function executeScheduledMessage(id, numbers, message, filesData) {
   deliveryResult.allFailed = [...deliveryResult.notRegistered, ...deliveryResult.failed];
 
   const totalFailed = sentErrors.length + deliveryResult.notRegistered.length;
+  
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`✅ PENGIRIMAN SELESAI - PESAN ID: ${id}`);
+  console.log(`${'='.repeat(60)}`);
+  console.log(`   📤 Terkirim: ${actualSent.length} nomor`);
+  console.log(`   ❌ Gagal: ${totalFailed} nomor`);
+  console.log(`${'='.repeat(60)}\n`);
   
   // Cleanup files
   cleanupFiles(filesData);
@@ -357,16 +385,16 @@ function saveDeliveryResult(scheduleId, deliveryResult) {
     [resultJson, scheduleId],
     (err) => {
       if (err) {
-        console.error('Gagal menyimpan delivery result:', err);
+        console.error('❌ Gagal menyimpan delivery result:', err);
       } else {
-        console.log(`Delivery result berhasil disimpan untuk schedule ${scheduleId}`);
+        console.log(`✅ Delivery result berhasil disimpan untuk schedule ${scheduleId}`);
       }
     }
   );
 }
 
 function handleFailedMessage(id, filesData, reason) {
-  console.error(`Pesan ID ${id} gagal: ${reason}`);
+  console.error(`❌ Pesan ID ${id} gagal: ${reason}`);
 
   db.run(`UPDATE schedules SET status = ? WHERE id = ?`, ["gagal", id], (err) => {
     if (err) {
@@ -404,7 +432,7 @@ function updateMessageStatus(id, status, deliveryResult) {
     if (err) {
       console.error("Gagal memperbarui status:", err.message);
     } else {
-      console.log(`Status pesan ID ${id} diperbarui: ${status}`);
+      console.log(`✅ Status pesan ID ${id} diperbarui: ${status}`);
       
       if (global.emitScheduleStatusUpdate) {
         global.emitScheduleStatusUpdate(id, status, statusMessage, deliveryResult);
@@ -424,8 +452,9 @@ function loadAndScheduleExistingMessages() {
       console.error("Gagal mengambil jadwal pesan dari DB:", err.message);
       return;
     }
+    console.log(`📋 Memuat ${rows.length} jadwal pesan yang terjadwal...`);
     rows.forEach((scheduleData) => {
-      console.log(`Menjadwalkan ulang pesan ID ${scheduleData.id}`);
+      console.log(`   ↪️  Menjadwalkan ulang pesan ID ${scheduleData.id}`);
       scheduleMessage(scheduleData);
     });
   });

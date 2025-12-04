@@ -1,18 +1,22 @@
 // schedule-render.js - COMPLETE: With delivery result column
 
-import { formatTimeDifference } from '../ui/ui-helpers.js';
-import { getContacts } from '../contacts/contact-manager.js';
-import { getSchedules, setSchedules, getCurrentFilter } from './schedule-manager.js';
-import { 
-  createMessageEditFormHtml, 
+import { formatTimeDifference } from "../ui/ui-helpers.js";
+import { getContacts } from "../contacts/contact-manager.js";
+import {
+  getSchedules,
+  setSchedules,
+  getCurrentFilter,
+} from "./schedule-manager.js";
+import {
+  createMessageEditFormHtml,
   createMeetingEditFormHtml,
   populateMessageEditForm,
   populateMeetingEditForm,
   initEditMessageContactListeners,
   initEditMeetingContactListeners,
   handleReminderFormSubmit,
-  handleMeetingFormSubmit
-} from './schedule-edit.js';
+  handleMeetingFormSubmit,
+} from "./schedule-edit.js";
 
 /**
  *  NEW: Format delivery result untuk ditampilkan
@@ -25,58 +29,62 @@ function formatDeliveryResult(deliveryResultJson) {
   try {
     const result = JSON.parse(deliveryResultJson);
     const contacts = getContacts();
-    
+
     const successCount = result.sent || 0;
     const failedDetails = result.failed || [];
-    
-    let html = '';
-    
+
+    let html = "";
+
     // Success count
     if (successCount > 0) {
       html += `<div style="color: #48bb78; margin-bottom: 4px; font-size: 12px;">
         <strong>${successCount} Berhasil</strong>
       </div>`;
     }
-    
+
     // Failed details
     if (failedDetails.length > 0) {
       html += `<div style="color: #f56565; font-size: 12px;">
         <strong>${failedDetails.length} Gagal:</strong><br>`;
-      
+
       // Show max 3 failed numbers
       const displayFailed = failedDetails.slice(0, 999);
-      displayFailed.forEach(fail => {
+      displayFailed.forEach((fail) => {
         // Cari nama kontak berdasarkan nomor
-        const contact = contacts.find(c => c.number === fail.number);
-        const displayName = contact 
-          ? `<i class="fa-solid fa-user" style="font-size: 10px;"></i> ${contact.name}` 
-          : (fail.number.length > 15 ? fail.number.substring(0, 12) + '...' : fail.number);
-        
+        const contact = contacts.find((c) => c.number === fail.number);
+        const displayName = contact
+          ? `<i class="fa-solid fa-user" style="font-size: 10px;"></i> ${contact.name}`
+          : fail.number.length > 15
+          ? fail.number.substring(0, 12) + "..."
+          : fail.number;
+
         html += `<span style="display: block; padding-left: 16px; color: #bb6464ff;">
           • ${displayName}<br>
-          <small style="color: #a0aec0;">${fail.reason || 'Unknown error'}</small>
+          <small style="color: #a0aec0;">${
+            fail.reason || "Unknown error"
+          }</small>
         </span>`;
       });
-      
+
       // Show "and X more" if there are more failures
       if (failedDetails.length > 999) {
         html += `<span style="display: block; padding-left: 16px; color: #a0aec0; font-style: italic;">
           ... dan ${failedDetails.length - 999} lainnya
         </span>`;
       }
-      
+
       html += `</div>`;
     }
-    
+
     // If no result yet
     if (successCount === 0 && failedDetails.length === 0) {
-      html = '<span style="color: #a0aec0; font-size: 12px;">Belum terkirim</span>';
+      html =
+        '<span style="color: #a0aec0; font-size: 12px;">Belum terkirim</span>';
     }
-    
+
     return html;
-    
   } catch (e) {
-    console.error('Error parsing delivery result:', e);
+    console.error("Error parsing delivery result:", e);
     return '<span style="color: #f56565; font-size: 12px;">Error parsing data</span>';
   }
 }
@@ -86,48 +94,49 @@ function formatDeliveryResult(deliveryResultJson) {
  */
 async function formatRecipientsDisplay(numbersArray, groupInfo) {
   const contacts = getContacts();
-  
+
   // Parse groupInfo jika ada
   let groupInfoArray = [];
   if (groupInfo) {
     try {
-      groupInfoArray = typeof groupInfo === 'string' ? JSON.parse(groupInfo) : groupInfo;
+      groupInfoArray =
+        typeof groupInfo === "string" ? JSON.parse(groupInfo) : groupInfo;
       if (!Array.isArray(groupInfoArray)) {
         groupInfoArray = [];
       }
     } catch (e) {
-      console.warn('Error parsing groupInfo:', e);
+      console.warn("Error parsing groupInfo:", e);
       groupInfoArray = [];
     }
   }
-  
+
   const displayItems = [];
   const processedNumbers = new Set();
-  
+
   // STEP 1: Mark all group members as processed first
   if (groupInfoArray.length > 0) {
-    groupInfoArray.forEach(group => {
+    groupInfoArray.forEach((group) => {
       if (group.members && Array.isArray(group.members)) {
-        group.members.forEach(memberNum => {
+        group.members.forEach((memberNum) => {
           processedNumbers.add(memberNum);
         });
       }
     });
   }
-  
+
   // STEP 2: Display ONLY group names (NOT members)
   if (groupInfoArray.length > 0) {
-    groupInfoArray.forEach(group => {
+    groupInfoArray.forEach((group) => {
       displayItems.push(`<span style="color: #4299e1; font-weight: 500;">
         <i class="fa-solid fa-users" style="font-size: 11px;"></i> ${group.name}
       </span>`);
     });
   }
-  
+
   // STEP 3: Display individual contacts yang BUKAN member grup
-  numbersArray.forEach(num => {
+  numbersArray.forEach((num) => {
     if (!processedNumbers.has(num)) {
-      const contact = contacts.find(c => c.number === num);
+      const contact = contacts.find((c) => c.number === num);
       if (contact) {
         displayItems.push(`<span style="color: #48bb78;">
           <i class="fa-solid fa-user" style="font-size: 11px;"></i> ${contact.name}
@@ -138,12 +147,12 @@ async function formatRecipientsDisplay(numbersArray, groupInfo) {
       processedNumbers.add(num);
     }
   });
-  
+
   return {
-    html: displayItems.join('<br>'),
+    html: displayItems.join("<br>"),
     totalRecipients: numbersArray.length,
     groupCount: groupInfoArray.length,
-    individualCount: displayItems.length - groupInfoArray.length
+    individualCount: displayItems.length - groupInfoArray.length,
   };
 }
 
@@ -159,26 +168,24 @@ async function createScheduleRowHtml(schedule) {
     timeStyle: "short",
   });
 
+  // Parse numbers array - HANYA SATU KALI
   let numbersArray = [];
   try {
     if (schedule.originalNumbers) {
-      if (Array.isArray(schedule.originalNumbers)) {
-        numbersArray = schedule.originalNumbers;
-      } else if (typeof schedule.originalNumbers === "string") {
-        numbersArray = JSON.parse(schedule.originalNumbers || "[]");
-      }
+      numbersArray = Array.isArray(schedule.originalNumbers)
+        ? schedule.originalNumbers
+        : JSON.parse(schedule.originalNumbers || "[]");
     } else if (schedule.numbers) {
-      if (Array.isArray(schedule.numbers)) {
-        numbersArray = schedule.numbers;
-      } else if (typeof schedule.numbers === "string") {
-        numbersArray = JSON.parse(schedule.numbers || "[]");
-      }
+      numbersArray = Array.isArray(schedule.numbers)
+        ? schedule.numbers
+        : JSON.parse(schedule.numbers || "[]");
     }
   } catch (e) {
     console.error("Error parsing numbers:", e);
     numbersArray = [];
   }
 
+  // Clean numbers
   numbersArray = numbersArray.map((num) => {
     if (typeof num === "string") {
       let cleanNum = num.replace("@c.us", "");
@@ -190,7 +197,10 @@ async function createScheduleRowHtml(schedule) {
     return num;
   });
 
-  const recipientDisplay = await formatRecipientsDisplay(numbersArray, schedule.groupInfo);
+  const recipientDisplay = await formatRecipientsDisplay(
+    numbersArray,
+    schedule.groupInfo
+  );
   const isMeeting = schedule.type === "meeting" || schedule.meetingRoom;
 
   let statusClass = "";
@@ -206,7 +216,8 @@ async function createScheduleRowHtml(schedule) {
     case "terkirim":
       statusClass = "status-terkirim";
       statusText = "Terkirim";
-      statusIcon = '<i class="material-icons" title="Terkirim">check_circle</i>';
+      statusIcon =
+        '<i class="material-icons" title="Terkirim">check_circle</i>';
       break;
     case "gagal":
       statusClass = "status-gagal";
@@ -223,19 +234,34 @@ async function createScheduleRowHtml(schedule) {
       statusText = "Selesai";
       statusIcon = '<i class="material-icons" title="Selesai">done_all</i>';
       break;
+    case "processing":
+      statusClass = "status-processing";
+      statusText = "Mengirim";
+      statusIcon =
+        '<i class="fa-solid fa-spinner fa-spin" title="Sedang Mengirim"></i>';
+      break;
+    case "canceling":
+      statusClass = "status-canceling";
+      statusText = "Membatalkan";
+      statusIcon =
+        '<i class="fa-solid fa-spinner fa-spin" title="Membatalkan"></i>';
+      break;
     default:
       statusClass = "status-terjadwal";
       statusText = "Terjadwal";
-      statusIcon = '<i class="material-icons" title="Terjadwal">hourglass_empty</i>';
+      statusIcon =
+        '<i class="material-icons" title="Terjadwal">hourglass_empty</i>';
   }
 
   let fileDisplay = "-";
   if (isMeeting) {
     if (schedule.filesData && schedule.filesData.length > 0) {
-      fileDisplay = schedule.filesData.map((file) => {
-        const fileName = file.name || file.filename || "File";
-        return fileName.replace(/^\d+-/, "");
-      }).join("<br>");
+      fileDisplay = schedule.filesData
+        .map((file) => {
+          const fileName = file.name || file.filename || "File";
+          return fileName.replace(/^\d+-/, "");
+        })
+        .join("<br>");
     } else if (schedule.file) {
       fileDisplay = schedule.file.replace(/^\d+-/, "");
     } else if (schedule.meetingFile) {
@@ -243,16 +269,20 @@ async function createScheduleRowHtml(schedule) {
     }
   } else {
     if (schedule.filesData && schedule.filesData.length > 0) {
-      fileDisplay = schedule.filesData.map((file) => {
-        const fileName = file.name || file.filename || "File";
-        return fileName.replace(/^\d+-/, "");
-      }).join("<br>");
+      fileDisplay = schedule.filesData
+        .map((file) => {
+          const fileName = file.name || file.filename || "File";
+          return fileName.replace(/^\d+-/, "");
+        })
+        .join("<br>");
     }
   }
 
   let messageDisplay = "";
   if (isMeeting) {
-    let meetingTimeInfo = `<strong>Rapat:</strong> ${schedule.meetingTitle || schedule.message || "-"}<br>`;
+    let meetingTimeInfo = `<strong>Rapat:</strong> ${
+      schedule.meetingTitle || schedule.message || "-"
+    }<br>`;
     meetingTimeInfo += `<small>Ruangan: ${schedule.meetingRoom}</small>`;
     if (schedule.meetingEndTime) {
       const endTime = new Date(schedule.meetingEndTime);
@@ -262,7 +292,10 @@ async function createScheduleRowHtml(schedule) {
       });
       meetingTimeInfo += `<br><small>Durasi: ${scheduledTimeFormatted} - ${endTimeFormatted}</small>`;
     } else if (schedule.endTime) {
-      meetingTimeInfo += `<br><small>Durasi: ${scheduledTimeFull.toLocaleString("id-ID", { timeStyle: "short" })} - ${schedule.endTime}</small>`;
+      meetingTimeInfo += `<br><small>Durasi: ${scheduledTimeFull.toLocaleString(
+        "id-ID",
+        { timeStyle: "short" }
+      )} - ${schedule.endTime}</small>`;
     }
     messageDisplay = meetingTimeInfo;
   } else {
@@ -279,7 +312,9 @@ async function createScheduleRowHtml(schedule) {
         timeStyle: "short",
       });
     } else if (schedule.endTime) {
-      const meetingDate = scheduledTimeFull.toLocaleDateString("id-ID", { dateStyle: "medium" });
+      const meetingDate = scheduledTimeFull.toLocaleDateString("id-ID", {
+        dateStyle: "medium",
+      });
       endTimeDisplay = `${meetingDate}, ${schedule.endTime}`;
     }
 
@@ -301,27 +336,70 @@ async function createScheduleRowHtml(schedule) {
     timeCellContent = `${scheduledTimeFormatted}${countdownText}`;
   }
 
+  // Calculate estimated preparation time based on number of recipients
+  const VALIDATION_DELAY_PER_NUMBER = 500; // ms
+  const estimatedPrepTime = numbersArray.length * VALIDATION_DELAY_PER_NUMBER;
+  const BUFFER_TIME = 5000; // 5 seconds buffer
+  const totalPrepTime = estimatedPrepTime + BUFFER_TIME;
+
+  // Check if schedule is about to be sent OR currently processing
+  const scheduledTime = new Date(schedule.scheduledTime);
+  const now = new Date();
+  const timeUntilSend = scheduledTime - now;
+  const isAboutToSend = timeUntilSend > 0 && timeUntilSend <= totalPrepTime;
+  const isProcessing = schedule.status === "processing";
+
   let actionButtons = "";
   if (isMeeting) {
     switch (schedule.status) {
       case "terjadwal":
-        const fileData = schedule.filesData && schedule.filesData.length > 0
-          ? JSON.stringify(schedule.filesData)
-          : schedule.file || schedule.meetingFile || "";
+        if (isAboutToSend) {
+          actionButtons = `
+            <span style="color: #f6ad55; font-weight: 500;">
+              <i class="fa-solid fa-hourglass-half"></i> Mempersiapkan...
+              <small style="display: block; margin-top: 4px; color: #718096; font-size: 11px;">
+                ${numbersArray.length} penerima
+              </small>
+            </span>
+          `;
+        } else {
+          const fileData =
+            schedule.filesData && schedule.filesData.length > 0
+              ? JSON.stringify(schedule.filesData)
+              : schedule.file || schedule.meetingFile || "";
+          actionButtons = `
+            <button class="edit-btn" data-id="${schedule.id}" 
+                    data-type="meeting" 
+                    data-meetingroom="${schedule.meetingRoom}"
+                    data-meetingtitle="${
+                      schedule.meetingTitle || schedule.message || ""
+                    }"
+                    data-starttime="${schedule.scheduledTime}"
+                    data-endtime="${
+                      schedule.meetingEndTime || schedule.endTime || ""
+                    }"
+                    data-numbers="${escape(
+                      JSON.stringify(
+                        schedule.numbers || schedule.originalNumbers || []
+                      )
+                    )}"
+                    data-filesdata="${escape(fileData)}">
+              <i class="material-icons">edit</i> Edit
+            </button>
+            <button class="cancel-meeting-btn" data-id="${schedule.id}">
+              <i class="material-icons">cancel</i> Batal
+            </button>
+          `;
+        }
+        break;
+      case "processing":
         actionButtons = `
-          <button class="edit-btn" data-id="${schedule.id}" 
-                  data-type="meeting" 
-                  data-meetingroom="${schedule.meetingRoom}"
-                  data-meetingtitle="${schedule.meetingTitle || schedule.message || ""}"
-                  data-starttime="${schedule.scheduledTime}"
-                  data-endtime="${schedule.meetingEndTime || schedule.endTime || ""}"
-                  data-numbers="${escape(JSON.stringify(schedule.numbers || schedule.originalNumbers || []))}"
-                  data-filesdata="${escape(fileData)}">
-            <i class="material-icons">edit</i> Edit
-          </button>
-          <button class="cancel-meeting-btn" data-id="${schedule.id}">
-            <i class="material-icons">cancel</i> Batal
-          </button>
+          <span style="color: #48bb78; font-weight: 500;">
+            <i class="fa-solid fa-spinner fa-spin"></i> Mengirim pesan... 
+            <small style="display: block; margin-top: 4px; color: #718096; font-size: 11px;">
+              Mohon tunggu hingga selesai
+            </small>
+          </span>
         `;
         break;
       case "terkirim":
@@ -342,23 +420,56 @@ async function createScheduleRowHtml(schedule) {
           </button>
         `;
         break;
+      case "canceling":
+        actionButtons = `
+    <span style="color: #ed8936; font-weight: 500;">
+      <i class="fa-solid fa-spinner fa-spin"></i> Membatalkan...
+      <small style="display: block; margin-top: 4px; color: #718096; font-size: 11px;">
+        Mengirim notifikasi pembatalan
+      </small>
+    </span>
+  `;
+        break;
       default:
         actionButtons = "-";
     }
   } else {
     switch (schedule.status) {
       case "terjadwal":
+        if (isAboutToSend) {
+          actionButtons = `
+            <span style="color: #f6ad55; font-weight: 500;">
+              <i class="fa-solid fa-hourglass-half"></i> Mempersiapkan...
+              <small style="display: block; margin-top: 4px; color: #718096; font-size: 11px;">
+                ${numbersArray.length} penerima
+              </small>
+            </span>
+          `;
+        } else {
+          actionButtons = `
+            <button class="edit-btn" data-id="${schedule.id}" 
+                    data-type="message"
+                    data-message="${escape(schedule.message || "")}"
+                    data-datetime="${schedule.scheduledTime}"
+                    data-filesdata="${escape(
+                      JSON.stringify(schedule.filesData || [])
+                    )}">
+              <i class="material-icons">edit</i> Edit
+            </button>
+            <button class="cancel-btn" data-id="${schedule.id}">
+              <i class="material-icons">delete</i> Batal
+            </button>
+          `;
+        }
+        break;
+      case "processing":
         actionButtons = `
-          <button class="edit-btn" data-id="${schedule.id}" 
-                  data-type="message"
-                  data-message="${escape(schedule.message || "")}"
-                  data-datetime="${schedule.scheduledTime}"
-                  data-filesdata="${escape(JSON.stringify(schedule.filesData || []))}">
-            <i class="material-icons">edit</i> Edit
-          </button>
-          <button class="cancel-btn" data-id="${schedule.id}">
-            <i class="material-icons">delete</i> Batal
-          </button>
+          <span style="color: #48bb78; font-weight: 500;">
+            <i class="fa-solid fa-spinner fa-spin"></i> Mengirim pesan... 
+            <small style="display: block; margin-top: 4px; color: #718096; font-size: 11px;">
+              ${numbersArray.length} penerima
+            </small>
+          </span>
         `;
         break;
       case "terkirim":
@@ -377,7 +488,7 @@ async function createScheduleRowHtml(schedule) {
 
   let recipientDisplayHtml = recipientDisplay.html || "-";
   let recipientSummary = `${recipientDisplay.totalRecipients} nomor`;
-  
+
   if (recipientDisplay.groupCount > 0 && recipientDisplay.individualCount > 0) {
     recipientSummary += ` (${recipientDisplay.groupCount} grup, ${recipientDisplay.individualCount} kontak)`;
   } else if (recipientDisplay.groupCount > 0) {
@@ -386,10 +497,8 @@ async function createScheduleRowHtml(schedule) {
     recipientSummary += ` (${recipientDisplay.individualCount} kontak)`;
   }
 
-  //  NEW: Format delivery result
   const deliveryResultHtml = formatDeliveryResult(schedule.deliveryResult);
 
-  //  UPDATED: Add delivery result column (7 columns total now)
   return `
     <td data-scheduled-time="${schedule.scheduledTime}">${timeCellContent}</td>
     <td>${recipientDisplayHtml}<br><small style="color: #718096;">(${recipientSummary})</small></td>
@@ -427,7 +536,9 @@ export async function renderScheduleTable() {
     if (currentFilter === "all") {
       filteredSchedules = schedules;
     } else if (currentFilter === "meeting") {
-      filteredSchedules = schedules.filter((s) => s.type === "meeting" || s.meetingRoom);
+      filteredSchedules = schedules.filter(
+        (s) => s.type === "meeting" || s.meetingRoom
+      );
     } else {
       filteredSchedules = schedules.filter((s) => s.status === currentFilter);
     }
@@ -436,7 +547,10 @@ export async function renderScheduleTable() {
     filteredSchedules.sort((a, b) => {
       const isActiveMeeting = (schedule) => {
         const isMeeting = schedule.type === "meeting" || !!schedule.meetingRoom;
-        return isMeeting && (schedule.status === "terjadwal" || schedule.status === "terkirim");
+        return (
+          isMeeting &&
+          (schedule.status === "terjadwal" || schedule.status === "terkirim")
+        );
       };
 
       const aIsActiveMeeting = isActiveMeeting(a);
@@ -466,7 +580,8 @@ export async function renderScheduleTable() {
     schedulesContainer.innerHTML = "";
 
     if (filteredSchedules.length === 0) {
-      schedulesContainer.innerHTML = '<tr><td colspan="7" class="text-center"><div class="empty-state" style="padding: 40px 20px;"><i class="fa-solid fa-calendar-times" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i><p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada jadwal untuk filter ini.</p></div></td></tr>';
+      schedulesContainer.innerHTML =
+        '<tr><td colspan="7" class="text-center"><div class="empty-state" style="padding: 40px 20px;"><i class="fa-solid fa-calendar-times" style="font-size: 48px; color: #cbd5e0; margin-bottom: 12px;"></i><p style="color: #a0aec0; margin: 0; font-size: 14px;">Tidak ada jadwal untuk filter ini.</p></div></td></tr>';
     } else {
       const rowPromises = filteredSchedules.map(async (schedule) => {
         const newRow = document.createElement("tr");
@@ -474,9 +589,9 @@ export async function renderScheduleTable() {
         newRow.innerHTML = await createScheduleRowHtml(schedule);
         return newRow;
       });
-      
+
       const rows = await Promise.all(rowPromises);
-      rows.forEach(row => schedulesContainer.appendChild(row));
+      rows.forEach((row) => schedulesContainer.appendChild(row));
     }
 
     updateCountdownTimers();
@@ -495,7 +610,7 @@ export function updateCountdownTimers() {
   if (schedules.length === 0) return;
 
   const rows = document.querySelectorAll("#scheduleTable tbody tr[data-id]");
-  
+
   rows.forEach((row) => {
     const scheduleId = row.dataset.id;
     const scheduleData = schedules.find((s) => s.id == scheduleId);
@@ -503,7 +618,7 @@ export function updateCountdownTimers() {
     if (scheduleData && scheduleData.status === "terjadwal") {
       const timeCell = row.cells[0];
       if (!timeCell) return;
-      
+
       let smallElement = timeCell.querySelector("small.countdown-timer");
 
       const scheduledTime = new Date(scheduleData.scheduledTime);
@@ -516,7 +631,8 @@ export function updateCountdownTimers() {
       if (!smallElement) {
         smallElement = document.createElement("small");
         smallElement.className = "countdown-timer";
-        smallElement.style.cssText = "display: block; color: #718096; margin-top: 4px; font-size: 12px;";
+        smallElement.style.cssText =
+          "display: block; color: #718096; margin-top: 4px; font-size: 12px;";
         timeCell.appendChild(smallElement);
       }
 
@@ -563,26 +679,45 @@ export async function smartUpdateScheduleStatus() {
     const schedules = getSchedules();
 
     newSchedules.forEach((newSchedule) => {
-      const oldSchedule = schedules.find(s => s.id === newSchedule.id);
-      
+      const oldSchedule = schedules.find((s) => s.id === newSchedule.id);
+
       if (oldSchedule && oldSchedule.status !== newSchedule.status) {
-        const row = document.querySelector(`#scheduleTable tbody tr[data-id="${newSchedule.id}"]`);
+        const row = document.querySelector(
+          `#scheduleTable tbody tr[data-id="${newSchedule.id}"]`
+        );
         if (row && row.cells[4]) {
           const statusCell = row.cells[4];
-          
+
           statusCell.style.transition = "opacity 0.3s ease";
           statusCell.style.opacity = "0.3";
-          
+
           setTimeout(() => {
             const statusConfig = {
-              'terkirim': { icon: 'check_circle', text: 'Terkirim', class: 'status-terkirim' },
-              'gagal': { icon: 'cancel', text: 'Gagal', class: 'status-gagal' },
-              'dibatalkan': { icon: 'block', text: 'Dibatalkan', class: 'status-dibatalkan' },
-              'selesai': { icon: 'done_all', text: 'Selesai', class: 'status-selesai' },
-              'terjadwal': { icon: 'hourglass_empty', text: 'Terjadwal', class: 'status-terjadwal' }
+              terkirim: {
+                icon: "check_circle",
+                text: "Terkirim",
+                class: "status-terkirim",
+              },
+              gagal: { icon: "cancel", text: "Gagal", class: "status-gagal" },
+              dibatalkan: {
+                icon: "block",
+                text: "Dibatalkan",
+                class: "status-dibatalkan",
+              },
+              selesai: {
+                icon: "done_all",
+                text: "Selesai",
+                class: "status-selesai",
+              },
+              terjadwal: {
+                icon: "hourglass_empty",
+                text: "Terjadwal",
+                class: "status-terjadwal",
+              },
             };
-            
-            const config = statusConfig[newSchedule.status] || statusConfig['terjadwal'];
+
+            const config =
+              statusConfig[newSchedule.status] || statusConfig["terjadwal"];
             statusCell.innerHTML = `<i class="material-icons" title="${config.text}">${config.icon}</i> ${config.text}`;
             statusCell.className = config.class;
             statusCell.style.opacity = "1";
@@ -592,7 +727,6 @@ export async function smartUpdateScheduleStatus() {
     });
 
     setSchedules(newSchedules);
-
   } catch (error) {
     console.error("Error in smart status update:", error);
   }
@@ -620,7 +754,7 @@ async function attachScheduleActionListeners() {
       if (isMeeting) {
         window.showEditModal("Edit Jadwal Rapat");
         modalBody.innerHTML = createMeetingEditFormHtml(scheduleToEdit);
-        
+
         //  PERBAIKAN: Pastikan ini di-call SEBELUM populate form
         if (window.afterEditMeetingModalOpen) {
           window.afterEditMeetingModalOpen();
@@ -676,9 +810,13 @@ async function attachScheduleActionListeners() {
   document.querySelectorAll(".cancel-meeting-btn").forEach((button) => {
     button.onclick = async function () {
       const id = this.dataset.id;
+      const buttonElement = this;
+      const row = buttonElement.closest("tr");
+      const actionCell = row.querySelector(".action-buttons");
+
       Swal.fire({
         title: "Anda yakin?",
-        text: "Rapat ini akan dibatalkan!",
+        text: "Rapat ini akan dibatalkan dan notifikasi akan dikirim ke semua peserta!",
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#3085d6",
@@ -687,18 +825,133 @@ async function attachScheduleActionListeners() {
         cancelButtonText: "Tidak",
       }).then(async (result) => {
         if (result.isConfirmed) {
+          // STEP 1: Ubah UI ke status "Membatalkan..."
+          const originalHTML = actionCell.innerHTML;
+          actionCell.innerHTML = `
+          <span style="color: #ed8936; font-weight: 500;">
+            <i class="fa-solid fa-spinner fa-spin"></i> Membatalkan rapat...
+            <small style="display: block; margin-top: 4px; color: #718096; font-size: 11px;">
+              Mengirim notifikasi pembatalan...
+            </small>
+          </span>
+        `;
+
           try {
+            // STEP 2: Kirim request ke server
             const res = await fetch(`/cancel-meeting/${id}`, { method: "PUT" });
             const result = await res.json();
+
             if (res.ok && result.success) {
-              Swal.fire("Dibatalkan!", result.message, "success");
-              renderScheduleTable();
+              // STEP 3: Tampilkan notifikasi sukses
+              Swal.fire({
+                icon: "success",
+                title: "Dibatalkan!",
+                text: result.message,
+                timer: 3000,
+                showConfirmButton: false,
+              });
+
+              // STEP 4: Update UI ke status "dibatalkan"
+              setTimeout(() => {
+                actionCell.innerHTML = `
+                <button class="delete-meeting-btn" data-id="${id}">
+                  <i class="material-icons">delete_forever</i> Hapus Riwayat
+                </button>
+              `;
+
+                // Update status cell
+                const statusCell = row.cells[4];
+                if (statusCell) {
+                  statusCell.className = "status-dibatalkan";
+                  statusCell.innerHTML =
+                    '<i class="material-icons" title="Dibatalkan">block</i> Dibatalkan';
+                }
+
+                // Re-attach event listener untuk tombol delete yang baru
+                const deleteBtn = actionCell.querySelector(
+                  ".delete-meeting-btn"
+                );
+                if (deleteBtn) {
+                  deleteBtn.onclick = async function () {
+                    // Copy dari handler delete-meeting-btn yang sudah ada
+                    const deleteId = this.dataset.id;
+                    Swal.fire({
+                      title: "Anda yakin?",
+                      text: "Data rapat ini akan dihapus permanen dan tidak bisa dikembalikan!",
+                      icon: "warning",
+                      showCancelButton: true,
+                      confirmButtonColor: "#d33",
+                      cancelButtonColor: "#3085d6",
+                      confirmButtonText: "Ya, hapus!",
+                      cancelButtonText: "Tidak",
+                    }).then(async (deleteResult) => {
+                      if (deleteResult.isConfirmed) {
+                        try {
+                          const deleteRes = await fetch(
+                            `/delete-meeting/${deleteId}`,
+                            { method: "DELETE" }
+                          );
+                          const deleteResData = await deleteRes.json();
+                          if (deleteRes.ok && deleteResData.success) {
+                            Swal.fire(
+                              "Dihapus!",
+                              deleteResData.message,
+                              "success"
+                            );
+                            renderScheduleTable();
+                          } else {
+                            Swal.fire(
+                              "Gagal!",
+                              deleteResData.message || "Gagal menghapus rapat",
+                              "error"
+                            );
+                          }
+                        } catch (error) {
+                          console.error("Error deleting meeting:", error);
+                          Swal.fire(
+                            "Gagal!",
+                            "Terjadi kesalahan saat menghapus rapat.",
+                            "error"
+                          );
+                        }
+                      }
+                    });
+                  };
+                }
+              }, 500);
             } else {
-              Swal.fire("Gagal!", result.message || "Gagal membatalkan rapat", "error");
+              // Error dari server
+              Swal.fire(
+                "Gagal!",
+                result.message || "Gagal membatalkan rapat",
+                "error"
+              );
+              actionCell.innerHTML = originalHTML;
+
+              // Re-attach event listener
+              const newCancelBtn = actionCell.querySelector(
+                ".cancel-meeting-btn"
+              );
+              if (newCancelBtn) {
+                newCancelBtn.onclick = buttonElement.onclick;
+              }
             }
           } catch (error) {
             console.error("Error canceling meeting:", error);
-            Swal.fire("Gagal!", "Terjadi kesalahan saat membatalkan rapat.", "error");
+            Swal.fire(
+              "Gagal!",
+              "Terjadi kesalahan saat membatalkan rapat.",
+              "error"
+            );
+            actionCell.innerHTML = originalHTML;
+
+            // Re-attach event listener
+            const newCancelBtn = actionCell.querySelector(
+              ".cancel-meeting-btn"
+            );
+            if (newCancelBtn) {
+              newCancelBtn.onclick = buttonElement.onclick;
+            }
           }
         }
       });
@@ -727,11 +980,19 @@ async function attachScheduleActionListeners() {
               Swal.fire("Selesai!", result.message, "success");
               renderScheduleTable();
             } else {
-              Swal.fire("Gagal!", result.message || "Gagal menandai rapat selesai", "error");
+              Swal.fire(
+                "Gagal!",
+                result.message || "Gagal menandai rapat selesai",
+                "error"
+              );
             }
           } catch (error) {
             console.error("Error finishing meeting:", error);
-            Swal.fire("Gagal!", "Terjadi kesalahan saat menandai rapat selesai.", "error");
+            Swal.fire(
+              "Gagal!",
+              "Terjadi kesalahan saat menandai rapat selesai.",
+              "error"
+            );
           }
         }
       });
@@ -754,17 +1015,27 @@ async function attachScheduleActionListeners() {
       }).then(async (result) => {
         if (result.isConfirmed) {
           try {
-            const res = await fetch(`/delete-meeting/${id}`, { method: "DELETE" });
+            const res = await fetch(`/delete-meeting/${id}`, {
+              method: "DELETE",
+            });
             const result = await res.json();
             if (res.ok && result.success) {
               Swal.fire("Dihapus!", result.message, "success");
               renderScheduleTable();
             } else {
-              Swal.fire("Gagal!", result.message || "Gagal menghapus rapat", "error");
+              Swal.fire(
+                "Gagal!",
+                result.message || "Gagal menghapus rapat",
+                "error"
+              );
             }
           } catch (error) {
             console.error("Error deleting meeting:", error);
-            Swal.fire("Gagal!", "Terjadi kesalahan saat menghapus rapat.", "error");
+            Swal.fire(
+              "Gagal!",
+              "Terjadi kesalahan saat menghapus rapat.",
+              "error"
+            );
           }
         }
       });
@@ -787,7 +1058,9 @@ async function attachScheduleActionListeners() {
       }).then(async (result) => {
         if (result.isConfirmed) {
           try {
-            const res = await fetch(`/cancel-schedule/${id}`, { method: "DELETE" });
+            const res = await fetch(`/cancel-schedule/${id}`, {
+              method: "DELETE",
+            });
             const text = await res.text();
             if (res.ok) {
               Swal.fire("Dibatalkan!", text, "success");
@@ -797,7 +1070,11 @@ async function attachScheduleActionListeners() {
             }
           } catch (error) {
             console.error("Error canceling schedule:", error);
-            Swal.fire("Gagal!", "Terjadi kesalahan saat membatalkan jadwal.", "error");
+            Swal.fire(
+              "Gagal!",
+              "Terjadi kesalahan saat membatalkan jadwal.",
+              "error"
+            );
           }
         }
       });
@@ -820,7 +1097,9 @@ async function attachScheduleActionListeners() {
       }).then(async (result) => {
         if (result.isConfirmed) {
           try {
-            const res = await fetch(`/delete-history/${id}`, { method: "DELETE" });
+            const res = await fetch(`/delete-history/${id}`, {
+              method: "DELETE",
+            });
             const text = await res.text();
             if (res.ok) {
               Swal.fire("Dihapus!", text, "success");
@@ -830,7 +1109,11 @@ async function attachScheduleActionListeners() {
             }
           } catch (error) {
             console.error("Error deleting history:", error);
-            Swal.fire("Gagal!", "Terjadi kesalahan saat menghapus riwayat.", "error");
+            Swal.fire(
+              "Gagal!",
+              "Terjadi kesalahan saat menghapus riwayat.",
+              "error"
+            );
           }
         }
       });
@@ -839,9 +1122,9 @@ async function attachScheduleActionListeners() {
 }
 
 // Export all functions
-export { 
-  formatDeliveryResult,  //  Export new function
+export {
+  formatDeliveryResult, //  Export new function
   formatRecipientsDisplay,
   createScheduleRowHtml,
-  attachScheduleActionListeners
+  attachScheduleActionListeners,
 };
