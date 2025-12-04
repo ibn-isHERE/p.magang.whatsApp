@@ -374,6 +374,8 @@ db.serialize(() => {
                 (err) => {
                     if (err) {
                         console.error("Kesalahan saat menambahkan kolom editedAt:", err);
+                    } else {
+                        console.log("✅ Kolom editedAt berhasil ditambahkan ke tabel chats");
                     }
                 }
             );
@@ -395,6 +397,45 @@ db.serialize(() => {
                 (err) => {
                     if (err) {
                         console.error("Kesalahan saat menambahkan kolom waMessageId:", err);
+                    } else {
+                        console.log("✅ Kolom waMessageId berhasil ditambahkan ke tabel chats");
+                    }
+                }
+            );
+        }
+    });
+
+    // MIGRASI BARU: Menambahkan kolom updatedAt ke contacts
+    db.all("PRAGMA table_info(contacts)", [], (err, columns) => {
+        if (err) {
+            console.error("Kesalahan saat mengecek skema tabel contacts:", err);
+            return;
+        }
+
+        const hasUpdatedAt = columns.some(col => col.name === 'updatedAt');
+        
+        if (!hasUpdatedAt) {
+            // SQLite tidak support DEFAULT CURRENT_TIMESTAMP di ALTER TABLE
+            // Jadi kita gunakan NULL sebagai default, lalu update manual
+            db.run(
+                "ALTER TABLE contacts ADD COLUMN updatedAt TEXT",
+                (err) => {
+                    if (err) {
+                        console.error("Kesalahan saat menambahkan kolom updatedAt ke contacts:", err);
+                    } else {
+                        console.log("✅ Kolom updatedAt berhasil ditambahkan ke tabel contacts");
+                        
+                        // Set nilai default untuk existing records
+                        db.run(
+                            "UPDATE contacts SET updatedAt = createdAt WHERE updatedAt IS NULL",
+                            (updateErr) => {
+                                if (updateErr) {
+                                    console.error("Kesalahan saat set default updatedAt:", updateErr);
+                                } else {
+                                    console.log("✅ Nilai default updatedAt berhasil diset untuk existing records");
+                                }
+                            }
+                        );
                     }
                 }
             );

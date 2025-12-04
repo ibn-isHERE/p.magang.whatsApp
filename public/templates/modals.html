@@ -53,28 +53,91 @@
     </div>
 </div>
 
-<!-- ADD MEMBERS MODAL -->
+<!-- ADD MEMBERS MODAL - UPDATED WITH FILTER -->
 <div id="addMembersModal" class="edit-modal">
-    <div class="edit-modal-content" style="max-width: 600px">
+    <div class="edit-modal-content" style="max-width: 700px">
         <div class="edit-modal-header">
             <h2>Tambah Anggota ke Grup</h2>
             <button class="edit-modal-close" onclick="closeAddMembersModal()">&times;</button>
         </div>
         <div id="addMembersModalBody" style="padding: 20px">
-            <div class="search-box-wrapper" style="margin-bottom: 16px">
-                <i class="fa-solid fa-search"></i>
-                <input type="text" id="addMemberSearch" placeholder="Cari kontak..." autocomplete="off" />
+            
+            <!-- FILTER CONTAINER - NEW -->
+            <div class="member-filter-container">
+                <div class="filter-header">
+                    <h4><i class="fa-solid fa-filter"></i> Filter Anggota</h4>
+                    <button id="clearAllAddMemberFilters" class="clear-all-filters-btn" style="display: none;">
+                        <i class="fa-solid fa-times"></i> Reset Semua Filter
+                    </button>
+                </div>
+                
+                <div class="filter-grid">
+                    <div class="filter-item">
+                        <label><i class="fa-solid fa-user"></i> Nama</label>
+                        <input 
+                            type="text" 
+                            id="filterAddMemberName" 
+                            placeholder="Cari nama..." 
+                            class="filter-input"
+                            autocomplete="off"
+                        />
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label><i class="fa-solid fa-phone"></i> Nomor</label>
+                        <input 
+                            type="text" 
+                            id="filterAddMemberNumber" 
+                            placeholder="Cari nomor..." 
+                            class="filter-input"
+                            autocomplete="off"
+                        />
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label><i class="fa-solid fa-building"></i> Instansi</label>
+                        <input 
+                            type="text" 
+                            id="filterAddMemberInstansi" 
+                            placeholder="Cari instansi..." 
+                            class="filter-input"
+                            autocomplete="off"
+                        />
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label><i class="fa-solid fa-briefcase"></i> Jabatan</label>
+                        <input 
+                            type="text" 
+                            id="filterAddMemberJabatan" 
+                            placeholder="Cari jabatan..." 
+                            class="filter-input"
+                            autocomplete="off"
+                        />
+                    </div>
+                </div>
+                
+                <div id="filterAddMemberResultInfo" class="filter-result-info"></div>
             </div>
 
+            <!-- SELECT ALL CONTAINER -->
             <div class="select-all-container" style="margin-bottom: 12px">
                 <label for="selectAllAddMembers">Pilih Semua</label>
                 <input type="checkbox" id="selectAllAddMembers" />
             </div>
 
-            <div id="addMembersList" class="contact-checklist-box" style="max-height: 400px; overflow-y: auto">
+            <!-- MEMBERS LIST -->
+            <div id="addMembersList" class="contact-checklist-box" style="max-height: 350px; overflow-y: auto">
                 <p style="text-align: center; color: #a0aec0">Memuat kontak...</p>
             </div>
 
+            <!-- NO RESULTS MESSAGE -->
+            <div id="noAddMemberResults" class="no-search-results" style="display: none;">
+                <i class="fa-solid fa-search"></i>
+                <p>Tidak ada kontak yang cocok dengan pencarian</p>
+            </div>
+
+            <!-- ACTION BUTTONS -->
             <div style="margin-top: 20px; display: flex; gap: 10px">
                 <button id="confirmAddMembersBtn" class="btn-primary" style="flex: 1">
                     <i class="fa-solid fa-user-plus"></i> Tambahkan

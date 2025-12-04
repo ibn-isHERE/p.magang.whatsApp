@@ -43,20 +43,26 @@ function formatDeliveryResult(deliveryResultJson) {
     }
 
     // Failed details
-    if (failedDetails.length > 0) {
+     if (failedDetails.length > 0) {
       html += `<div style="color: #f56565; font-size: 12px;">
         <strong>${failedDetails.length} Gagal:</strong><br>`;
 
       // Show max 3 failed numbers
       const displayFailed = failedDetails.slice(0, 999);
       displayFailed.forEach((fail) => {
-        // Cari nama kontak berdasarkan nomor
-        const contact = contacts.find((c) => c.number === fail.number);
+        // Clean nomor dari format WhatsApp untuk matching
+        let cleanFailNumber = fail.number.replace("@c.us", "");
+        if (cleanFailNumber.startsWith("62")) {
+          cleanFailNumber = "0" + cleanFailNumber.slice(2);
+        }
+        
+        // Cari nama kontak berdasarkan nomor yang sudah di-clean
+        const contact = contacts.find((c) => c.number === cleanFailNumber);
         const displayName = contact
           ? `<i class="fa-solid fa-user" style="font-size: 10px;"></i> ${contact.name}`
-          : fail.number.length > 15
-          ? fail.number.substring(0, 12) + "..."
-          : fail.number;
+          : cleanFailNumber.length > 15
+          ? cleanFailNumber.substring(0, 12) + "..."
+          : cleanFailNumber;
 
         html += `<span style="display: block; padding-left: 16px; color: #bb6464ff;">
           • ${displayName}<br>

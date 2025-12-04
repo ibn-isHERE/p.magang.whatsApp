@@ -1,4 +1,4 @@
-// Handler untuk registrasi dan unregistrasi kontak
+// Handler untuk registrasi, update, dan unregistrasi kontak
 const templates = require('../config/messageTemplates');
 const { toTitleCase } = require('../utils/textHelpers');
 
@@ -164,6 +164,107 @@ class RegistrationHandler {
                 await this.client.sendMessage(message.from, 'Terjadi kesalahan saat menyimpan data. Mohon coba lagi.');
                 return { success: false, reason: 'database_error' };
             }
+        }
+    }
+
+    /**
+     * BARU: Menangani proses update data kontak (parsing UPDATE#...)
+     */
+    async handleUpdate(message, fromNumber, messageBody) {
+        const parts = messageBody.split('#');
+
+        // Validasi format
+        if (parts.length !== 4) {
+            await this.client.sendMessage(message.from, templates.updateFormatError);
+            return { success: false, reason: 'invalid_format' };
+        }
+
+        const nama = parts[1].trim();
+        const instansi = toTitleCase(parts[2].trim());  
+        const jabatan = toTitleCase(parts[3].trim());   
+
+        // Validasi semua field terisi
+        if (!nama || !instansi || !jabatan) {
+            await this.client.sendMessage(message.from, templates.updateFormatError);
+            return { success: false, reason: 'empty_fields' };
+        }
+
+        try {
+            // Cek apakah nomor sudah terdaftar
+            const existingContact = await this.checkRegistration(fromNumber);
+            
+            if (!existingContact) {
+                console.log(`Nomor ${fromNumber} belum terdaftar, tidak bisa update`);
+                await this.client.sendMessage(message.from, templates.updateNotRegistered);
+                return { success: false, reason: 'not_registered' };
+            }
+
+            // VALIDASI: Cek apakah ada perubahan data
+            const isDataSame = 
+                existingContact.name === nama && 
+                existingContact.instansi === instansi && 
+                existingContact.jabatan === jabatan;
+
+            if (isDataSame) {
+                console.log(`Tidak ada perubahan data untuk ${fromNumber}`);
+                await this.client.sendMessage(message.from, templates.updateNoChanges);
+                return { 
+                    success: false, 
+                    reason: 'no_changes',
+                    currentData: {
+                        nama: existingContact.name,
+                        instansi: existingContact.instansi,
+                        jabatan: existingContact.jabatan
+                    }
+                };
+            }
+
+            // Cek apakah kolom updatedAt ada
+            const hasUpdatedAt = await new Promise((resolve, reject) => {
+                this.db.all("PRAGMA table_info(contacts)", [], (err, columns) => {
+                    if (err) reject(err);
+                    else resolve(columns.some(col => col.name === 'updatedAt'));
+                });
+            });
+
+            // Update data kontak (dengan atau tanpa updatedAt)
+            await new Promise((resolve, reject) => {
+                const updateSql = hasUpdatedAt 
+                    ? `UPDATE contacts SET name = ?, instansi = ?, jabatan = ?, updatedAt = datetime('now') WHERE id = ?`
+                    : `UPDATE contacts SET name = ?, instansi = ?, jabatan = ? WHERE id = ?`;
+                
+                this.db.run(updateSql, [nama, instansi, jabatan, existingContact.id], function(err) {
+                    if (err) {
+                        reject({ type: 'database', message: err.message });
+                    } else {
+                        resolve(this.changes);
+                    }
+                });
+            });
+
+            console.log(`Kontak berhasil diupdate: ${nama} (${existingContact.number})`);
+            await this.client.sendMessage(
+                message.from, 
+                templates.updateSuccess(nama, instansi, jabatan)
+            );
+
+            return { 
+                success: true, 
+                data: { nama, instansi, jabatan, number: existingContact.number },
+                previousData: {
+                    nama: existingContact.name,
+                    instansi: existingContact.instansi,
+                    jabatan: existingContact.jabatan
+                }
+            };
+
+        } catch (error) {
+            console.error('Error saat mengupdate kontak:', error);
+            await this.client.sendMessage(
+                message.from, 
+                'Terjadi kesalahan saat memperbarui data. Mohon coba lagi.'
+            );
+            return { success: false, reason: 'database_error' };
         }
     }
 

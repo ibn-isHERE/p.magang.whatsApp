@@ -456,7 +456,7 @@ async function sendCancellationNotification(meeting) {
     }
 
     const message =
-        `*PEMBERITAHUAN PEMBATALAN RAPAT*\n\n` +
+        `*❌PEMBERITAHUAN PEMBATALAN RAPAT❌*\n\n` +
         `Rapat dengan detail berikut telah dibatalkan:\n` +
         `*Judul:* ${meeting.meetingTitle}\n` +
         `*Ruangan:* ${meeting.meetingRoom}\n` +

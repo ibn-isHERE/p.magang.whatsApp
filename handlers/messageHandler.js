@@ -205,6 +205,7 @@ class MessageHandler {
   /**
    * Main message handler - dipanggil dari index.js
    * MODIFIED: Otomatis masuk ke mode chat, menu hanya via trigger
+   * ADDED: Handler untuk UPDATE command
    */
   async handleIncomingMessage(message) {
     try {
@@ -258,7 +259,28 @@ class MessageHandler {
         return;
       }
 
-      // PRIORITAS 4: Cek apakah user di state MENU_UTAMA
+      // PRIORITAS 4: Cek format UPDATE# (untuk update data kontak)
+      if (messageBodyUpper.startsWith("UPDATE#")) {
+        const result = await this.registrationHandler.handleUpdate(
+          message,
+          fromNumber,
+          messageBody
+        );
+
+        if (result.success) {
+          console.log(`✅ Data kontak ${fromNumber} berhasil diupdate`);
+          console.log(`📋 Data sebelumnya:`, result.previousData);
+          console.log(`📋 Data baru:`, result.data);
+        } else if (result.reason === 'no_changes') {
+          console.log(`ℹ️  Tidak ada perubahan data untuk ${fromNumber}`);
+          console.log(`📋 Data saat ini:`, result.currentData);
+        } else {
+          console.log(`❌ Update gagal untuk ${fromNumber}, alasan: ${result.reason}`);
+        }
+        return;
+      }
+
+      // PRIORITAS 5: Cek apakah user di state MENU_UTAMA
       // Jika ya, cek apakah pilihan menu valid (1-5)
       // Jika tidak valid, langsung masuk ke chat mode dan save pesan
       if (this.userState[fromNumber] === "MENU_UTAMA") {
@@ -287,7 +309,7 @@ class MessageHandler {
         return;
       }
 
-      // PRIORITAS 5: Semua pesan lainnya otomatis masuk ke chat
+      // PRIORITAS 6: Semua pesan lainnya otomatis masuk ke chat
       // User langsung dalam mode CHATTING_WAITING
 
       // Jika belum punya state, set ke CHATTING_WAITING

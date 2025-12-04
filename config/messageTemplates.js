@@ -62,6 +62,7 @@ Daftar dengan: *REG#Nama#Instansi#Jabatan*
 
 ━━━━━━━━━━━━━━━━━━━━━━
 ✅ _Anda terdaftar untuk menerima broadcast rutin dari BPS_
+📝 _Ketik *UPDATE#Nama#Instansi#Jabatan* untuk mengubah data Anda_
 🔕 _Ketik *UNREG* untuk berhenti menerima broadcast_`,
 
   // BARU: Pesan menu 5 - Panduan Registrasi untuk yang BELUM TERDAFTAR
@@ -99,6 +100,17 @@ REG#Budi Santoso#Dinas Pendidikan#Kepala Seksi
 ✅ *Anda sudah terdaftar sebagai: ${name}*
 
 Anda saat ini menerima broadcast rutin dari BPS Provinsi Riau.
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+*📝 CARA UPDATE DATA:*
+
+Jika ingin mengubah data Anda (nama, instansi, atau jabatan), ketik:
+
+*UPDATE#Nama Baru#Instansi Baru#Jabatan Baru*
+
+*Contoh:*
+UPDATE#Budi Santoso#Dinas Kesehatan#Kepala Bidang
 
 ━━━━━━━━━━━━━━━━━━━━━━
 
@@ -143,6 +155,57 @@ REG#Budi Santoso#Dinas Pendidikan#Kepala Seksi
 
 _Ketik ulang dengan format yang benar atau lanjutkan ke menu layanan_`,
 
+  // BARU: Pesan sukses update data
+  updateSuccess: (nama, instansi, jabatan) => `✅ *Data Anda berhasil diperbarui!*
+
+*Data Terbaru:*
+👤 Nama: ${nama}
+🏢 Instansi: ${instansi}
+💼 Jabatan: ${jabatan}
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Anda akan terus menerima broadcast dengan data yang telah diperbarui.
+
+Terima kasih! 🙏`,
+
+  // BARU: Pesan error format update
+  updateFormatError: `❌ *Format update salah!*
+
+Pastikan menggunakan format:
+*UPDATE#Nama Lengkap#Nama Instansi#Jabatan*
+
+*Contoh:*
+UPDATE#Budi Santoso#Dinas Kesehatan#Kepala Bidang
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+_Ketik ulang dengan format yang benar_`,
+
+  // BARU: Pesan error update untuk yang belum terdaftar
+  updateNotRegistered: `❌ *Anda belum terdaftar!*
+
+Fitur update data hanya tersedia untuk pengguna yang sudah terdaftar.
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+*Daftar terlebih dahulu dengan format:*
+*REG#Nama Lengkap#Nama Instansi#Jabatan*
+
+*Contoh:*
+REG#Budi Santoso#Dinas Pendidikan#Kepala Seksi`,
+
+  // BARU: Pesan jika tidak ada perubahan data
+  updateNoChanges: `ℹ️ *Tidak Ada Perubahan*
+
+Data yang Anda masukkan sama dengan data yang sudah tersimpan di sistem.
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+Jika ingin mengubah data, pastikan ada yang berbeda dari data sebelumnya.
+
+Ketik *menu* untuk kembali ke menu utama.`,
+
   // Pesan konfirmasi UNREG
   unregSuccess: `*Data Anda telah berhasil dihapus.*
 
@@ -171,6 +234,11 @@ Ketik: *REG#Nama#Instansi#Jabatan*`,
   alreadyRegistered: `Nomor Anda sudah terdaftar dalam sistem.
 
 Anda sudah menerima broadcast rutin dari BPS.
+
+━━━━━━━━━━━━━━━━━━━━━━
+
+*Ingin update data?*
+Ketik: *UPDATE#Nama#Instansi#Jabatan*
 
 ━━━━━━━━━━━━━━━━━━━━━━
 

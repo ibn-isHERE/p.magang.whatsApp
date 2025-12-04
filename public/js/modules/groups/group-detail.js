@@ -1,4 +1,4 @@
-// group-detail.js - Group Detail View & Member Management Module
+// group-detail.js - Group Detail View & Member Management Module (WITH ADD MEMBER FILTER)
 // Use dynamic imports to avoid circular dependencies
 
 let currentGroupId = null;
@@ -9,7 +9,6 @@ let selectedMembersToAdd = new Set();
  * Show group detail modal with members table
  */
 export async function showGroupDetail(id) {
-  // Import dinamis untuk menghindari circular dependency
   const groupManager = await import('../groups/group-manager.js');
   const contactManager = await import('../contacts/contact-manager.js');
   
@@ -264,7 +263,7 @@ function attachDetailModalListeners() {
 }
 
 /**
- * Initialize member search filter
+ * Initialize member search filter (for group detail view)
  */
 function initMemberSearch() {
   const filterName = document.getElementById("filterName");
@@ -282,7 +281,7 @@ function initMemberSearch() {
     return;
   }
 
-  console.log(" Filter initialized successfully!");
+  console.log("✅ Filter initialized successfully!");
 
   function performFilter() {
     const nameQuery = filterName ? filterName.value.toLowerCase().trim() : "";
@@ -430,7 +429,7 @@ function updateRemoveButton() {
 }
 
 /**
- * Show add members modal
+ * Show add members modal WITH FILTER
  */
 async function showAddMembersModal() {
   selectedMembersToAdd.clear();
@@ -458,25 +457,17 @@ async function showAddMembersModal() {
   
   modal.style.display = "block";
 
-  const searchInput = document.getElementById("addMemberSearch");
-  if (searchInput) {
-    searchInput.value = '';
-    searchInput.addEventListener("input", function() {
-      const searchTerm = this.value.toLowerCase();
-      const filtered = availableContacts.filter(c => 
-        c.name.toLowerCase().includes(searchTerm) || 
-        c.number.includes(searchTerm)
-      );
-      renderAddMembersList(filtered);
-    });
-  }
+  // Initialize filter for add members modal
+  initAddMemberFilter(availableContacts);
 
   const selectAllCheck = document.getElementById("selectAllAddMembers");
   if (selectAllCheck) {
     selectAllCheck.checked = false;
     selectAllCheck.addEventListener("change", function() {
-      const checkboxes = document.querySelectorAll(".add-member-checkbox");
-      checkboxes.forEach(cb => {
+      const visibleCheckboxes = Array.from(document.querySelectorAll(".add-member-checkbox"))
+        .filter(cb => cb.closest('label').style.display !== 'none');
+      
+      visibleCheckboxes.forEach(cb => {
         cb.checked = this.checked;
         if (this.checked) {
           selectedMembersToAdd.add(cb.value);
@@ -494,6 +485,166 @@ async function showAddMembersModal() {
 }
 
 /**
+ * NEW: Initialize filter for add members modal
+ */
+function initAddMemberFilter(availableContacts) {
+  const filterName = document.getElementById("filterAddMemberName");
+  const filterNumber = document.getElementById("filterAddMemberNumber");
+  const filterInstansi = document.getElementById("filterAddMemberInstansi");
+  const filterJabatan = document.getElementById("filterAddMemberJabatan");
+  const clearAllBtn = document.getElementById("clearAllAddMemberFilters");
+  const filterInfo = document.getElementById("filterAddMemberResultInfo");
+  const listContainer = document.getElementById("addMembersList");
+  const noResults = document.getElementById("noAddMemberResults");
+  const selectAllCheck = document.getElementById("selectAllAddMembers");
+
+  if (!listContainer) {
+    console.error("Add members list container not found!");
+    return;
+  }
+
+  console.log("✅ Add member filter initialized!");
+
+  function performFilter() {
+    const nameQuery = filterName ? filterName.value.toLowerCase().trim() : "";
+    const numberQuery = filterNumber ? filterNumber.value.toLowerCase().trim() : "";
+    const instansiQuery = filterInstansi ? filterInstansi.value.toLowerCase().trim() : "";
+    const jabatanQuery = filterJabatan ? filterJabatan.value.toLowerCase().trim() : "";
+    
+    const labels = listContainer.querySelectorAll("label");
+    let visibleCount = 0;
+    const totalCount = availableContacts.length;
+
+    const hasActiveFilter = nameQuery || numberQuery || instansiQuery || jabatanQuery;
+
+    if (clearAllBtn) {
+      clearAllBtn.style.display = hasActiveFilter ? "inline-flex" : "none";
+    }
+
+    if (!hasActiveFilter) {
+      labels.forEach(label => {
+        label.style.display = "";
+        visibleCount++;
+      });
+      
+      if (filterInfo) filterInfo.innerHTML = "";
+      if (noResults) noResults.style.display = "none";
+    } else {
+      labels.forEach(label => {
+        const contact = availableContacts.find(c => {
+          const checkbox = label.querySelector('.add-member-checkbox');
+          return checkbox && checkbox.value === c.number;
+        });
+        
+        if (!contact) {
+          label.style.display = "none";
+          return;
+        }
+        
+        const name = (contact.name || "").toLowerCase();
+        const number = (contact.number || "").toLowerCase();
+        const instansi = (contact.instansi || "").toLowerCase();
+        const jabatan = (contact.jabatan || "").toLowerCase();
+        
+        const matchName = !nameQuery || name.includes(nameQuery);
+        const matchNumber = !numberQuery || number.includes(numberQuery);
+        const matchInstansi = !instansiQuery || instansi.includes(instansiQuery);
+        const matchJabatan = !jabatanQuery || jabatan.includes(jabatanQuery);
+        
+        const matchAll = matchName && matchNumber && matchInstansi && matchJabatan;
+        
+        if (matchAll) {
+          label.style.display = "";
+          visibleCount++;
+        } else {
+          label.style.display = "none";
+        }
+      });
+      
+      if (filterInfo) {
+        const activeFilters = [];
+        if (nameQuery) activeFilters.push(`Nama: "${nameQuery}"`);
+        if (numberQuery) activeFilters.push(`Nomor: "${numberQuery}"`);
+        if (instansiQuery) activeFilters.push(`Instansi: "${instansiQuery}"`);
+        if (jabatanQuery) activeFilters.push(`Jabatan: "${jabatanQuery}"`);
+        
+        if (visibleCount === 0) {
+          filterInfo.innerHTML = `
+            <i class="fa-solid fa-circle-exclamation"></i> 
+            Tidak ada hasil untuk filter: ${activeFilters.join(", ")}
+          `;
+          filterInfo.style.color = "#f56565";
+        } else if (visibleCount === totalCount) {
+          filterInfo.innerHTML = `
+            <i class="fa-solid fa-check-circle"></i> 
+            Menampilkan semua ${totalCount} kontak
+          `;
+          filterInfo.style.color = "#48bb78";
+        } else {
+          filterInfo.innerHTML = `
+            <i class="fa-solid fa-filter"></i> 
+            <strong>${visibleCount}</strong> dari ${totalCount} kontak 
+            <span style="color: #718096;">(${activeFilters.length} filter aktif)</span>
+          `;
+          filterInfo.style.color = "#4299e1";
+        }
+      }
+      
+      if (noResults) {
+        noResults.style.display = visibleCount === 0 ? "block" : "none";
+      }
+    }
+
+    if (selectAllCheck) {
+      selectAllCheck.checked = false;
+    }
+
+    updateAddMemberFilterInputStyles();
+  }
+
+  function updateAddMemberFilterInputStyles() {
+    const inputs = [filterName, filterNumber, filterInstansi, filterJabatan];
+    inputs.forEach(input => {
+      if (!input) return;
+      if (input.value.trim()) {
+        input.style.borderColor = "#4299e1";
+        input.style.background = "#ebf8ff";
+      } else {
+        input.style.borderColor = "#cbd5e0";
+        input.style.background = "white";
+      }
+    });
+  }
+
+  function clearAllFilters() {
+    if (filterName) filterName.value = "";
+    if (filterNumber) filterNumber.value = "";
+    if (filterInstansi) filterInstansi.value = "";
+    if (filterJabatan) filterJabatan.value = "";
+    performFilter();
+  }
+
+  if (filterName) {
+    filterName.addEventListener("input", performFilter);
+  }
+  if (filterNumber) {
+    filterNumber.addEventListener("input", performFilter);
+  }
+  if (filterInstansi) {
+    filterInstansi.addEventListener("input", performFilter);
+  }
+  if (filterJabatan) {
+    filterJabatan.addEventListener("input", performFilter);
+  }
+  
+  if (clearAllBtn) {
+    clearAllBtn.addEventListener("click", clearAllFilters);
+  }
+
+  performFilter();
+}
+
+/**
  * Render add members list
  */
 function renderAddMembersList(contactsList) {
@@ -501,7 +652,7 @@ function renderAddMembersList(contactsList) {
   if (!list) return;
 
   if (contactsList.length === 0) {
-    list.innerHTML = '<p style="text-align: center; color: #a0aec0; padding: 20px;">Tidak ada kontak tersedia</p>';
+    list.innerHTML = '<p style="text-align: center; color: #a0aec0; padding: 20px;">Semua kontak sudah menjadi anggota grup ini</p>';
     return;
   }
 
@@ -509,8 +660,9 @@ function renderAddMembersList(contactsList) {
     <label>
       <input type="checkbox" class="add-member-checkbox" value="${contact.number}" 
              ${selectedMembersToAdd.has(contact.number) ? 'checked' : ''}>
-      <strong>${contact.name}</strong> – ${contact.number}
-      ${contact.instansi ? `<br><small style="color: #718096; margin-left: 26px;">${contact.instansi}</small>` : ''}
+      <strong>${contact.name}</strong> — ${contact.number}
+      ${contact.instansi ? `<br><small style="color: #718096; margin-left: 26px;"><i class="fa-solid fa-building" style="font-size: 10px;"></i> ${contact.instansi}</small>` : ''}
+      ${contact.jabatan ? `<small style="color: #718096; margin-left: 8px;"><i class="fa-solid fa-briefcase" style="font-size: 10px;"></i> ${contact.jabatan}</small>` : ''}
     </label>
   `).join('');
 
