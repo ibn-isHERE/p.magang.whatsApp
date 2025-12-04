@@ -1098,145 +1098,313 @@ export async function renderScheduleTable(forceRefresh = false) {
  * Initializes realtime schedule updates
  */
 export async function initRealtimeScheduleUpdates() {
-  console.log("Connecting to real-time schedule updates...");
+  console.log("🔌 Connecting to real-time schedule updates...");
   
   const socket = io();
   const scheduleRender = await import('../schedule/schedule-render.js');
 
   socket.on('connect', () => {
-    console.log(" Real-time connection established - Socket ID:", socket.id);
+    console.log("✅ Real-time connection established - Socket ID:", socket.id);
   });
 
   socket.on('disconnect', () => {
-    console.log(" Real-time connection lost");
+    console.log("❌ Real-time connection lost");
   });
 
   socket.on('connect_error', (error) => {
-    console.error(" Connection error:", error);
+    console.error("⚠️ Connection error:", error);
   });
 
-  // Event: schedule status berubah (untuk pesan)
+  // ✅ FIXED: Event handler untuk schedule status update (DENGAN PROCESSING)
   socket.on('schedule-status-updated', async (data) => {
-    console.log(' RECEIVED: schedule-status-updated', data);
+    console.log('📩 RECEIVED: schedule-status-updated', data);
     
-    const { scheduleId, newStatus, message } = data;
+    const { scheduleId, newStatus, message, deliveryResult } = data;
     
-    if (window.updateScheduleStatusInTable) {
-      window.updateScheduleStatusInTable(scheduleId, newStatus);
+    // Update row di table secara real-time
+    const row = document.querySelector(`#scheduleTable tbody tr[data-id="${scheduleId}"]`);
+    
+    if (row) {
+      // 🎯 UPDATE STATUS CELL (kolom ke-5, index 4)
+      const statusCell = row.cells[4];
+      if (statusCell) {
+        let statusHTML = '';
+        let statusClass = '';
+        
+        switch (newStatus) {
+          case 'processing':
+            statusClass = 'status-processing';
+            statusHTML = '<i class="fa-solid fa-spinner fa-spin" title="Sedang Mengirim"></i> Mengirim';
+            console.log(`✅ Status cell updated to PROCESSING for schedule ${scheduleId}`);
+            break;
+          case 'terkirim':
+            statusClass = 'status-terkirim';
+            statusHTML = '<i class="material-icons" title="Terkirim">check_circle</i> Terkirim';
+            break;
+          case 'gagal':
+            statusClass = 'status-gagal';
+            statusHTML = '<i class="material-icons" title="Gagal">cancel</i> Gagal';
+            break;
+          case 'dibatalkan':
+            statusClass = 'status-dibatalkan';
+            statusHTML = '<i class="material-icons" title="Dibatalkan">block</i> Dibatalkan';
+            break;
+          default:
+            statusClass = 'status-terjadwal';
+            statusHTML = '<i class="material-icons" title="Terjadwal">hourglass_empty</i> Terjadwal';
+        }
+        
+        statusCell.className = statusClass;
+        statusCell.innerHTML = statusHTML;
+      }
+      
+      // 🎯 UPDATE ACTION BUTTONS (kolom ke-7, index 6)
+      const actionCell = row.cells[6];
+      if (actionCell) {
+        if (newStatus === 'processing') {
+          // Hitung jumlah penerima dari cell kolom 2
+          const recipientCell = row.cells[1];
+          const recipientText = recipientCell ? recipientCell.textContent : '';
+          const recipientMatch = recipientText.match(/(\d+)\s*nomor/);
+          const recipientCount = recipientMatch ? recipientMatch[1] : '...';
+          
+          actionCell.innerHTML = `
+            <span style="color: #48bb78; font-weight: 500;">
+              <i class="fa-solid fa-spinner fa-spin"></i> Mengirim pesan... 
+              <small style="display: block; margin-top: 4px; color: #718096; font-size: 11px;">
+                ${recipientCount} penerima
+              </small>
+            </span>
+          `;
+          console.log(`✅ Action cell updated to PROCESSING for schedule ${scheduleId}`);
+        } 
+        else if (newStatus === 'terkirim' || newStatus === 'gagal' || newStatus === 'dibatalkan') {
+          actionCell.innerHTML = `
+            <button class="delete-history-btn" data-id="${scheduleId}">
+              <i class="material-icons">delete_forever</i> Hapus Riwayat
+            </button>
+          `;
+          
+          // Re-attach event listener untuk tombol delete
+          const deleteBtn = actionCell.querySelector('.delete-history-btn');
+          if (deleteBtn) {
+            deleteBtn.onclick = async function() {
+              const confirmed = await Swal.fire({
+                title: 'Anda yakin?',
+                text: 'Riwayat pesan ini akan dihapus permanen!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, hapus!',
+                cancelButtonText: 'Tidak'
+              });
+              
+              if (confirmed.isConfirmed) {
+                try {
+                  const res = await fetch(`/delete-history/${scheduleId}`, { method: 'DELETE' });
+                  if (res.ok) {
+                    Swal.fire('Dihapus!', 'Riwayat berhasil dihapus', 'success');
+                    await scheduleRender.renderScheduleTable(true);
+                  } else {
+                    Swal.fire('Gagal!', 'Gagal menghapus riwayat', 'error');
+                  }
+                } catch (error) {
+                  console.error('Error deleting history:', error);
+                  Swal.fire('Gagal!', 'Terjadi kesalahan', 'error');
+                }
+              }
+            };
+          }
+        }
+      }
+      
+      // 🎯 UPDATE DELIVERY RESULT CELL (kolom ke-6, index 5) - jika ada
+      if (deliveryResult && row.cells[5]) {
+        const deliveryCell = row.cells[5];
+        import('../schedule/schedule-render.js').then(module => {
+          if (module.formatDeliveryResult) {
+            deliveryCell.innerHTML = module.formatDeliveryResult(JSON.stringify(deliveryResult));
+            console.log(`✅ Delivery result updated for schedule ${scheduleId}`);
+          }
+        });
+      }
     }
     
+    // Show notification untuk status akhir
     if (newStatus === 'terkirim') {
-      showNotification(' Pesan Terkirim', message || `Jadwal #${scheduleId} telah terkirim`, 'success');
-      await scheduleRender.renderScheduleTable(true); //  FORCE REFRESH
+      showNotification('✅ Pesan Terkirim', message || `Jadwal #${scheduleId} telah terkirim`, 'success');
+      // Refresh full table setelah selesai
+      setTimeout(() => scheduleRender.renderScheduleTable(true), 1000);
     } else if (newStatus === 'gagal') {
-      showNotification(' Pesan Gagal', message || `Jadwal #${scheduleId} gagal terkirim`, 'error');
-      await scheduleRender.renderScheduleTable(true); //  FORCE REFRESH
+      showNotification('❌ Pesan Gagal', message || `Jadwal #${scheduleId} gagal terkirim`, 'error');
+      setTimeout(() => scheduleRender.renderScheduleTable(true), 1000);
     }
   });
 
-  // Event: meeting status berubah
+  // ✅ FIXED: Event handler untuk meeting status update (DENGAN PROCESSING)
   socket.on('meeting-status-updated', async (data) => {
-    console.log(' RECEIVED: meeting-status-updated', data);
+    console.log('📩 RECEIVED: meeting-status-updated', data);
     
-    const { scheduleId, newStatus, message } = data;
+    const { scheduleId, newStatus, message, deliveryResult } = data;
     
-    if (window.updateScheduleStatusInTable) {
-      window.updateScheduleStatusInTable(scheduleId, newStatus);
+    // Update row di table secara real-time
+    const row = document.querySelector(`#scheduleTable tbody tr[data-id="${scheduleId}"]`);
+    
+    if (row) {
+      // Update status cell
+      const statusCell = row.cells[4];
+      if (statusCell) {
+        let statusHTML = '';
+        let statusClass = '';
+        
+        switch (newStatus) {
+          case 'processing':
+            statusClass = 'status-processing';
+            statusHTML = '<i class="fa-solid fa-spinner fa-spin" title="Sedang Mengirim"></i> Mengirim';
+            console.log(`✅ Meeting status cell updated to PROCESSING for ${scheduleId}`);
+            break;
+          case 'terkirim':
+            statusClass = 'status-terkirim';
+            statusHTML = '<i class="material-icons" title="Terkirim">check_circle</i> Terkirim';
+            break;
+          case 'selesai':
+            statusClass = 'status-selesai';
+            statusHTML = '<i class="material-icons" title="Selesai">done_all</i> Selesai';
+            break;
+          case 'dibatalkan':
+            statusClass = 'status-dibatalkan';
+            statusHTML = '<i class="material-icons" title="Dibatalkan">block</i> Dibatalkan';
+            break;
+          case 'canceling':
+            statusClass = 'status-canceling';
+            statusHTML = '<i class="fa-solid fa-spinner fa-spin" title="Membatalkan"></i> Membatalkan';
+            break;
+          default:
+            statusClass = 'status-terjadwal';
+            statusHTML = '<i class="material-icons" title="Terjadwal">hourglass_empty</i> Terjadwal';
+        }
+        
+        statusCell.className = statusClass;
+        statusCell.innerHTML = statusHTML;
+      }
+      
+      // Update action buttons untuk meeting
+      const actionCell = row.cells[6];
+      if (actionCell) {
+        if (newStatus === 'processing') {
+          const recipientCell = row.cells[1];
+          const recipientText = recipientCell ? recipientCell.textContent : '';
+          const recipientMatch = recipientText.match(/(\d+)\s*nomor/);
+          const recipientCount = recipientMatch ? recipientMatch[1] : '...';
+          
+          actionCell.innerHTML = `
+            <span style="color: #48bb78; font-weight: 500;">
+              <i class="fa-solid fa-spinner fa-spin"></i> Mengirim reminder... 
+              <small style="display: block; margin-top: 4px; color: #718096; font-size: 11px;">
+                ${recipientCount} peserta
+              </small>
+            </span>
+          `;
+          console.log(`✅ Meeting action cell updated to PROCESSING for ${scheduleId}`);
+        }
+        else if (newStatus === 'canceling') {
+          actionCell.innerHTML = `
+            <span style="color: #ed8936; font-weight: 500;">
+              <i class="fa-solid fa-spinner fa-spin"></i> Membatalkan...
+              <small style="display: block; margin-top: 4px; color: #718096; font-size: 11px;">
+                Mengirim notifikasi pembatalan
+              </small>
+            </span>
+          `;
+        }
+        else if (newStatus === 'terkirim') {
+          actionCell.innerHTML = `
+            <button class="cancel-meeting-btn" data-id="${scheduleId}">
+              <i class="material-icons">cancel</i> Batalkan Rapat
+            </button>
+            <button class="finish-meeting-btn" data-id="${scheduleId}">
+              <i class="material-icons">done</i> Selesaikan
+            </button>
+          `;
+          // Re-render untuk attach event listeners
+          setTimeout(() => scheduleRender.renderScheduleTable(true), 500);
+        }
+        else if (newStatus === 'selesai' || newStatus === 'dibatalkan') {
+          actionCell.innerHTML = `
+            <button class="delete-meeting-btn" data-id="${scheduleId}">
+              <i class="material-icons">delete_forever</i> Hapus Riwayat
+            </button>
+          `;
+          setTimeout(() => scheduleRender.renderScheduleTable(true), 500);
+        }
+      }
+      
+      // Update delivery result jika ada
+      if (deliveryResult && row.cells[5]) {
+        const deliveryCell = row.cells[5];
+        import('../schedule/schedule-render.js').then(module => {
+          if (module.formatDeliveryResult) {
+            deliveryCell.innerHTML = module.formatDeliveryResult(JSON.stringify(deliveryResult));
+            console.log(`✅ Meeting delivery result updated for ${scheduleId}`);
+          }
+        });
+      }
     }
     
-    //  CRITICAL FIX: Force refresh untuk semua perubahan status meeting
+    // Show notifications
     if (newStatus === 'terkirim') {
-      showNotification('¨ Pengingat Rapat Terkirim', message || `Pengingat rapat #${scheduleId} telah terkirim`, 'success');
-      console.log(' Auto-refreshing table after meeting reminder sent...');
-      await scheduleRender.renderScheduleTable(true); //  FORCE REFRESH
+      showNotification('📅 Reminder Rapat Terkirim', message || `Reminder rapat #${scheduleId} telah terkirim`, 'success');
+      setTimeout(() => scheduleRender.renderScheduleTable(true), 1000);
     } else if (newStatus === 'selesai') {
-      showNotification(' Rapat Selesai', message || `Rapat #${scheduleId} telah selesai`, 'success');
-      await scheduleRender.renderScheduleTable(true); //  FORCE REFRESH
+      showNotification('✅ Rapat Selesai', message || `Rapat #${scheduleId} telah selesai`, 'success');
+      setTimeout(() => scheduleRender.renderScheduleTable(true), 1000);
     } else if (newStatus === 'dibatalkan') {
-      showNotification('¸ Rapat Dibatalkan', message || `Rapat #${scheduleId} dibatalkan`, 'warning');
-      await scheduleRender.renderScheduleTable(true); //  FORCE REFRESH
-    } else {
-      console.log(` Refreshing table for meeting status: ${newStatus}`);
-      await scheduleRender.renderScheduleTable(true); //  FORCE REFRESH
+      showNotification('⛔ Rapat Dibatalkan', message || `Rapat #${scheduleId} dibatalkan`, 'warning');
+      setTimeout(() => scheduleRender.renderScheduleTable(true), 1000);
     }
   });
 
   // Event: schedule baru dibuat
   socket.on('schedule-created', async (data) => {
-    console.log(' RECEIVED: schedule-created', data);
-    console.log(' Auto-refreshing schedule table for new schedule...');
-    await scheduleRender.renderScheduleTable(true); //  FORCE REFRESH
+    console.log('📩 RECEIVED: schedule-created', data);
+    await scheduleRender.renderScheduleTable(true);
   });
 
-  //  CRITICAL FIX: Event ketika schedule/meeting di-update
+  // Event: schedule/meeting di-update
   socket.on('schedule-updated', async (data) => {
-    console.log(' RECEIVED: schedule-updated', data);
-    console.log(' Data received:', {
-      scheduleId: data.scheduleId,
-      filesChanged: data.filesChanged,
-      hasGroupInfo: !!data.groupInfo,
-      forceRefresh: data.forceRefresh
-    });
-    
+    console.log('📩 RECEIVED: schedule-updated', data);
     const message = data.filesChanged 
       ? `Jadwal #${data.scheduleId} dan file telah diupdate` 
       : `Jadwal #${data.scheduleId} telah diupdate`;
     
-    showNotification(' Jadwal Diperbarui', message, 'info');
-    
-    //  CRITICAL: ALWAYS force refresh untuk edit
-    console.log(' FORCE REFRESH - Fetching fresh data from database...');
-    
-    // First refresh
+    showNotification('🔄 Jadwal Diperbarui', message, 'info');
     await scheduleRender.renderScheduleTable(true);
     
-    //  DOUBLE REFRESH: Ensure data fully loaded (especially for groupInfo changes)
-    setTimeout(async () => {
-      console.log(' Secondary force refresh to ensure groupInfo updated...');
-      await scheduleRender.renderScheduleTable(true);
-    }, 800);
+    // Double refresh untuk ensure groupInfo updated
+    setTimeout(() => scheduleRender.renderScheduleTable(true), 800);
   });
 
   socket.on('meeting-updated', async (data) => {
-    console.log(' RECEIVED: meeting-updated', data);
-    console.log(' Data received:', {
-      scheduleId: data.scheduleId,
-      filesChanged: data.filesChanged,
-      hasGroupInfo: !!data.groupInfo,
-      forceRefresh: data.forceRefresh
-    });
-    
+    console.log('📩 RECEIVED: meeting-updated', data);
     const message = data.filesChanged 
       ? `Rapat #${data.scheduleId} dan file telah diupdate` 
       : `Rapat #${data.scheduleId} telah diupdate`;
     
-    showNotification(' Rapat Diperbarui', message, 'info');
-    
-    //  CRITICAL: ALWAYS force refresh untuk edit
-    console.log(' FORCE REFRESH - Fetching fresh data from database...');
-    
-    // First refresh
+    showNotification('🔄 Rapat Diperbarui', message, 'info');
     await scheduleRender.renderScheduleTable(true);
     
-    //  DOUBLE REFRESH: Ensure data fully loaded (especially for groupInfo changes)
-    setTimeout(async () => {
-      console.log(' Secondary force refresh to ensure groupInfo updated...');
-      await scheduleRender.renderScheduleTable(true);
-    }, 800);
+    setTimeout(() => scheduleRender.renderScheduleTable(true), 800);
   });
 
   // Event: schedule dihapus
   socket.on('schedule-deleted', async (data) => {
-    console.log(' RECEIVED: schedule-deleted', data);
-    const { scheduleId } = data;
-    if (window.removeScheduleFromTable) {
-      window.removeScheduleFromTable(scheduleId);
-    }
-    // Force refresh juga untuk memastikan
+    console.log('📩 RECEIVED: schedule-deleted', data);
     await scheduleRender.renderScheduleTable(true);
   });
 
   window.scheduleSocket = socket;
+  console.log("✅ Real-time updates initialized successfully");
 }
 
 /**

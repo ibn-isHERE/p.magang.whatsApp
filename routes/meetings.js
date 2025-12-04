@@ -703,13 +703,7 @@ router.put("/cancel-meeting/:id", async (req, res) => {
       global.emitMeetingStatusUpdate(id, "dibatalkan", message);
     }
 
-    res.json({
-      success: true,
-      message: notificationSent
-        ? "Meeting berhasil dibatalkan dan notifikasi pembatalan telah terkirim ke semua peserta."
-        : "Meeting berhasil dibatalkan.",
-      notificationSent: notificationSent,
-    });
+    
   } catch (error) {
     console.error("Kesalahan pada rute /cancel-meeting:", error.message);
 
